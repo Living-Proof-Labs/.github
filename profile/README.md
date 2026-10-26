@@ -62,8 +62,15 @@ those connections are not claims of implemented integrations or partnerships.
 | **Report and grade** | The understandable record of decisions and their supporting context. The grade is an outcome within that report; rendering a saved report does not regrade it. |
 
 The released [portable bundle schema](https://github.com/Living-Proof-Labs/livingproof-capability-report/blob/v1.6.0/src/livingproof_capability_report/bundle.schema.json)
-provides the technical detail. A manifest can contain multiple results; keep its
-referenced evidence files with it when sharing a bundle.
+provides the technical detail. A manifest can contain multiple results, so a
+bundle need not represent a single robot execution. Keep its referenced evidence
+files with it; different specification and software contexts remain separate in
+grading.
+
+In a reporting workflow, the execution pipeline supplies the manifest, evidence,
+and assessments. The installed reporter validates that input, grades under its
+supported policy, and renders the stored decisions. Our examples supply recorded
+fixtures in place of observations from a robot or simulator.
 
 ## See it today
 
