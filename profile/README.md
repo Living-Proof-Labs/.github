@@ -1,5 +1,11 @@
 # Helping robots help humans
 
+> [!NOTE]
+> **Under construction · Updated 26 October 2026**
+> We are building toward the workflow below. Today's releases demonstrate fixture
+> evidence and reports; robot, simulator, and live evaluator integrations are still
+> ahead. Expect small, inspectable examples while the pieces take shape.
+
 Robots earn our confidence through what they can do, under conditions we can
 understand. **Living Proof Labs is building an open way to connect robot capability
 requirements, observed behavior, and evidence people can inspect.**
@@ -10,72 +16,84 @@ requirement to a run, its evidence, and a useful next step.
 
 ## From a requirement to the next improvement
 
-The loop we are building brings developers, reviewers, and their tools together:
+**Continuous integration is the execution platform we are building toward for
+simulation verification:** software changes trigger repeatable scenarios, evidence
+capture, and reports. Today's fixtures already run in continuous integration;
+simulator adapters are future work. Physical robot runs need their own hardware
+execution environment and controls. We do not control hardware from continuous
+integration today.
 
-1. **Describe the capability.** Version the requirement, operating conditions, and
-   acceptance criteria so everyone knows what is being checked.
-2. **Exercise the software.** Run a scenario in simulation or on hardware. Capture
-   observations and logs alongside the software, robot, and environment versions.
-3. **Evaluate the evidence.** Combine deterministic checks, human review, and
-   agent-assisted assessments, keeping their reasoning and disagreements visible.
-   An explicit, versioned policy determines the grade.
-4. **Make the result understandable.** Produce a traceable report that connects each
-   decision to its requirement, evidence, evaluators, and policy. Missing evidence
-   should be visible, not quietly treated as a pass.
-5. **Investigate, improve, and repeat.** Log analysis and coding agents help
-   developers explore possible root causes and propose software changes. Developers
-   test those ideas, rerun the scenario, and compare results in their exact contexts.
+This is the intended loop, with future execution paths marked explicitly:
 
-An evaluation asks whether the evidence meets a requirement. A diagnosis suggests
-why something happened. Those are different claims: an agent's explanation is a
-hypothesis to investigate, not proof of root cause or authority to change a grade.
-These reports do not certify robot safety.
+```mermaid
+flowchart TD
+    A["Versioned software, requirements, and scenarios"]
+    A --> B["Continuous integration: fixtures today, simulation planned"]
+    A --> C["Hardware execution: separate environment, planned"]
+    B --> D["Evidence and logs with versioned context"]
+    C --> D
+    D --> E["Evaluators assess; versioned policy grades"]
+    E --> F["Understandable, traceable report"]
+    F --> G["Log analysis and coding agents suggest diagnoses"]
+    G --> H["Developers investigate, change software, and rerun"]
+    H --> A
+```
 
-Our vision spans different simulators, robots, evaluation providers, and developer
-tools. Those connections are future integration work. **Today's released demo uses
-fixtures: it does not run a robot or simulator, call a model, or conduct live human
-review.** It demonstrates portable evidence and reports, with deterministic checks,
-clearly labeled mock agent assessments, and recorded human assessments.
+Deterministic checks, human review, and agent-assisted evaluations should retain
+separate assessments and disagreements. An explicit policy determines the grade.
+Log analysis and coding agents then help developers investigate possible root
+causes and test improvements, comparing each new run in its exact context.
+
+An evaluation asks whether evidence meets a requirement. A diagnosis suggests why
+something happened: it is a hypothesis to investigate, not proof of root cause or
+authority to change a grade. These reports do not certify robot safety. Our vision
+spans diverse robots, simulators, evaluation providers, and developer tools;
+those connections are not claims of implemented integrations or partnerships.
+
+## What goes in, what comes out
+
+| Piece | What it means |
+| --- | --- |
+| **Specification** | The versioned capability requirement, operating conditions, and acceptance criteria: what must be true. |
+| **Scenario** | A concrete situation and expected behavior used to exercise that requirement. |
+| **Evidence and manifest** | Observations and logs are the evidence. A manifest indexes result context, specification and software versions, assessments, and relative evidence paths with integrity digests. It describes collected results, not commands for a robot. |
+| **Assessments** | Evaluators' findings, reasons, and evidence references, kept separately so disagreement stays visible. |
+| **Policy** | Explicit, versioned rules that turn supported assessments and evidence checks into a grade. Missing evidence must not silently pass. |
+| **Report and grade** | The understandable record of decisions and their supporting context. The grade is an outcome within that report; rendering a saved report does not regrade it. |
+
+The released [portable bundle schema](https://github.com/Living-Proof-Labs/livingproof-capability-report/blob/v1.6.0/src/livingproof_capability_report/bundle.schema.json)
+provides the technical detail. A manifest can contain multiple results; keep its
+referenced evidence files with it when sharing a bundle.
 
 ## See it today
 
-**Start with a result.** Download the [example HTML report](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.2.0/report.html)
+Here is a plain-language reading of the released pause fixture, not a live robot
+run or an executable command:
+
+```text
+Given motion is inhibited after a recorded pause of 300 milliseconds
+When that evidence is assessed against a 500-millisecond pause limit
+Then the fixture passes
+When the same evidence is assessed against a 250-millisecond pause limit
+Then the fixture fails
+And the report retains the requirement versions and supporting evidence
+```
+
+The observation has not changed; the requirement has. Missing elapsed time instead
+produces insufficient evidence. Today's demonstration uses deterministic checks,
+scripted mock agent assessments, and recorded human assessments. No simulator,
+robot, model call, or live human review is involved.
+
+**Explore the released result:** download the [example HTML report](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.2.0/report.html)
 and open it locally, or read the [plain-text report](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.2.0/report.txt).
 Both come from [capability verifier v1.2.0](https://github.com/Living-Proof-Labs/capability-verifier/releases/tag/v1.2.0).
-
-For a concrete example, a recorded pause of 300 milliseconds meets a 500-millisecond
-limit but fails a 250-millisecond limit. The observation has not changed; the
-requirement has. Preserving both versions makes that difference explainable.
-
-**Make your own report from the fixture bundle.** Follow the
-[livingproof v1.4.0 installation guide](https://github.com/Living-Proof-Labs/livingproof/blob/v1.4.0/README.md#get-started)
-first. In that same Python environment, install the released reporter explicitly:
-
-```sh
-livingproof plugins install livingproof-capability-report --version 1.6.0
-livingproof plugins status livingproof-capability-report
-```
-
-Then follow [Produce a report](https://github.com/Living-Proof-Labs/livingproof/blob/v1.4.0/README.md#produce-a-report)
-to download and checksum-verify the reporter v1.6.0 source archive and extract its
-example `bundle` directory. With that directory in place:
-
-```sh
-livingproof capability report validate bundle/manifest.json
-livingproof capability report grade bundle/manifest.json -o report.json
-livingproof capability report render report.json --format html -o report.html
-```
-
-Open `report.html` locally. Keep the complete bundle with its evidence files;
-use new output filenames when repeating the commands. Grading saves the policy's
-decisions; rendering displays them without regrading. A fixture's failure or
-insufficient-evidence grade can be the correct result of a successful demo.
+These reports preserve their recorded specification versions rather than silently
+adopting the newest catalog.
 
 ## Find your next step
 
-These links open released documentation. Each project gets more technical as you
-dig in; the demo retains its own recorded specification versions rather than
-silently adopting the newest catalog.
+Start with the part that interests you. These links open released documentation;
+installation commands and technical details live with the tools.
 
 | If you want to… | Start here |
 | --- | --- |
