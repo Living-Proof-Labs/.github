@@ -1,7 +1,7 @@
 # Working on the Living Proof Labs welcome experience
 
 Read and follow the released
-[collaboration-guidelines v4.3.0 baseline](https://github.com/Living-Proof-Labs/collaboration-guidelines/blob/v4.3.0/AGENTS.md)
+[collaboration-guidelines v6.0.0 baseline](https://github.com/Living-Proof-Labs/collaboration-guidelines/blob/v6.0.0/AGENTS.md)
 and its relevant procedures at that same tag. A link alone does not load them.
 
 ## Local additions and scope
@@ -11,10 +11,10 @@ and its relevant procedures at that same tag. A link alone does not load them.
 - Distinguish available fixture demonstrations from planned robot, simulator,
   provider, and developer-tool integrations. Keep policy grades separate from
   diagnosis hypotheses. Do not imply safety certification or partnerships.
-- Pin cross-repository documentation, examples, and downloads to published
-  version tags. The curated directory uses release trees, so it needs no moving
-  repository-link exception. Same-repository relative navigation follows the
-  revision being read.
+- Pin shared guidance, examples, and downloads to published version tags.
+  Current root and rendered-manual links are bounded navigation exceptions;
+  they do not permit floating executable dependencies. Same-repository relative
+  navigation follows the revision being read.
 - Verify command examples against released artifacts and record the exact
   versions, commands, outcomes, and limitations in the pull request.
 
@@ -33,3 +33,6 @@ separate tooling and publishing project. Do not describe manual evidence as a
 hosted test run. Revisit this exception when adding executable tooling or an
 automated validation/release workflow. Profile publication uses GitHub's existing
 default-branch behavior; do not change settings or publishing services.
+
+Guidelines v6.0.0 resolves to `52a2f274576dab20e96ee1152b6c8d187cfbf377`.
+Publish profile redirects only after the canonical root targets are live.
