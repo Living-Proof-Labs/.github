@@ -29,6 +29,11 @@ if [ -e "$destination" ]; then
 fi
 mv "$temporary/node-$version-linux-$platform" "$destination"
 fi
+installed_node_version=$("$destination/bin/node" --version)
+if [ "$installed_node_version" != "$version" ]; then
+  echo 'Installed Node did not report the expected version.' >&2
+  exit 70
+fi
 task_version=v3.54.0
 task_destination="$root/.tools/task-$task_version-linux-$platform"
 if [ "$platform" = x64 ]; then task_platform=amd64; task_checksum=680859dbb4d881a9c72d4d9a8f510825450849af8567deacd7302c01124416fb; else task_platform=arm64; task_checksum=d7189d439d4a6058e39e1b2acd7c8b27acd4856691b408f23b242e4294e1df5b; fi
@@ -39,4 +44,6 @@ if [ ! -x "$task_destination/task" ]; then
   mkdir -p "$task_destination"
   tar -xzf "$task_archive" -C "$task_destination" task
 fi
-printf 'Installed Node %s and Task %s under %s\n' "$version" "$task_version" "$root/.tools"
+printf 'Verified Node %s and Task %s under %s\n' "$installed_node_version" "$task_version" "$root/.tools"
+printf 'For repository commands: bash tools/task.sh verify\n'
+printf 'For bare node in this shell only: source tools/activate-node.sh\n'
