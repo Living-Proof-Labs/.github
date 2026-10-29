@@ -21,6 +21,9 @@ GitHub App definitions, settings audit, and drift evidence. Start with
 an approved apply and by scheduled drift detection. The generic policy and
 tool remain released dependencies of `collaboration-guidelines`; this
 repository supplies the organization inventory and operating decisions.
+The App helper entry points are `task github:apps:form:help`,
+`task github:apps:callback:help`, and `task github:apps:exchange:help`; the
+exchange helper is dry-run until its explicit `--execute` flag.
 
 ## Repository directory
 

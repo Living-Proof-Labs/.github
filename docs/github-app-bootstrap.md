@@ -21,33 +21,75 @@ of the owner-approved manifest handshake.
 
 ## Owner runbook
 
-1. Review both manifests with `node tools/github/verify-app-manifests.mjs`.
-2. Register each manifest through the organization Manifest flow, using an
-   owner-controlled local callback at `127.0.0.1:8787`. Do not use a public
-   callback service merely to bootstrap these credentials.
-3. Exchange the callback code locally within one hour. Store the returned PEM
-   outside the repository and record only the non-secret client ID/App ID in
-   the organization password or secrets-management record.
-4. Install each App on **Only select repositories**, selecting exactly the
+1. Review both manifests with `task github:apps:check`.
+2. For one manifest, generate and open a local owner-consent form:
+
+   ```sh
+   node tools/github/render-app-manifest-form.mjs \
+     --manifest config/github/apps/repository-settings-audit.manifest.json \
+     --organization Living-Proof-Labs --output /tmp/repository-settings-audit.html
+   open /tmp/repository-settings-audit.html
+   ```
+
+   This is a local HTML form that posts only the reviewed manifest to GitHub's
+   organization registration page; no hosted service is involved.
+3. Before submitting that form, start the included loopback-only receiver in a
+   second terminal. It writes the one-time code once to the named, new file
+   with mode `0600` and never prints the code:
+
+   ```sh
+   node tools/github/receive-app-manifest-code.mjs --output /tmp/audit-code
+   ```
+
+4. The conversion command is dry-run unless `--execute` is supplied. After
+   owner approval, exchange the code within one hour and save the response to a
+   secure, new path. The response contains the PEM and other secrets.
+
+   ```sh
+   node tools/github/exchange-app-manifest-code.mjs \
+     --code-file /tmp/audit-code --output /secure/location/audit-app.json
+   node tools/github/exchange-app-manifest-code.mjs \
+     --code-file /tmp/audit-code --output /secure/location/audit-app.json --execute
+   ```
+
+   Repeat steps 2–4 for the apply manifest. Record only the non-secret client
+   ID/App ID in the organization password or secrets-management record.
+5. Install each App on **Only select repositories**, selecting exactly the
    committed repository inventory and `.github`. Do not select all current or
    future organization repositories.
-5. Create `repository-settings-audit` and
+6. Create `repository-settings-audit` and
    `repository-administration` environments in `.github`, restricted to
    `main`. The latter requires an authorized owner review; allow self-review
    only if the sole owner must both dispatch and approve an apply.
-6. Put each App's client ID in a configuration variable and its PEM only in the
+7. Put each App's client ID in a configuration variable and its PEM only in the
    corresponding environment secret. The apply identity names are
    `REPO_ADMIN_APP_CLIENT_ID` and `REPO_ADMIN_APP_PRIVATE_KEY`.
-7. Before wiring a workflow, run a read-only request with each installation
+8. Before wiring a workflow, run a read-only request with each installation
    token against the inventory. The audit App may not reveal ruleset bypass
    actors; a trusted read using the apply App is required for that assertion.
 
-Environment, variable, and encrypted-secret APIs exist, so steps 5–6 can be
-automated after the initial secret is securely available. They are deliberately
-not automated here: doing so would require passing a private key to a command,
-which risks logging or persisting it. Any future bootstrap command must accept
-the PEM only via standard input, encrypt it with GitHub's environment public
-key, and make no secret-bearing output.
+Environment, variable, and encrypted-secret APIs exist, so step 6–7 can be
+performed without hand-entering a PEM. These are opt-in commands—not part of
+the manifest tools—and require the owner's action-time authorization:
+
+```sh
+# Set OWNER_NUMERIC_ID from a reviewed owner account, then create/update the
+# protected environment. This uses protected branches; enable it after main is
+# protected, or use the deployment-branch-policy endpoint for a custom main-only rule.
+printf '%s' "{\"prevent_self_review\":false,\"reviewers\":[{\"type\":\"User\",\"id\":${OWNER_NUMERIC_ID}}],\"deployment_branch_policy\":{\"protected_branches\":true,\"custom_branch_policies\":false}}" \
+  | gh api --method PUT repos/Living-Proof-Labs/.github/environments/repository-administration --input -
+
+gh variable set REPO_ADMIN_APP_CLIENT_ID --repo Living-Proof-Labs/.github \
+  --env repository-administration --body "$APP_CLIENT_ID"
+gh secret set REPO_ADMIN_APP_PRIVATE_KEY --repo Living-Proof-Labs/.github \
+  --env repository-administration < /secure/location/app-private-key.pem
+```
+
+`gh secret set` encrypts the secret for GitHub; it does not reveal its value in
+the command output. Use a local file with restrictive permissions, never a
+shell variable or committed file. The same pattern applies to the audit App's
+environment. Review the resulting environment read-back before wiring a
+credentialed workflow.
 
 ## Workflow boundary
 
