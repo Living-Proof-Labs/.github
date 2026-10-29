@@ -27,3 +27,7 @@ tasks:
     desc: Read-only policy audit that reports drift without changing settings
     cmds:
       - bash tools/github/repository-settings.sh
+  github:settings:test:
+    desc: Write JUnit evidence and fail on every drift or unverified setting
+    cmds:
+      - bash tools/github/repository-settings.sh --fail-on-drift --junit artifacts/repository-settings.xml

@@ -5,9 +5,15 @@ set -euo pipefail
 policy_file=config/github/repository-policy.json
 inventory_file=config/github/repositories.json
 fail_on_drift=false
+result_file=
 if [ "${1:-}" = "--fail-on-drift" ]; then
   fail_on_drift=true
   shift
+fi
+if [ "${1:-}" = "--junit" ]; then
+  result_file=${2:-}
+  if [ -z "$result_file" ]; then echo "--junit requires an output path." >&2; exit 64; fi
+  shift 2
 fi
 policy=$(node -e 'const fs=require("fs"); console.log(JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1]))))' "$policy_file")
 repository=$(node -e 'console.log(JSON.parse(process.argv[1]).repository)' "$policy")
@@ -40,6 +46,9 @@ tool_status=${PIPESTATUS[0]}
 set -e
 if [ "$tool_status" -ne 0 ]; then
   exit "$tool_status"
+fi
+if [ -n "$result_file" ]; then
+  node tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file"
 fi
 differences=$(sed -n 's/^\([0-9][0-9]*\) difference(s) found; [0-9][0-9]* error(s).$/\1/p' "$audit_output")
 if [ -z "$differences" ]; then
