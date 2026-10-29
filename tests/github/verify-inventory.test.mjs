@@ -10,4 +10,6 @@ test('accepts the group directory inventory shape', () => {
 test('rejects duplicate and unsafe repository names', () => {
   assert.throws(() => validateInventory({ schema_version: 1, owner: 'example-org', repositories: ['project', 'project'] }), /unique/);
   assert.throws(() => validateInventory({ schema_version: 1, owner: 'example-org', repositories: ['../project'] }), /valid/);
+  assert.throws(() => validateInventory({ schema_version: 1, owner: '../example', repositories: ['project'] }), /owner/);
+  assert.throws(() => validateInventory({ schema_version: 1, owner: 'example-org', repositories: [3] }), /valid/);
 });

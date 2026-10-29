@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+version: '3'
+
+tasks:
+  setup:
+    desc: Verify the supported Node runtime is available
+    cmds:
+      - node --version
+  check:
+    desc: Validate the canonical repository inventory
+    cmds:
+      - npm run check
+  test:
+    desc: Test inventory validation
+    cmds:
+      - npm test
+  verify:
+    desc: Run inventory checks and tests
+    cmds:
+      - task: check
+      - task: test

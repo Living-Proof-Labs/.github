@@ -21,7 +21,7 @@ and its relevant procedures at that same tag. A link alone does not load them.
 ## Local directory tooling
 
 This repository owns the single organization repository inventory. Validate it
-with `npm run check` and `npm test`; the workflow runs the same commands. The
+with `task setup` and `task verify`; the workflow runs the same commands. The
 inventory may reference only released, pinned policy artifacts. Do not invent a
 tag, pin a moving branch, or duplicate a project list in the policy provider.
 Before a provider release is available, retain the inventory and validation here

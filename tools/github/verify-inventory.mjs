@@ -10,7 +10,7 @@ export function validateInventory(inventory) {
     throw new Error('Inventory must declare at least one repository.');
   }
   const names = new Set(inventory.repositories);
-  if (names.size !== inventory.repositories.length || !inventory.repositories.every((name) => name === '.github' || /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name))) {
+  if (names.size !== inventory.repositories.length || !inventory.repositories.every((name) => typeof name === 'string' && (name === '.github' || /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)))) {
     throw new Error('Inventory must contain unique, valid GitHub repository names.');
   }
   return inventory;
