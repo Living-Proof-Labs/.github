@@ -24,9 +24,12 @@ repository supplies the organization inventory and operating decisions.
 
 On Debian Linux (amd64 or arm64), `task` first lists these operations and
 `task setup` installs the pinned, checksum-verified Node runtime under this
-checkout's `.tools/` directory. It does not use `sudo`, alter system packages,
-or modify shell startup files. Codespaces uses `.devcontainer/devcontainer.json`
-and runs the same setup after creation.
+checkout's `.tools/` directory. It also installs the pinned Task binary there.
+On a host without Task, start once with `bash tools/setup.sh`, then run
+`bash tools/task.sh setup` (or add no shell configuration; the wrapper stays in
+the checkout). It does not use `sudo` or alter system packages. Codespaces
+uses `.devcontainer/devcontainer.json` and exposes the same Task binary after
+creation.
 The App helper entry points are `task github:apps:form:help`,
 `task github:apps:callback:help`, and `task github:apps:exchange:help`; the
 exchange helper is dry-run until its explicit `--execute` flag.

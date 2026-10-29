@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+node=(bash "$root/tools/with-node.sh" node)
+
 policy_file=config/github/repository-policy.json
 inventory_file=config/github/repositories.json
 fail_on_drift=false
@@ -15,13 +18,13 @@ if [ "${1:-}" = "--junit" ]; then
   if [ -z "$result_file" ]; then echo "--junit requires an output path." >&2; exit 64; fi
   shift 2
 fi
-policy=$(node -e 'const fs=require("fs"); console.log(JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1]))))' "$policy_file")
-repository=$(node -e 'console.log(JSON.parse(process.argv[1]).repository)' "$policy")
-tag=$(node -e 'console.log(JSON.parse(process.argv[1]).tag)' "$policy")
-tool_path=$(node -e 'console.log(JSON.parse(process.argv[1]).tool_path)' "$policy")
-expected_sha=$(node -e 'console.log(JSON.parse(process.argv[1]).tool_blob_sha)' "$policy")
-policy_path=$(node -e 'console.log(JSON.parse(process.argv[1]).policy_path)' "$policy")
-expected_policy_sha=$(node -e 'console.log(JSON.parse(process.argv[1]).policy_blob_sha)' "$policy")
+policy=$("${node[@]}" -e 'const fs=require("fs"); console.log(JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1]))))' "$policy_file")
+repository=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).repository)' "$policy")
+tag=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tag)' "$policy")
+tool_path=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tool_path)' "$policy")
+expected_sha=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tool_blob_sha)' "$policy")
+policy_path=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).policy_path)' "$policy")
+expected_policy_sha=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).policy_blob_sha)' "$policy")
 work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 fetch_pinned_file() {
@@ -41,14 +44,14 @@ fetch_pinned_file "$tool_path" "$expected_sha" "$tool_file"
 fetch_pinned_file "$policy_path" "$expected_policy_sha" "$released_policy_file"
 audit_output="$work_dir/audit-output.txt"
 set +e
-node "$tool_file" --inventory "$inventory_file" "$@" | tee "$audit_output"
+"${node[@]}" "$tool_file" --inventory "$inventory_file" "$@" | tee "$audit_output"
 tool_status=${PIPESTATUS[0]}
 set -e
 if [ "$tool_status" -ne 0 ]; then
   exit "$tool_status"
 fi
 if [ -n "$result_file" ]; then
-  node tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file"
+  "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file"
 fi
 differences=$(sed -n 's/^\([0-9][0-9]*\) difference(s) found; [0-9][0-9]* error(s).$/\1/p' "$audit_output")
 if [ -z "$differences" ]; then

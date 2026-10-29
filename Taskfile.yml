@@ -5,7 +5,7 @@ tasks:
   default:
     desc: List available organization operations
     cmds:
-      - task --list
+      - bash tools/task.sh --list
   setup:
     desc: Install the pinned user-local Node runtime for supported Debian Linux hosts
     cmds:
@@ -42,16 +42,16 @@ tasks:
   github:apps:check:
     desc: Validate the versioned GitHub App manifests without contacting GitHub
     cmds:
-      - node tools/github/verify-app-manifests.mjs
+      - bash tools/with-node.sh node tools/github/verify-app-manifests.mjs
   github:apps:form:help:
     desc: Show the local GitHub App registration-form command
     cmds:
-      - node tools/github/render-app-manifest-form.mjs --help
+      - bash tools/with-node.sh node tools/github/render-app-manifest-form.mjs --help
   github:apps:callback:help:
     desc: Show the loopback-only GitHub App manifest callback command
     cmds:
-      - node tools/github/receive-app-manifest-code.mjs --help
+      - bash tools/with-node.sh node tools/github/receive-app-manifest-code.mjs --help
   github:apps:exchange:help:
     desc: Show the opt-in GitHub App manifest conversion command
     cmds:
-      - node tools/github/exchange-app-manifest-code.mjs --help
+      - bash tools/with-node.sh node tools/github/exchange-app-manifest-code.mjs --help
