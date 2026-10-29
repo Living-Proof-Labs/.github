@@ -7,10 +7,8 @@ Codespaces, a manifest callback, or any command from this repository.
 ## What this enables today
 
 The existing workflow only performs **read-only repository-settings audits**.
-It can use an App credential once a future workflow change wires one in. The
-current workflow does **not** read `REPO_ADMIN_APP_CLIENT_ID` or
-`REPO_ADMIN_APP_PRIVATE_KEY`, and it has no settings-apply job. Do not create
-an environment or secret merely expecting it to be used by the current PR.
+It does not yet read an App credential and has no settings-apply job. Do not
+create an environment or secret merely expecting the current PR to use it.
 
 The built-in `GITHUB_TOKEN` deliberately remains `contents: read`; it produces
 an access-limited report. It cannot complete the fleet audit or verify hidden
@@ -24,9 +22,10 @@ ruleset bypass actors.
    description such as “Read-only audit of registered repository settings.”
    Set the homepage URL to `https://github.com/Living-Proof-Labs/.github`.
    Disable the webhook.
-3. Under **Repository permissions**, choose **Administration: Read-only**.
+3. Under **Repository permissions**, choose **Administration: Read and write**.
    GitHub supplies Metadata read automatically. Request no other permissions
-   and subscribe to no events. Create the App.
+   and subscribe to no events. Create the App. This single App can later mint
+   a short-lived token for both audit and explicitly approved settings changes.
 4. Generate a private key and store the downloaded PEM in a password manager
    or another secure local secret store. It is shown only at download time;
    never commit it, paste it into a PR, or put it in a shell profile. Record
@@ -35,22 +34,30 @@ ruleset bypass actors.
    repositories**. Select exactly the repositories in
    [`config/github/repositories.json`](../config/github/repositories.json),
    including `.github`. Do not choose “All repositories.”
-6. Stop here until the credentialed read-only workflow is reviewed and merged.
-   At that point, put the client ID and PEM only in the environment/secrets
-   named by that workflow, then run its manual audit and inspect the result.
+6. Today, this gives the owner a correctly scoped, selected-repository App and
+   key for a future trusted apply path. The current repository has no App-token
+   minting helper or credentialed workflow yet, so it cannot safely consume the
+   PEM from a local command or Actions run. Keep the PEM outside this checkout
+   until that small integration is reviewed.
 
 GitHub documents App registration and installation in its
 [GitHub App guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app)
 and [installation guide](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
 
-## A note on complete ruleset verification
+## What remains before applying settings
 
-Read-only Administration access is the smallest useful audit permission. It
-cannot prove the absence of ruleset bypass actors because GitHub hides those
-actors from callers without ruleset write access. If that exact assertion later
-needs automated verification, create a **separate** Administration-write App
-and keep its key only in a protected, manually dispatched workflow. Do not give
-the read-only audit App write access just to avoid an `unknown` result.
+An installation token from this App can read ruleset bypass actors and perform
+authorized settings changes. It must only be minted in a trusted local command
+or protected manual workflow, never in a pull-request or fork workflow.
+
+There is one deliberate blocker in the released generic helper: its `--apply`
+mode also enables release immutability, which has not been authorized as part
+of this rollout. Do **not** run `--apply` with this new App yet. The next
+implementation step is a narrowly scoped apply command that changes only the
+approved general settings and, separately, the approved main ruleset; it will
+then read every target back. The App setup above is still the minimal correct
+credential preparation for that step, without creating a second App or storing
+an administrator key in an untrusted workflow.
 
 ## Optional versioned manifests
 

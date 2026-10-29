@@ -61,9 +61,8 @@ auto-remediates drift. JUnit results and a 14-day artifact are published on
 every run. GitHub cron is UTC and cannot follow Sydney daylight-saving changes.
 
 The workflow token is intentionally insufficient for complete organization-wide
-administration reads. Until a reviewed future workflow consumes the read-only
-App described in the [manual checklist](docs/github-app-bootstrap.md), strict
-runs accurately fail as incomplete. This PR does not implement an apply
-workflow, environment, or secret wiring. A separate write-capable App would be
-needed only for future application or complete ruleset-bypass verification; it
-must never be exposed to pull-request or fork-controlled code.
+administration reads. The [manual checklist](docs/github-app-bootstrap.md)
+prepares one selected-repository Administration-write App for future trusted
+audit and application. This PR does not implement its token minting, apply
+workflow, environment, or secret wiring; that administrator key must never be
+exposed to pull-request or fork-controlled code.
