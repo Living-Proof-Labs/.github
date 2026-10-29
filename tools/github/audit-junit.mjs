@@ -30,7 +30,16 @@ for (const [repo, state] of entries) {
   const immutable = `${repo} :: immutable releases`;
   cases.push(state.immutable === 'enabled' ? `<testcase name="${escape(immutable)}"/>` : `<testcase name="${escape(immutable)}"><error message="unverified immutable-release state">${escape(state.immutable)}</error></testcase>`);
   const ruleset = `${repo} :: main ruleset`;
-  cases.push(state.ruleset === 'matches' ? `<testcase name="${escape(ruleset)}"/>` : `<testcase name="${escape(ruleset)}"><failure message="main protection drift">${escape(state.ruleset)}</failure></testcase>`);
+  if (state.ruleset === 'matches') cases.push(`<testcase name="${escape(ruleset)}"/>`);
+  else if (state.ruleset === 'unknown') cases.push(`<testcase name="${escape(ruleset)}"><error message="unverified main protection">bypass actors or another protected field was unavailable</error></testcase>`);
+  else cases.push(`<testcase name="${escape(ruleset)}"><failure message="main protection drift">${escape(state.ruleset)}</failure></testcase>`);
+  for (const [field, expected] of Object.entries(policy.graphql_repository ?? {})) {
+    const actual = state.differences.get(`graphql.${field}`);
+    const name = `${repo} :: graphql.${field}`;
+    if (actual === undefined) cases.push(`<testcase name="${escape(name)}"/>`);
+    else if (actual === 'undefined') cases.push(`<testcase name="${escape(name)}"><error message="GraphQL field unavailable">expected ${escape(JSON.stringify(expected))}</error></testcase>`);
+    else cases.push(`<testcase name="${escape(name)}"><failure message="setting drift">actual ${escape(actual)}; expected ${escape(JSON.stringify(expected))}</failure></testcase>`);
+  }
   for (const field of Object.keys(policy.manual_or_unavailable_settings ?? {})) {
     cases.push(`<testcase name="${escape(`${repo} :: manual ${field}`)}"><error message="manual verification required">not exposed by the managed API</error></testcase>`);
   }

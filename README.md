@@ -28,7 +28,23 @@ preferences (sponsorships, Archive Program preservation, Git LFS archives,
 ref-update limits, and linked-issue closing) explicit for manual review; the
 API audit does not misrepresent them as enforced. Neither task applies settings.
 Applying any settings or branch policy remains a separately authorized operation.
-The pull-request workflow uses its read-only workflow token, which may not read
-repository-administration fields for every registered repository. Its report is
-therefore an access-limited observation, not a fleet-compliance attestation;
-run the strict check with an authorized administrator token for that decision.
+
+Pull requests block on the inventory and tool tests, while their live settings
+report is deliberately informational: repository administrators can make a
+legitimate out-of-band change while a pull request is open. On `main`, a manual
+dispatch, and the daily `16:17 UTC` schedule (02:17 AEST / 03:17 AEDT), the
+same audit is strict and fails for drift or unverified state. It never
+auto-remediates drift. JUnit results and a 14-day artifact are published on
+every run. GitHub cron is UTC and cannot follow Sydney daylight-saving changes.
+
+The workflow token is intentionally insufficient for complete organization-wide
+administration reads. Until a separately approved App is configured, strict
+runs accurately fail as incomplete. A durable setup uses a selected-repository
+GitHub App: an Administration-read audit identity, plus an Administration-write
+apply identity kept only in a protected `repository-administration` environment
+on `main`. A write-capable read is required to verify ruleset bypass actors,
+because GitHub hides that field otherwise. Store the App client ID in
+`REPO_ADMIN_APP_CLIENT_ID` and private key only as
+`REPO_ADMIN_APP_PRIVATE_KEY` in that protected environment; do not make either
+available to pull-request or fork-controlled code. Credential and environment
+creation are deliberately outside this repository change.
