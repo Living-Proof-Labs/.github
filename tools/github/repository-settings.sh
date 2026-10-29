@@ -48,10 +48,10 @@ if [ -z "$differences" ]; then
 fi
 if grep -q 'immutable releases: unknown' "$audit_output"; then
   echo "Audit status: incomplete ($differences difference(s); immutable release state unknown)."
-  "$fail_on_drift" && exit 3
+  if [ "$fail_on_drift" = true ]; then exit 3; fi
 elif [ "$differences" -gt 0 ]; then
   echo "Audit status: drift detected ($differences difference(s))."
-  "$fail_on_drift" && exit 2
+  if [ "$fail_on_drift" = true ]; then exit 2; fi
 else
   echo "Audit status: compliant."
 fi

@@ -28,3 +28,7 @@ preferences (sponsorships, Archive Program preservation, Git LFS archives,
 ref-update limits, and linked-issue closing) explicit for manual review; the
 API audit does not misrepresent them as enforced. Neither task applies settings.
 Applying any settings or branch policy remains a separately authorized operation.
+The pull-request workflow uses its read-only workflow token, which may not read
+repository-administration fields for every registered repository. Its report is
+therefore an access-limited observation, not a fleet-compliance attestation;
+run the strict check with an authorized administrator token for that decision.
