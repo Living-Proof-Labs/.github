@@ -27,7 +27,8 @@ of the owner-approved manifest handshake.
    ```sh
    node tools/github/render-app-manifest-form.mjs \
      --manifest config/github/apps/repository-settings-audit.manifest.json \
-     --organization Living-Proof-Labs --output /tmp/repository-settings-audit.html
+     --organization Living-Proof-Labs --output /tmp/repository-settings-audit.html \
+     --state-output /tmp/repository-settings-audit.state
    open /tmp/repository-settings-audit.html
    ```
 
@@ -38,7 +39,8 @@ of the owner-approved manifest handshake.
    with mode `0600` and never prints the code:
 
    ```sh
-   node tools/github/receive-app-manifest-code.mjs --output /tmp/audit-code
+   node tools/github/receive-app-manifest-code.mjs --output /tmp/audit-code \
+     --state-file /tmp/repository-settings-audit.state
    ```
 
 4. The conversion command is dry-run unless `--execute` is supplied. After
