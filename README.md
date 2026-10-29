@@ -13,9 +13,7 @@ is published from `profile/README.md`; contributor guidance is in
 ## Organization operations
 
 This is the operator entry point for organization-wide repository inventory,
-GitHub App definitions, settings audit, and drift evidence. Start with
-`task github:apps:check` to validate the versioned App manifests, then read the
-[bootstrap runbook](docs/github-app-bootstrap.md). Use
+settings audit, and drift evidence. Use
 `task github:settings:report` for an on-demand non-mutating audit and
 `task github:settings:check` for the strict read-only verification used after
 an approved apply and by scheduled drift detection. The generic policy and
@@ -32,9 +30,8 @@ the checkout). To use bare `node` only in the current shell, explicitly run
 not use `sudo` or alter system packages. Codespaces
 uses `.devcontainer/devcontainer.json` and exposes the same Task binary after
 creation.
-The App helper entry points are `task github:apps:form:help`,
-`task github:apps:callback:help`, and `task github:apps:exchange:help`; the
-exchange helper is dry-run until its explicit `--execute` flag.
+The [manual GitHub App checklist](docs/github-app-bootstrap.md) is the shortest
+owner setup path. Versioned manifest helpers remain optional.
 
 ## Repository directory
 
@@ -64,18 +61,9 @@ auto-remediates drift. JUnit results and a 14-day artifact are published on
 every run. GitHub cron is UTC and cannot follow Sydney daylight-saving changes.
 
 The workflow token is intentionally insufficient for complete organization-wide
-administration reads. Until a separately approved App is configured, strict
-runs accurately fail as incomplete. A durable setup uses a selected-repository
-GitHub App: an Administration-read audit identity, plus an Administration-write
-apply identity kept only in a protected `repository-administration` environment
-on `main`. A write-capable read is required to verify ruleset bypass actors,
-because GitHub hides that field otherwise. Store the App client ID in
-`REPO_ADMIN_APP_CLIENT_ID` and private key only as
-`REPO_ADMIN_APP_PRIVATE_KEY` in that protected environment; do not make either
-available to pull-request or fork-controlled code. Credential and environment
-creation are deliberately outside this repository change.
-
-The versioned [GitHub App bootstrap recipe](docs/github-app-bootstrap.md)
-records the requested infrastructure-as-code manifests, exact owner-consent
-boundary, and the future encrypted-secret bootstrap path without storing or
-creating any credential.
+administration reads. Until a reviewed future workflow consumes the read-only
+App described in the [manual checklist](docs/github-app-bootstrap.md), strict
+runs accurately fail as incomplete. This PR does not implement an apply
+workflow, environment, or secret wiring. A separate write-capable App would be
+needed only for future application or complete ruleset-bypass verification; it
+must never be exposed to pull-request or fork-controlled code.
