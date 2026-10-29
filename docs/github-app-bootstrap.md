@@ -21,6 +21,22 @@ of the owner-approved manifest handshake.
 
 ## Owner runbook
 
+Run this manifest handshake from a local desktop Linux/macOS terminal, not a
+Codespace. The manifest redirect must reach the receiver that owns the state
+file. A Codespace's `127.0.0.1` is remote, while its forwarded URL is dynamic
+and must remain private; this repository does not yet configure that private
+port/callback path. The Dev Container is supported for inventory and policy
+tooling, but not for this secret-bearing registration exchange.
+
+If the local form is inconvenient, an organization owner can use GitHub's
+**Settings → Developer settings → GitHub Apps → New GitHub App** page and copy
+the reviewed manifest fields exactly: private App, no webhooks, the listed URL
+and callback URL, **Metadata: read**, and **Administration: read** for the
+audit App or **Administration: write** for the apply App. Install each on
+**Only select repositories** from the committed inventory. This manual route
+does not use the manifest exchange and GitHub generates the private key in its
+normal App settings flow.
+
 1. Review both manifests with `task github:apps:check`.
 2. For one manifest, generate and open a local owner-consent form:
 

@@ -1,0 +1,6 @@
+{
+  "name": "Living Proof Labs organization tools",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "postCreateCommand": "bash tools/setup.sh",
+  "remoteUser": "vscode"
+}
