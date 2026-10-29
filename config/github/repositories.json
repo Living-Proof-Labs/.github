@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "owner": "Living-Proof-Labs",
+  "repositories": [
+    ".github",
+    "capability-verifier",
+    "collaboration-guidelines",
+    "living-proof-labs.github.io",
+    "livingproof",
+    "livingproof-capability-report",
+    "livingproof-common",
+    "livingproof-sim-gazebo",
+    "livingproof-sim-mujoco",
+    "robot-capability-specs",
+    "unitree-foxglove-sdk",
+    "website"
+  ]
+}
