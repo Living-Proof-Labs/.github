@@ -18,14 +18,16 @@ ruleset bypass actors.
 
 1. In GitHub, open **Living-Proof-Labs → Settings → Developer settings →
    GitHub Apps → New GitHub App**.
-2. Name it `Living Proof Labs repository settings audit`. Set an owner-visible
-   description such as “Read-only audit of registered repository settings.”
-   Set the homepage URL to `https://github.com/Living-Proof-Labs/.github`.
-   Disable the webhook.
+2. Name it `Living Proof Labs repository settings administration`. Set an
+   owner-visible description such as “Audits and administers registered
+   repository settings.” Set the homepage URL to
+   `https://github.com/Living-Proof-Labs/.github`. Choose **Only on this
+   account**, disable the webhook, and leave the callback URL blank: this App
+   does not authenticate interactive users.
 3. Under **Repository permissions**, choose **Administration: Read and write**.
    GitHub supplies Metadata read automatically. Request no other permissions
    and subscribe to no events. Create the App. This single App can later mint
-   a short-lived token for both audit and explicitly approved settings changes.
+   a short-lived token for both audit and deliberately reviewed settings changes.
 4. Generate a private key and store the downloaded PEM in a password manager
    or another secure local secret store. It is shown only at download time;
    never commit it, paste it into a PR, or put it in a shell profile. Record
@@ -36,9 +38,8 @@ ruleset bypass actors.
    including `.github`. Do not choose “All repositories.”
 6. Today, this gives the owner a correctly scoped, selected-repository App and
    key for a future trusted apply path. The current repository has no App-token
-   minting helper or credentialed workflow yet, so it cannot safely consume the
-   PEM from a local command or Actions run. Keep the PEM outside this checkout
-   until that small integration is reviewed.
+   minting helper or credentialed workflow yet. Keep the PEM outside this
+   checkout until that small integration is reviewed.
 
 GitHub documents App registration and installation in its
 [GitHub App guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app)
@@ -51,13 +52,13 @@ authorized settings changes. It must only be minted in a trusted local command
 or protected manual workflow, never in a pull-request or fork workflow.
 
 There is one deliberate blocker in the released generic helper: its `--apply`
-mode also enables release immutability, which has not been authorized as part
-of this rollout. Do **not** run `--apply` with this new App yet. The next
-implementation step is a narrowly scoped apply command that changes only the
-approved general settings and, separately, the approved main ruleset; it will
-then read every target back. The App setup above is still the minimal correct
-credential preparation for that step, without creating a second App or storing
-an administrator key in an untrusted workflow.
+mode also enables release immutability. Before using it, review its complete
+proposed change set—not only the general settings and main ruleset—and make a
+deliberate decision about release immutability. A narrowly scoped apply command
+and App-token integration remain to be implemented; they should read every
+target back. The App setup above is still the minimal correct credential
+preparation, without creating a second App or storing an administrator key in
+an untrusted workflow.
 
 ## Optional versioned manifests
 
