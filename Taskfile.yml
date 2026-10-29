@@ -35,3 +35,7 @@ tasks:
     desc: Write JUnit evidence and fail on every drift or unverified setting
     cmds:
       - bash tools/github/repository-settings.sh --fail-on-drift --junit artifacts/repository-settings.xml
+  github:apps:check:
+    desc: Validate the versioned GitHub App manifests without contacting GitHub
+    cmds:
+      - node tools/github/verify-app-manifests.mjs

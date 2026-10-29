@@ -10,6 +10,18 @@ This repository hosts our public GitHub organization profile. The welcome page
 is published from `profile/README.md`; contributor guidance is in
 [AGENTS.md](AGENTS.md).
 
+## Organization operations
+
+This is the operator entry point for organization-wide repository inventory,
+GitHub App definitions, settings audit, and drift evidence. Start with
+`task github:apps:check` to validate the versioned App manifests, then read the
+[bootstrap runbook](docs/github-app-bootstrap.md). Use
+`task github:settings:report` for an on-demand non-mutating audit and
+`task github:settings:check` for the strict read-only verification used after
+an approved apply and by scheduled drift detection. The generic policy and
+tool remain released dependencies of `collaboration-guidelines`; this
+repository supplies the organization inventory and operating decisions.
+
 ## Repository directory
 
 [`config/github/repositories.json`](config/github/repositories.json) is the
@@ -48,3 +60,8 @@ because GitHub hides that field otherwise. Store the App client ID in
 `REPO_ADMIN_APP_PRIVATE_KEY` in that protected environment; do not make either
 available to pull-request or fork-controlled code. Credential and environment
 creation are deliberately outside this repository change.
+
+The versioned [GitHub App bootstrap recipe](docs/github-app-bootstrap.md)
+records the requested infrastructure-as-code manifests, exact owner-consent
+boundary, and the future encrypted-secret bootstrap path without storing or
+creating any credential.
