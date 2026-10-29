@@ -19,3 +19,6 @@ jobs:
           version: '3.54.0'
       - run: task setup
       - run: task verify
+      - run: task github:settings:report
+        env:
+          GH_TOKEN: ${{ github.token }}

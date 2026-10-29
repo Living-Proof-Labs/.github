@@ -24,9 +24,8 @@ This repository owns the single organization repository inventory. Validate it
 with `task setup` and `task verify`; the workflow runs the same commands. The
 inventory may reference only released, pinned policy artifacts. Do not invent a
 tag, pin a moving branch, or duplicate a project list in the policy provider.
-Before a provider release is available, retain the inventory and validation here
-but document the blocked integration honestly. Profile publication uses GitHub's
-existing default-branch behavior; do not change settings or publishing services.
+Profile publication uses GitHub's existing default-branch behavior; do not
+change settings or publishing services.
 
 Guidelines v6.0.0 resolves to `52a2f274576dab20e96ee1152b6c8d187cfbf377`.
 Publish profile redirects only after the canonical root targets are live.

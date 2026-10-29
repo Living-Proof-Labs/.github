@@ -17,10 +17,14 @@ sole canonical inventory of Living Proof Labs repositories. Register a new
 project there through a pull request. The inventory is validated locally with
 `npm run check` and `npm test`.
 
-The reusable GitHub repository-settings policy and its safe apply tool are
-being prepared in
-[`collaboration-guidelines` pull request 33](https://github.com/Living-Proof-Labs/collaboration-guidelines/pull/33).
-This directory intentionally does not pin a branch or an unreleased tag. After
-that policy is merged and has a published release tag, a follow-up change will
-pin that exact tag here and invoke its read-only audit against this inventory.
-No organization settings will be changed by registration or validation.
+The reusable GitHub repository-settings policy is pinned in
+[`config/github/repository-policy.json`](config/github/repository-policy.json)
+to a published release tag, exact commit, and verified tool blob. Run
+`task github:settings:check` to fail on policy drift or incomplete state, or
+`task github:settings:report` for the same read-only audit without treating
+existing drift as a CI failure. Both download and verify the released tool
+before executing it with this inventory. The released policy keeps its UI-only
+preferences (sponsorships, Archive Program preservation, Git LFS archives,
+ref-update limits, and linked-issue closing) explicit for manual review; the
+API audit does not misrepresent them as enforced. Neither task applies settings.
+Applying any settings or branch policy remains a separately authorized operation.
