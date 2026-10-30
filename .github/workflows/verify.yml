@@ -26,6 +26,7 @@ jobs:
       - run: task verify
   repository-settings:
     name: Repository settings report
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -37,13 +38,7 @@ jobs:
           version: '3.54.0'
       - run: task setup
       - id: repository_settings
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
-        run: |
-          if [ "${{ github.event_name }}" = pull_request ]; then
-            task github:settings:junit
-          else
-            task github:settings:test
-          fi
+        run: task github:settings:junit
         env:
           GH_TOKEN: ${{ github.token }}
       - if: always()
@@ -57,6 +52,47 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: repository-settings-results
+          path: artifacts/repository-settings.xml
+          retention-days: 14
+          if-no-files-found: error
+  trusted-repository-settings:
+    name: Strict repository settings audit
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: repository-administration
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        id: app-token
+        with:
+          client-id: ${{ vars.REPO_ADMIN_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-administration: write
+      - run: task setup
+      - run: task github:settings:test
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - if: always()
+        uses: dorny/test-reporter@8861569aa5348397e7a26b6dda744c17c9265478 # v2.1.1
+        with:
+          name: Strict repository settings
+          path: artifacts/repository-settings.xml
+          reporter: java-junit
+          fail-on-error: false
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: strict-repository-settings-results
           path: artifacts/repository-settings.xml
           retention-days: 14
           if-no-files-found: error

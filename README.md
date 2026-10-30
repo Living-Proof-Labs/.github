@@ -52,6 +52,15 @@ ref-update limits, and linked-issue closing) explicit for manual review; the
 API audit does not misrepresent them as enforced. Neither task applies settings.
 Applying any settings or branch policy remains a separately authorized operation.
 
+After the administrator configures the protected `repository-administration`
+environment with the App Client ID and private key, the **Apply repository settings**
+workflow can be manually dispatched from `main`. It previews one registered
+repository first. Applying requires explicit acknowledgement because the
+currently pinned generic tool includes release immutability; it then performs a
+strict all-repository verification and retains its JUnit artifact for 14 days.
+The workflow never runs for pull requests or fork code. Do not enable it until
+the policy's full change set and the unreleased provider follow-up are reviewed.
+
 Pull requests block on the inventory and tool tests, while their live settings
 report is deliberately informational: repository administrators can make a
 legitimate out-of-band change while a pull request is open. On `main`, a manual
@@ -60,9 +69,11 @@ same audit is strict and fails for drift or unverified state. It never
 auto-remediates drift. JUnit results and a 14-day artifact are published on
 every run. GitHub cron is UTC and cannot follow Sydney daylight-saving changes.
 
-The workflow token is intentionally insufficient for complete organization-wide
-administration reads. The [manual checklist](docs/github-app-bootstrap.md)
-prepares one selected-repository Administration-write App for future trusted
-audit and application. This PR does not implement its token minting, apply
-workflow, environment, or secret wiring; that administrator key must never be
-exposed to pull-request or fork-controlled code.
+The pull-request workflow token is intentionally insufficient for complete
+organization-wide administration reads. The
+[manual checklist](docs/github-app-bootstrap.md) configures one selected-
+repository Administration-write App for the trusted audit and manually
+dispatched apply workflow. This PR supplies the token-minting workflow source;
+an owner must still merge it and configure the protected environment. That
+administrator key must never be exposed to pull-request or fork-controlled
+code.
