@@ -59,8 +59,8 @@ dispatched from `main`. It previews one registered
 repository first. Applying requires explicit acknowledgement because the
 currently pinned generic tool includes release immutability; it then performs a
 strict all-repository verification and retains its JUnit artifact for 14 days.
-The workflow never runs for pull requests or fork code. Do not enable it until
-the policy's full change set and the unreleased provider follow-up are reviewed.
+The workflow never runs for pull requests or fork code. Review the policy's
+full change set before enabling a write.
 
 Pull requests block on the inventory and tool tests, while their live settings
 report is deliberately informational: repository administrators can make a
