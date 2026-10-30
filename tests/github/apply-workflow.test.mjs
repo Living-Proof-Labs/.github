@@ -25,14 +25,23 @@ test('PR audit stays secret-free while trusted main audit is environment-gated',
   assert.ok(trustedAudit);
   assert.match(prAudit, /name: Repository settings report\n    if: github\.event_name == 'pull_request'/);
   assert.doesNotMatch(prAudit, /create-github-app-token|environment: repository-administration|secrets\./);
-  assert.match(trustedAudit, /name: Strict repository settings audit[\s\S]*environment: repository-administration/);
+  assert.match(trustedAudit, /name: Strict repository settings audit[\s\S]*environment: repository-audit/);
   assert.match(trustedAudit, /actions\/create-github-app-token@[0-9a-f]{40}/);
   assert.match(verification, /github\.event_name != 'pull_request' && github\.ref == 'refs\/heads\/main'/);
+});
+
+test('daily strict audit is unattended while apply remains reviewer-gated', () => {
+  assert.match(verification, /schedule:[\s\S]*cron: '17 16 \* \* \*'/);
+  const trustedAudit = verification.match(/  trusted-repository-settings:[\s\S]*/)?.[0];
+  assert.ok(trustedAudit);
+  assert.match(trustedAudit, /environment: repository-audit/);
+  assert.doesNotMatch(trustedAudit, /environment: repository-administration/);
+  assert.match(workflow, /environment: repository-administration/);
 });
 
 test('settings apply previews first and requires explicit release-immutability acknowledgement', () => {
   assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --repo/);
   assert.match(workflow, /include_release_immutability/);
   assert.match(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
-  assert.match(workflow, /name: Strictly verify every registered repository/);
+  assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\) && inputs\.apply/);
 });

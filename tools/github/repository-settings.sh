@@ -28,18 +28,21 @@ expected_policy_sha=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).p
 work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 fetch_pinned_file() {
-  local remote_path=$1 expected=$2 output=$3 endpoint actual
-  endpoint="repos/$repository/contents/$remote_path?ref=$tag"
-  actual=$(gh api "$endpoint" --jq .sha)
+  local remote_path=$1 expected=$2 output=$3 actual url
+  # The provider is public. Fetch it anonymously so the administration-only
+  # installation token never needs Contents permission; verify the Git blob
+  # identity locally before executing either downloaded file.
+  url="https://raw.githubusercontent.com/$repository/$tag/$remote_path"
+  curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "$url" > "$output"
+  actual=$(git hash-object "$output")
   if [ "$actual" != "$expected" ]; then
     echo "Released policy identity differs from the pinned blob; refusing to execute." >&2
     exit 1
   fi
-  mkdir -p "$(dirname "$output")"
-  gh api "$endpoint" --jq .content | base64 --decode > "$output"
 }
 tool_file="$work_dir/$tool_path"
 released_policy_file="$work_dir/$policy_path"
+mkdir -p "$(dirname "$tool_file")" "$(dirname "$released_policy_file")"
 fetch_pinned_file "$tool_path" "$expected_sha" "$tool_file"
 fetch_pinned_file "$policy_path" "$expected_policy_sha" "$released_policy_file"
 audit_output="$work_dir/audit-output.txt"

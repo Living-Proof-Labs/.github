@@ -6,15 +6,15 @@ Codespaces, a manifest callback, or any command from this repository.
 
 ## What this enables
 
-This draft adds two trusted uses of the App after it is merged and the protected
-environment below is configured: a strict audit on `main` and the daily
-schedule, and an explicitly dispatched, one-repository preview/apply workflow.
-Pull-request audits remain **read-only, informational, and secret-free**.
+This draft adds two trusted uses of the App after it is merged and the two
+environments below are configured: an unattended strict audit on `main` and
+the daily schedule, plus an explicitly dispatched, one-repository
+preview/apply workflow. Pull-request audits remain **read-only, informational,
+and secret-free**.
 
 The built-in `GITHUB_TOKEN` deliberately remains `contents: read`; it produces
 an access-limited report. It cannot complete the fleet audit or verify hidden
-ruleset bypass actors. The App key is available only to jobs approved through
-the protected environment and checked out from `main`.
+ruleset bypass actors. The App key is available only to trusted `main` code.
 
 ## Manual owner checklist
 
@@ -44,12 +44,23 @@ the protected environment and checked out from `main`.
    installation tokens itself. Never use the key in a pull request, fork, or
    local shell profile.
 
-After this draft is merged, configure its one protected environment in
-`.github`: **Settings → Environments → New environment →
-`repository-administration`**. Restrict deployments to `main`, add the owner
-as required reviewer, add `REPO_ADMIN_APP_CLIENT_ID` as an environment variable,
-and add the PEM as `REPO_ADMIN_APP_PRIVATE_KEY` environment secret. The
-credentialed jobs cannot receive the PEM before that environment's approval.
+After this draft is merged, configure these two environments in `.github`.
+
+1. Create **`repository-audit`**. Restrict deployments to `main`; do **not**
+   add a required reviewer. Add `REPO_ADMIN_APP_CLIENT_ID` as an environment
+   variable and the PEM as `REPO_ADMIN_APP_PRIVATE_KEY` environment secret.
+   This lets the post-merge and daily strict audits run without a daily owner
+   approval prompt, including their ruleset-bypass checks.
+2. Create **`repository-administration`**. Restrict deployments to `main`, add
+   the owner as a required reviewer, and add the same Client ID variable and
+   PEM secret. This environment gates only the manually dispatched write path.
+
+The tradeoff is intentional: the audit receives an Administration-write App
+token because GitHub otherwise cannot reveal all managed ruleset data. It runs
+only trusted `main` code and its task is read-only, but anyone able to merge
+malicious workflow code to `main` could misuse that token. Keep `main` write
+access limited to trusted maintainers and retain the selected-repository App
+installation scope. The write workflow adds an independent reviewer gate.
 
 Then use **Actions → Apply repository settings → Run workflow**, selecting
 `main` and one registered repository. Leave **Apply** unchecked for the first
@@ -66,8 +77,8 @@ and [installation guide](https://docs.github.com/en/apps/using-github-apps/insta
 ## What remains before applying settings
 
 An installation token from this App can read ruleset bypass actors and perform
-authorized settings changes. It must only be minted in the protected manual
-workflow, never in a pull-request or fork workflow.
+authorized settings changes. It is minted only in trusted-main audit code or
+the protected manual write workflow, never in a pull-request or fork workflow.
 
 There is one deliberate blocker in the released generic helper: its `--apply`
 mode also enables release immutability. Before using it, review its complete

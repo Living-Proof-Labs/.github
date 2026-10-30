@@ -59,7 +59,9 @@ jobs:
     name: Strict repository settings audit
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: repository-administration
+    # This environment has no required reviewer. Its secrets are still limited
+    # to trusted main/scheduled code; writes stay in repository-administration.
+    environment: repository-audit
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

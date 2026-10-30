@@ -72,7 +72,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TARGET_REPOSITORY: ${{ inputs.repository }}
       - name: Strictly verify every registered repository
-        if: inputs.apply
+        if: always() && inputs.apply
         run: task github:settings:test
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}

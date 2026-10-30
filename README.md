@@ -52,9 +52,10 @@ ref-update limits, and linked-issue closing) explicit for manual review; the
 API audit does not misrepresent them as enforced. Neither task applies settings.
 Applying any settings or branch policy remains a separately authorized operation.
 
-After the administrator configures the protected `repository-administration`
-environment with the App Client ID and private key, the **Apply repository settings**
-workflow can be manually dispatched from `main`. It previews one registered
+After the administrator configures the unattended `repository-audit` and
+reviewer-gated `repository-administration` environments with the App Client ID
+and private key, the **Apply repository settings** workflow can be manually
+dispatched from `main`. It previews one registered
 repository first. Applying requires explicit acknowledgement because the
 currently pinned generic tool includes release immutability; it then performs a
 strict all-repository verification and retains its JUnit artifact for 14 days.
@@ -74,6 +75,6 @@ organization-wide administration reads. The
 [manual checklist](docs/github-app-bootstrap.md) configures one selected-
 repository Administration-write App for the trusted audit and manually
 dispatched apply workflow. This PR supplies the token-minting workflow source;
-an owner must still merge it and configure the protected environment. That
+an owner must still merge it and configure both environments. That
 administrator key must never be exposed to pull-request or fork-controlled
 code.
