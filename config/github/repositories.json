@@ -11,6 +11,7 @@
     "livingproof-common",
     "livingproof-sim-gazebo",
     "livingproof-sim-mujoco",
+    "livingproof-worlds",
     "robot-capability-specs",
     "unitree-foxglove-sdk",
     "website"
