@@ -43,5 +43,6 @@ test('settings apply previews first and requires explicit release-immutability a
   assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --repo/);
   assert.match(workflow, /include_release_immutability/);
   assert.match(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
+  assert.match(workflow, /--apply-immutable-releases-when-unknown/);
   assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\) && inputs\.apply/);
 });

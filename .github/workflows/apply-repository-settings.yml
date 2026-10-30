@@ -67,6 +67,7 @@ jobs:
         run: |
           arguments=(--repo "$TARGET_REPOSITORY" --apply)
           if [ '${{ inputs.apply_main_ruleset }}' = true ]; then arguments+=(--apply-main-ruleset); fi
+          if [ '${{ inputs.include_release_immutability }}' = true ]; then arguments+=(--apply-immutable-releases-when-unknown); fi
           bash tools/github/repository-settings.sh "${arguments[@]}"
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
