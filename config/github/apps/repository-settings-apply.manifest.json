@@ -1,0 +1,12 @@
+{
+  "name": "Living Proof Labs repository settings apply",
+  "description": "Owner-approved application of the registered Living Proof Labs repository-settings policy.",
+  "url": "https://github.com/Living-Proof-Labs/.github",
+  "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
+  "public": false,
+  "default_permissions": {
+    "administration": "write",
+    "metadata": "read"
+  },
+  "default_events": []
+}

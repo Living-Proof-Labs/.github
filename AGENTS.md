@@ -1,4 +1,4 @@
-# Working on the Living Proof Labs welcome experience
+# Working on the Living Proof Labs group directory
 
 Read and follow the released
 [collaboration-guidelines v6.0.0 baseline](https://github.com/Living-Proof-Labs/collaboration-guidelines/blob/v6.0.0/AGENTS.md)
@@ -18,21 +18,14 @@ and its relevant procedures at that same tag. A link alone does not load them.
 - Verify command examples against released artifacts and record the exact
   versions, commands, outcomes, and limitations in the pull request.
 
-## Documentation-only validation exception
+## Local directory tooling
 
-This repository currently contains only the profile, navigation, license, and
-this guidance. For this bounded welcome-page work, use native Markdown linting,
-link and fragment checks, and GitHub-rendered HTML inspection; record the results
-in the pull request before merging. Run any changed demo commands with released
-packages in an isolated environment. Check the public profile after merging.
-
-This is an explicit local exception to the baseline's Docker/Task tooling,
-continuous integration, individual test-result ingestion, and automated release
-setup. Adding that infrastructure would expand a small editorial change into a
-separate tooling and publishing project. Do not describe manual evidence as a
-hosted test run. Revisit this exception when adding executable tooling or an
-automated validation/release workflow. Profile publication uses GitHub's existing
-default-branch behavior; do not change settings or publishing services.
+This repository owns the single organization repository inventory. Validate it
+with `task setup` and `task verify`; the workflow runs the same commands. The
+inventory may reference only released, pinned policy artifacts. Do not invent a
+tag, pin a moving branch, or duplicate a project list in the policy provider.
+Profile publication uses GitHub's existing default-branch behavior; do not
+change settings or publishing services.
 
 Guidelines v6.0.0 resolves to `52a2f274576dab20e96ee1152b6c8d187cfbf377`.
 Publish profile redirects only after the canonical root targets are live.

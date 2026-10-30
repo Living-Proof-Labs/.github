@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Apply repository settings
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Registered repository name to preview or apply
+        required: true
+        type: string
+      apply:
+        description: Apply the complete pinned policy after preview
+        required: true
+        default: false
+        type: boolean
+      apply_main_ruleset:
+        description: Include the separately scoped main-ruleset update
+        required: true
+        default: false
+        type: boolean
+      include_release_immutability:
+        description: Acknowledge that the current pinned apply tool includes release immutability
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: Preview and apply registered repository settings
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: repository-administration
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        id: app-token
+        with:
+          client-id: ${{ vars.REPO_ADMIN_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-administration: write
+      - run: task setup
+      - name: Preview pinned policy
+        run: bash tools/github/repository-settings.sh --repo "$TARGET_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_REPOSITORY: ${{ inputs.repository }}
+      - name: Require explicit release-immutability acknowledgement
+        if: inputs.apply && !inputs.include_release_immutability
+        run: |
+          echo 'The pinned tool applies release immutability with --apply. Re-run with include_release_immutability=true only after reviewing that full policy.' >&2
+          exit 64
+      - name: Apply pinned policy
+        if: inputs.apply
+        run: |
+          arguments=(--repo "$TARGET_REPOSITORY" --apply)
+          if [ '${{ inputs.apply_main_ruleset }}' = true ]; then arguments+=(--apply-main-ruleset); fi
+          bash tools/github/repository-settings.sh "${arguments[@]}"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TARGET_REPOSITORY: ${{ inputs.repository }}
+      - name: Strictly verify every registered repository
+        if: always() && inputs.apply
+        run: task github:settings:test
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - if: always() && inputs.apply
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: repository-settings-apply-results
+          path: artifacts/repository-settings.xml
+          retention-days: 14
+          if-no-files-found: error

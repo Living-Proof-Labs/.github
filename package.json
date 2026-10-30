@@ -1,0 +1,10 @@
+{
+  "name": "living-proof-labs-group-directory",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node tools/github/verify-inventory.mjs",
+    "test": "node --test tests/github/*.test.mjs"
+  },
+  "license": "Apache-2.0"
+}

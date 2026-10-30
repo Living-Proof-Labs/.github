@@ -1,0 +1,6 @@
+{
+  "name": "Living Proof Labs organization tools",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "postCreateCommand": "bash tools/setup.sh && mkdir -p \"$HOME/.local/bin\" && ln -sf \"$PWD/.tools/task-v3.54.0-linux-x64/task\" \"$HOME/.local/bin/task\"",
+  "remoteUser": "vscode"
+}
