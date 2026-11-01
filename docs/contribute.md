@@ -41,6 +41,35 @@ Preserve existing URLs and anchors, or add a redirect in `site.json`. Keep curre
 behavior, evidence limitations and planned integrations explicit. Check a new
 manual live before listing it.
 
+## Draw diagrams with Mermaid
+
+Write diagrams as ordinary fenced `mermaid` blocks. The same source renders as a
+diagram on the documentation site and in GitHub's Markdown view, so there is no
+Graphviz to install and no generated PNG or SVG to commit.
+
+```mermaid
+flowchart LR
+  requirement[Capability requirement] --> evidence[Simulation evidence]
+  evidence --> verifier{Verifier}
+  verifier -->|PASS / FAIL per trial| report[Capability report]
+  report --> next[Next improvement]
+  next --> requirement
+```
+
+Keep to what both renderers support:
+
+- Use `flowchart`, `sequenceDiagram`, `stateDiagram-v2`, `classDiagram` or
+  `erDiagram`; the site styles these for light and dark mode, and
+  `task docs:check` rejects other types.
+- Do not add `%%{init: ...}%%` themes, colors or fonts; the site and GitHub apply
+  their own light and dark styles.
+- Keep diagrams small enough for a phone: the site scales a wide diagram down to
+  the screen, so prefer top-to-bottom (`flowchart TD`) and split a large one in two.
+- The site renders with the Mermaid 12.2.0 it vendors; GitHub uses its own bundled
+  Mermaid, which may be a different version. Check a new diagram in the pull
+  request's GitHub file view as well as in the publisher's docs preview, which
+  fails if a block is left as code.
+
 ## Apply the shared look to a project manual
 
 Each project manual has its own Zensical configuration, so the brand is not
