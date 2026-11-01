@@ -17,6 +17,9 @@ approved.
 
 The editable source is [verification-architecture.dot](verification-architecture.dot).
 The rendered SVG is [verification-architecture.svg](verification-architecture.svg).
+Every arrow in this diagram means **dependent → dependency**. For example, the
+proposed consumer depends on `livingproof`, and the verifier depends on selected
+providers, robot profiles, worlds, specifications, and provenance helpers.
 
 ## Data and publication flow
 
@@ -48,13 +51,17 @@ The rendered SVG is [verification-data-flow.svg](verification-data-flow.svg).
 
 ## Current and proposed state
 
-Today, the repositories already demonstrate bounded pieces of the path:
-versioned specifications, fixtures, simulator observations, configuration locks,
-evidence collection, assessment fixtures, and portable rendering. The G1
-repository's locked workflow is a useful concrete path: simulator evidence is
-collected first, the verifier assesses it, and the reporter renders the
-result. These demonstrations are not a claim that every robot, engine, or
-physical deployment integration is complete.
+Today, the implementation is transitional. Robot-owned workflows and evidence
+glue currently compose locked inputs, simulator runs, and verifier calls for
+their own profiles. `capability-verifier` provides reference execution,
+evidence, and evaluator helpers; it is not yet the fleet-wide orchestrator.
+`livingproof-capability-report` currently contains portable rendering **and**
+grading/aggregation policy, so authoritative assessment and comparison have not
+yet been consolidated in one implementation. The G1 locked workflow is a
+useful concrete path: simulator evidence is collected first, verifier helpers
+assess it, then the reporter grades and renders the result. These demonstrated
+pieces do not claim that every robot, engine, or physical-deployment integration
+is complete.
 
 The proposal adds no new evaluator service. It defines a thin,
 customer-like `livingproof-verification` consumer, after approval, to hold
@@ -66,18 +73,19 @@ justified by this proposal.
 | --- | --- | --- |
 | Organization inventory and architecture | `.github` | Keep the single ecosystem view here; do not duplicate inventory in a consumer. |
 | Plugin/tool access | `livingproof` | Discover, install, and invoke explicitly installed tools; no verification logic. |
-| Runs, evidence, assessments, grades, comparisons | `capability-verifier` | Remain authoritative. A consumer supplies selections and receives results. |
+| Run composition and execution | Robot-owned workflows and evidence glue, with `capability-verifier` reference helpers | `capability-verifier` orchestrates selected providers and preserves complete trial evidence. |
+| Assessments, grades, and comparisons | Verifier evaluators produce assessments; the reporter currently owns grading/aggregation policy | `capability-verifier` becomes the authoritative assessment, aggregation, and comparison authority. A consumer supplies selections and receives results. |
 | Physics and raw observations | Selected simulator provider | Execute the engine and emit observations, without grading capability. |
 | Robot model, controller, configuration, adapter | Robot repository | Version and test the profile and adapter close to the robot assets. |
 | World fixtures and engine representations | `livingproof-worlds` and selected simulator providers | Keep worlds versioned and engine-neutral; keep conversion in adapters. |
-| Rendering and publication artifacts | `livingproof-capability-report` | Render supplied run and series records without changing their judgments. |
+| Rendering and publication artifacts | `livingproof-capability-report`, which currently also grades | Render supplied run and series records without changing their judgments. |
 | Consumer definitions, locks, selection, publication settings | Proposed `livingproof-verification` | Declarative inputs and thin local/continuous-integration calls only. |
 
-The proposed consumer depends on capabilities; shared capabilities do not
-depend back on it. Versioned specifications and contracts are consumed by the
-components that interpret them. The diagram deliberately has no arrow from the
-proposed consumer or GitHub Pages back into a tool, provider, evaluator, or
-reporter.
+The proposed consumer depends on capabilities; shared capabilities must not
+depend back on the consumer. Versioned specifications and contracts are
+dependencies of the components that interpret them. The diagram deliberately
+has no shared-tool dependency back onto the proposed consumer, and GitHub Pages
+is not a dependency of any shared tool, provider, evaluator, or reporter.
 
 `livingproof-verification` would access the verifier and reporter through
 `livingproof`. The verifier selects the relevant providers and evaluator

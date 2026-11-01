@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: CC-BY-4.0
 digraph verification_architecture {
-  graph [rankdir=TB, bgcolor="white", fontname="Arial", pad="0.25", nodesep="0.45", ranksep="0.7"];
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", pad="0.25", nodesep="0.45", ranksep="0.7", label="Dependency direction: dependent → dependency", labelloc="t", fontsize=12, fontcolor="#243b55"];
   node [shape=box, style="rounded,filled", fillcolor="#f4f7fb", color="#385b8c", fontname="Arial", fontsize=11, margin="0.14,0.08"];
   edge [color="#536b85", fontname="Arial", fontsize=9, arrowsize=0.7];
 
@@ -20,10 +20,10 @@ digraph verification_architecture {
   verifier -> simulator [label="select and execute"];
   verifier -> robot [label="select profile/adapter"];
   verifier -> worlds [label="select fixture"];
-  specs -> verifier [label="consume"];
-  specs -> robot [label="consume"];
-  common -> access [label="provenance"];
-  common -> verifier [label="provenance"];
-  common -> reporter [label="provenance"];
+  verifier -> specs [label="consume"];
+  robot -> specs [label="consume"];
+  access -> common [label="provenance"];
+  verifier -> common [label="provenance"];
+  reporter -> common [label="provenance"];
   consumer -> reporter [label="select reports"];
 }
