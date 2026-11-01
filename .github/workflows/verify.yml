@@ -24,6 +24,40 @@ jobs:
           version: '3.54.0'
       - run: task setup
       - run: task verify
+  docs-preview:
+    name: Organization docs preview (publisher build and checks)
+    runs-on: ubuntu-24.04
+    env:
+      # Publisher revision whose build, link, redirect, navigation, search and
+      # browser checks this content must pass. Move it when the publisher changes.
+      PUBLISHER_REPOSITORY: Living-Proof-Labs/living-proof-labs.github.io
+      PUBLISHER_COMMIT: 634d9490a4e9f004f70fca650fcdbd928c70f1b8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: content
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ env.PUBLISHER_REPOSITORY }}
+          ref: ${{ env.PUBLISHER_COMMIT }}
+          path: publisher
+          persist-credentials: false
+      - name: Build locked documentation environment
+        run: docker build --target development -t root-docs publisher
+      - name: Build and check this content with the pinned publisher, offline
+        run: |
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
+            -e CONTENT_DIR=/content \
+            -v "$PWD/publisher:/workspace" -v "$PWD/content:/content:ro" \
+            root-docs task verify
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: organization-docs-preview
+          path: publisher/artifacts/
+          retention-days: 14
+          if-no-files-found: error
   repository-settings:
     name: Repository settings report
     if: github.event_name == 'pull_request'

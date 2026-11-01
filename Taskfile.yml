@@ -11,15 +11,19 @@ tasks:
     cmds:
       - bash tools/setup.sh
   check:
-    desc: Validate the canonical repository inventory
+    desc: Validate the canonical repository inventory and organization documentation
     cmds:
       - bash tools/with-node.sh npm run check
+  docs:check:
+    desc: Check organization docs (pages, links, fragments, directory, Mermaid) before publication
+    cmds:
+      - bash tools/with-node.sh node tools/docs/check-docs.mjs
   test:
-    desc: Test inventory validation
+    desc: Test inventory and documentation validation
     cmds:
       - bash tools/with-node.sh npm test
   verify:
-    desc: Run inventory checks and tests
+    desc: Run inventory and documentation checks and tests
     cmds:
       - task: check
       - task: test

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "description": "Root documentation directory. Every repository must be in config/github/repositories.json; the publisher renders these rows in order.",
+  "manuals": [
+    {
+      "repository": "livingproof",
+      "title": "LivingProof",
+      "url": "https://docs.livingprooflabs.com/livingproof/",
+      "scope": "Command entry point and installed plugins"
+    },
+    {
+      "repository": "livingproof-capability-report",
+      "title": "Capability reporter",
+      "url": "https://docs.livingprooflabs.com/livingproof-capability-report/",
+      "scope": "Bundle validation, policy grading and reports"
+    },
+    {
+      "repository": "capability-verifier",
+      "title": "Capability verifier",
+      "url": "https://docs.livingprooflabs.com/capability-verifier/",
+      "scope": "Fixture execution and portable evidence"
+    },
+    {
+      "repository": "robot-capability-specs",
+      "title": "Robot capability specifications",
+      "url": "https://docs.livingprooflabs.com/robot-capability-specs/",
+      "scope": "Requirements, conditions and acceptance criteria"
+    },
+    {
+      "repository": "livingproof-common",
+      "title": "Common library",
+      "url": "https://docs.livingprooflabs.com/livingproof-common/",
+      "scope": "Shared library interfaces"
+    },
+    {
+      "repository": "livingproof-sim-mujoco",
+      "title": "MuJoCo simulator",
+      "url": "https://docs.livingprooflabs.com/livingproof-sim-mujoco/",
+      "scope": "Standalone native engine example; no capability-pipeline integration implied"
+    },
+    {
+      "repository": "collaboration-guidelines",
+      "title": "Collaboration guidelines",
+      "url": "https://docs.livingprooflabs.com/collaboration-guidelines/",
+      "scope": "Shared contribution and engineering standards"
+    }
+  ],
+  "projects": [
+    {
+      "repository": "livingproof",
+      "title": "LivingProof",
+      "summary": "Command-line entry point"
+    },
+    {
+      "repository": "livingproof-capability-report",
+      "title": "Capability report",
+      "summary": "Capability reporting"
+    },
+    {
+      "repository": "capability-verifier",
+      "title": "Capability verifier",
+      "summary": "Verification tools"
+    },
+    {
+      "repository": "robot-capability-specs",
+      "title": "Robot capability specifications",
+      "summary": "Capability specifications"
+    },
+    {
+      "repository": "livingproof-common",
+      "title": "Shared library",
+      "summary": "Shared package support"
+    },
+    {
+      "repository": "livingproof-sim-mujoco",
+      "title": "MuJoCo simulator",
+      "summary": "Simulator project"
+    },
+    {
+      "repository": "unitree-foxglove-sdk",
+      "title": "Unitree Foxglove SDK",
+      "summary": "Robot and visualization project"
+    },
+    {
+      "repository": "collaboration-guidelines",
+      "title": "Collaboration guidelines",
+      "summary": "Contributor guidance"
+    }
+  ]
+}

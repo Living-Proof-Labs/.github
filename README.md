@@ -5,6 +5,9 @@ evidence, and understandable reports.
 
 - **Start here:** Visit the [welcome page](profile/README.md).
 - **Working on verification?** Read the [verification architecture](docs/architecture/verification-architecture.md).
+- **Editing the documentation site?** The organization pages published at
+  [docs.livingprooflabs.com](https://docs.livingprooflabs.com/) are authored in
+  [`docs/`](docs/site.json); see [organization documentation](#organization-documentation).
 - **Operating this organization?** Use the quick start below, then the
   [repository operations guide](docs/repository-operations.md).
 
@@ -42,6 +45,26 @@ Useful references:
 - [Manual UI-setting evidence](config/github/manual-settings-evidence.json)
 - [Repository operations guide](docs/repository-operations.md)
 - [Manual GitHub App setup](docs/github-app-bootstrap.md)
+
+## Organization documentation
+
+This repository is the single authored source for the organization overview,
+vision, architecture and directory published at
+[docs.livingprooflabs.com](https://docs.livingprooflabs.com/).
+[`docs/site.json`](docs/site.json) lists the published pages, their navigation
+order and redirects; [`docs/directory.json`](docs/directory.json) describes the
+manual and project tables and may name only repositories in the inventory above.
+The [root site repository](https://github.com/Living-Proof-Labs/living-proof-labs.github.io)
+is the publisher: it builds one pinned commit of this repository and owns the
+theme, search, redirect pages and deployment. It keeps no editable copy.
+
+Run `task docs:check` (also part of `task verify`) for missing pages, broken local
+links or fragments, unknown directory entries and unsupported Mermaid. The CI job `docs-preview`
+also builds this checkout with the publisher at the commit pinned in
+`.github/workflows/verify.yml` and runs its link, redirect, navigation, search and
+browser checks offline; the preview is uploaded as a review artifact. After a
+change merges here, the publisher repins in its own reviewed pull request;
+production publication remains separately authorized.
 
 ## Read, verify, and apply
 

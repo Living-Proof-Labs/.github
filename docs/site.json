@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "description": "Organization pages the root site publishes from this repository: source file, published path, navigation title and license, in navigation order. Redirects map an old or short URL to a published page and are checked by the publisher.",
+  "pages": [
+    {
+      "source": "docs/index.md",
+      "path": "index.md",
+      "title": "Start here",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "source": "docs/vision.md",
+      "path": "vision.md",
+      "title": "Vision and terminology",
+      "license": "Apache-2.0"
+    },
+    {
+      "source": "docs/architecture/verification-architecture.md",
+      "path": "architecture/verification-architecture.md",
+      "title": "Verification architecture",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "source": "docs/contribute.md",
+      "path": "contribute.md",
+      "title": "Contribute",
+      "license": "CC-BY-4.0"
+    }
+  ],
+  "directory": "docs/directory.json",
+  "redirects": {
+    "architecture.html": "architecture/verification-architecture.html"
+  }
+}
