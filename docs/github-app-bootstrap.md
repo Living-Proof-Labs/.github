@@ -66,8 +66,8 @@ Then use **Actions → Apply repository settings → Run workflow**, selecting
 run: it produces a preview only. A write requires both **Apply** and the
 release-immutability acknowledgement. Select the main-ruleset option only when
 that separately scoped change has been reviewed. Every apply run finishes with
-a strict all-repository JUnit verification; it does not auto-remediate later
-drift.
+a strict all-repository verification and JUnit test-result artifact; it does
+not auto-remediate later drift.
 
 GitHub documents App registration and installation in its
 [GitHub App guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app)
