@@ -3,87 +3,60 @@
 Helping robots help humans through clear capability requirements, inspectable
 evidence, and understandable reports.
 
-**[Start with the welcome page](profile/README.md)** for the vision, a released
-fixture demo, and a short guide to the projects.
-
-This repository hosts our public GitHub organization profile. The welcome page
-is published from `profile/README.md`; contributor guidance is in
-[AGENTS.md](AGENTS.md).
+- **Start here:** Visit the [welcome page](profile/README.md).
+- **Working on verification?** Read the [verification architecture](docs/architecture/verification-architecture.md).
+- **Operating this organization?** Use the quick start below, then the
+  [repository operations guide](docs/repository-operations.md).
 
 ## Organization operations
 
-This is the operator entry point for organization-wide repository inventory,
-settings audit, and drift evidence. Use
-`task github:settings:report` for an on-demand non-mutating audit and
-`task github:settings:check` for the strict read-only verification used after
-an approved apply and by scheduled drift detection. The generic policy and
-tool remain released dependencies of `collaboration-guidelines`; this
-repository supplies the organization inventory and operating decisions.
+This repository is the operator entry point for the organization inventory and
+repository-settings policy. The generic policy/tool is a released dependency of
+`collaboration-guidelines`; this repository supplies the inventory and
+organization-specific operating choices.
 
-On Debian Linux (amd64 or arm64), `task` first lists these operations and
-`task setup` installs the pinned, checksum-verified Node runtime under this
-checkout's `.tools/` directory. It also installs the pinned Task binary there.
-On a host without Task, start once with `bash tools/setup.sh`, then run
-`bash tools/task.sh setup` (or add no shell configuration; the wrapper stays in
-the checkout). To use bare `node` only in the current shell, explicitly run
-`source tools/activate-node.sh`; this does not modify a shell profile. It does
-not use `sudo` or alter system packages. Codespaces
-uses `.devcontainer/devcontainer.json` and exposes the same Task binary after
-creation.
-The [manual GitHub App checklist](docs/github-app-bootstrap.md) is the shortest
-owner setup path. Versioned manifest helpers remain optional.
+### Quick start
+
+| Goal | Command | Result |
+| --- | --- | --- |
+| List available operations | `task` | Shows organization tasks |
+| Bootstrap a Debian host | `task setup` | Installs pinned Node and Task under `.tools/` |
+| Validate this checkout | `bash tools/task.sh verify` | Checks inventory and tests |
+| Inspect settings drift | `task github:settings:report` | Read-only report; does not fail for existing drift |
+| Enforce settings policy | `task github:settings:check` | Read-only audit that fails for drift or unverified state |
+
+If Task is not installed, run `bash tools/setup.sh` once, then use
+`bash tools/task.sh <task>`. The local setup uses no `sudo`, does not modify
+shell profiles, and keeps tools in this checkout. Codespaces uses the same
+interface through `.devcontainer/devcontainer.json`.
 
 ## Repository directory
 
 [`config/github/repositories.json`](config/github/repositories.json) is the
-sole canonical inventory of Living Proof Labs repositories. Register a new
-project there through a pull request. The inventory is validated locally with
-`npm run check` and `npm test`.
+sole inventory of Living Proof Labs repositories. Register a project there by
+pull request, then run the validation command above.
 
-The reusable GitHub repository-settings policy is pinned in
-[`config/github/repository-policy.json`](config/github/repository-policy.json)
-to a published release tag, exact commit, and verified tool blob. Run
-`task github:settings:check` to fail on policy drift or incomplete state, or
-`task github:settings:report` for the same read-only audit without treating
-existing drift as a CI failure. Both download and verify the released tool
-before executing it with this inventory. The released policy keeps its UI-only
-preferences (Archive Program preservation, Git LFS archives, ref-update limits,
-and linked-issue closing) explicit for manual review. The JUnit report
-classifies a dated matching manual observation as a pass, while recording that
-it is not a current automated API measurement. A dated conflicting observation
-is a neutral manual-correction warning; no observation is a neutral unverified
-question. The renderer displays both neutral states with its skipped symbol, so
-their test names and messages retain the distinction. API drift and access
-errors remain failures and errors. Dated browser observations live in
-[`config/github/manual-settings-evidence.json`](config/github/manual-settings-evidence.json);
-repositories without an observation remain visibly skipped and require manual
-review.
-Neither task applies settings.
-Applying any settings or branch policy remains a separately authorized operation.
+Useful references:
 
-After the administrator configures the unattended `repository-audit` and
-reviewer-gated `repository-administration` environments with the App Client ID
-and private key, the **Apply repository settings** workflow can be manually
-dispatched from `main`. It previews one registered
-repository first. Ordinary settings apply with `apply=true`; main protection
-and release immutability require their separate explicit inputs. It then
-performs a strict all-repository verification and retains its JUnit artifact
-for 14 days. The workflow never runs for pull requests or fork code. Review
-the policy's full change set before enabling a write.
+- [Pinned repository policy](config/github/repository-policy.json)
+- [Manual UI-setting evidence](config/github/manual-settings-evidence.json)
+- [Repository operations guide](docs/repository-operations.md)
+- [Manual GitHub App setup](docs/github-app-bootstrap.md)
 
-Pull requests block on the inventory and tool tests, while their live settings
-report is deliberately informational: repository administrators can make a
-legitimate out-of-band change while a pull request is open. On `main`, a manual
-dispatch, and the daily `16:17 UTC` schedule (02:17 AEST / 03:17 AEDT), the
-same audit is strict and fails for drift or unverified state. It never
-auto-remediates drift. JUnit results and a 14-day artifact are published on
-every run. GitHub cron is UTC and cannot follow Sydney daylight-saving changes.
+## Read, verify, and apply
 
-The pull-request workflow token is intentionally insufficient for complete
-organization-wide administration reads. The
-[manual checklist](docs/github-app-bootstrap.md) configures one selected-
-repository Administration-write App for the trusted audit and manually
-dispatched apply workflow. This PR supplies the token-minting workflow source;
-an owner must still merge it and configure both environments. That
-administrator key must never be exposed to pull-request or fork-controlled
-code.
+| Operation | Where it runs | Behavior |
+| --- | --- | --- |
+| Pull-request report | Pull requests | Informational and secret-free; it never changes settings |
+| Strict audit | Trusted `main`, manual dispatch, and daily schedule | Fails for observable drift, access errors, or unverified required state |
+| Apply repository settings | Manually dispatched trusted-main workflow | Previews one registered repository, then writes only after explicit inputs and environment approval |
+
+Audits never auto-remediate drift. The apply workflow always previews first;
+ordinary settings, main protection, and release immutability are separately
+scoped inputs. It follows every apply attempt with strict fleet verification.
+
+The audit credential is available only to trusted-main workflows. Never expose
+the App key to pull-request, fork, or local shell-profile code. The
+[GitHub App guide](docs/github-app-bootstrap.md) covers the selected-repository
+installation and the `repository-audit` / `repository-administration`
+environment split.
