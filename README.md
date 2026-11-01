@@ -47,20 +47,29 @@ to a published release tag, exact commit, and verified tool blob. Run
 `task github:settings:report` for the same read-only audit without treating
 existing drift as a CI failure. Both download and verify the released tool
 before executing it with this inventory. The released policy keeps its UI-only
-preferences (sponsorships, Archive Program preservation, Git LFS archives,
-ref-update limits, and linked-issue closing) explicit for manual review; the
-API audit does not misrepresent them as enforced. Neither task applies settings.
+preferences (Archive Program preservation, Git LFS archives, ref-update limits,
+and linked-issue closing) explicit for manual review. The JUnit report
+classifies a dated matching manual observation as a pass, while recording that
+it is not a current automated API measurement. A dated conflicting observation
+is a neutral manual-correction warning; no observation is a neutral unverified
+question. The renderer displays both neutral states with its skipped symbol, so
+their test names and messages retain the distinction. API drift and access
+errors remain failures and errors. Dated browser observations live in
+[`config/github/manual-settings-evidence.json`](config/github/manual-settings-evidence.json);
+repositories without an observation remain visibly skipped and require manual
+review.
+Neither task applies settings.
 Applying any settings or branch policy remains a separately authorized operation.
 
 After the administrator configures the unattended `repository-audit` and
 reviewer-gated `repository-administration` environments with the App Client ID
 and private key, the **Apply repository settings** workflow can be manually
 dispatched from `main`. It previews one registered
-repository first. Applying requires explicit acknowledgement because the
-currently pinned generic tool includes release immutability; it then performs a
-strict all-repository verification and retains its JUnit artifact for 14 days.
-The workflow never runs for pull requests or fork code. Review the policy's
-full change set before enabling a write.
+repository first. Ordinary settings apply with `apply=true`; main protection
+and release immutability require their separate explicit inputs. It then
+performs a strict all-repository verification and retains its JUnit artifact
+for 14 days. The workflow never runs for pull requests or fork code. Review
+the policy's full change set before enabling a write.
 
 Pull requests block on the inventory and tool tests, while their live settings
 report is deliberately informational: repository administrators can make a

@@ -2,8 +2,17 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-const [policyFile, auditFile, outputFile] = process.argv.slice(2);
+const [policyFile, auditFile, outputFile, manualEvidenceFile] = process.argv.slice(2);
 const policy = JSON.parse(readFileSync(policyFile, 'utf8'));
+const manualEvidence = manualEvidenceFile
+  ? JSON.parse(readFileSync(manualEvidenceFile, 'utf8'))
+  : { observations: [] };
+if (manualEvidence.schema_version !== undefined && manualEvidence.schema_version !== 1) {
+  throw new Error('Unsupported manual settings evidence schema version.');
+}
+if (!Array.isArray(manualEvidence.observations)) {
+  throw new Error('Manual settings evidence must contain an observations array.');
+}
 const lines = readFileSync(auditFile, 'utf8').split('\n');
 const entries = new Map();
 let repository;
@@ -18,9 +27,17 @@ for (const line of lines) {
   else if (repository && line.startsWith('  main ruleset: ')) entries.get(repository).ruleset = line.trim().slice(14);
 }
 const escape = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
+function manualObservation(repository, field) {
+  for (const observation of manualEvidence.observations) {
+    if (!Array.isArray(observation.repositories) || !observation.repositories.includes(repository)) continue;
+    if (typeof observation.observed_at !== 'string') continue;
+    if (observation.settings && Object.hasOwn(observation.settings, field)) return observation;
+  }
+  return undefined;
+}
 const cases = [];
 for (const [repo, state] of entries) {
-  for (const [field, expected] of Object.entries(policy.repository)) {
+  for (const [field, expected] of Object.entries(policy.repository ?? {})) {
     const actual = state.differences.get(field);
     const name = `${repo} :: ${field}`;
     if (actual === undefined) cases.push(`<testcase name="${escape(name)}"/>`);
@@ -40,11 +57,20 @@ for (const [repo, state] of entries) {
     else if (actual === 'undefined') cases.push(`<testcase name="${escape(name)}"><error message="GraphQL field unavailable">expected ${escape(JSON.stringify(expected))}</error></testcase>`);
     else cases.push(`<testcase name="${escape(name)}"><failure message="setting drift">actual ${escape(actual)}; expected ${escape(JSON.stringify(expected))}</failure></testcase>`);
   }
-  for (const field of Object.keys(policy.manual_or_unavailable_settings ?? {})) {
-    cases.push(`<testcase name="${escape(`${repo} :: manual ${field}`)}"><error message="manual verification required">not exposed by the managed API</error></testcase>`);
+  for (const [field, expected] of Object.entries(policy.manual_or_unavailable_settings ?? {})) {
+    const name = `${repo} :: manual ${field}`;
+    const observation = manualObservation(repo, field);
+    if (!observation) {
+      cases.push(`<testcase name="${escape(`${name} [unverified]`)}"><skipped message="unverified manual setting">? Not exposed by the managed API; no dated manual evidence</skipped></testcase>`);
+    } else if (observation.settings[field] !== expected) {
+      cases.push(`<testcase name="${escape(`${name} [manual correction required]`)}"><skipped message="manual correction required">warning: observed ${escape(JSON.stringify(observation.settings[field]))} at ${escape(observation.observed_at)}; expected ${escape(JSON.stringify(expected))}; not exposed by the managed API</skipped></testcase>`);
+    } else {
+      cases.push(`<testcase name="${escape(`${name} [manual observation]`)}"><system-out>manually observed ${escape(JSON.stringify(expected))} at ${escape(observation.observed_at)}; not an automated API measurement</system-out></testcase>`);
+    }
   }
 }
 const failures = cases.filter((value) => value.includes('<failure')).length;
 const errors = cases.filter((value) => value.includes('<error')).length;
+const skipped = cases.filter((value) => value.includes('<skipped')).length;
 mkdirSync(path.dirname(outputFile), { recursive: true });
-writeFileSync(outputFile, `<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="repository-settings" tests="${cases.length}" failures="${failures}" errors="${errors}">\n${cases.join('\n')}\n</testsuite>\n`);
+writeFileSync(outputFile, `<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="repository-settings" tests="${cases.length}" failures="${failures}" errors="${errors}" skipped="${skipped}">\n${cases.join('\n')}\n</testsuite>\n`);

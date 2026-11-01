@@ -39,10 +39,12 @@ test('daily strict audit is unattended while apply remains reviewer-gated', () =
   assert.match(workflow, /environment: repository-administration/);
 });
 
-test('settings apply previews first and requires explicit release-immutability acknowledgement', () => {
+test('settings apply previews first and scopes privileged changes to explicit inputs', () => {
   assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --repo/);
   assert.match(workflow, /include_release_immutability/);
-  assert.match(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
+  assert.match(workflow, /if \[ '\$\{\{ inputs\.apply_main_ruleset \}\}' = true \]/);
+  assert.match(workflow, /if \[ '\$\{\{ inputs\.include_release_immutability \}\}' = true \]/);
+  assert.doesNotMatch(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
   assert.match(workflow, /--apply-immutable-releases-when-unknown/);
   assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\) && inputs\.apply/);
 });

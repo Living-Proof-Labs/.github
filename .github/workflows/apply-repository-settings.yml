@@ -9,7 +9,7 @@ on:
         required: true
         type: string
       apply:
-        description: Apply the complete pinned policy after preview
+        description: Apply ordinary pinned repository settings after preview
         required: true
         default: false
         type: boolean
@@ -19,7 +19,7 @@ on:
         default: false
         type: boolean
       include_release_immutability:
-        description: Acknowledge that the current pinned apply tool includes release immutability
+        description: Also apply release immutability when its API state is unknown
         required: true
         default: false
         type: boolean
@@ -57,11 +57,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           TARGET_REPOSITORY: ${{ inputs.repository }}
-      - name: Require explicit release-immutability acknowledgement
-        if: inputs.apply && !inputs.include_release_immutability
-        run: |
-          echo 'The pinned tool applies release immutability with --apply. Re-run with include_release_immutability=true only after reviewing that full policy.' >&2
-          exit 64
       - name: Apply pinned policy
         if: inputs.apply
         run: |

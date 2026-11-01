@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "observations": [
+    {
+      "observed_at": "2026-10-30T05:50:00Z",
+      "source": "authenticated browser review",
+      "repositories": [
+        "Living-Proof-Labs/.github",
+        "Living-Proof-Labs/capability-verifier",
+        "Living-Proof-Labs/collaboration-guidelines",
+        "Living-Proof-Labs/living-proof-labs.github.io",
+        "Living-Proof-Labs/livingproof",
+        "Living-Proof-Labs/livingproof-capability-report",
+        "Living-Proof-Labs/livingproof-common",
+        "Living-Proof-Labs/livingproof-sim-gazebo",
+        "Living-Proof-Labs/livingproof-sim-mujoco",
+        "Living-Proof-Labs/robot-capability-specs",
+        "Living-Proof-Labs/unitree-foxglove-sdk",
+        "Living-Proof-Labs/website"
+      ],
+      "settings": {
+        "preserve_repository_in_archive_program": true,
+        "include_git_lfs_objects_in_archives": false,
+        "limit_ref_updates_per_push": false,
+        "auto_close_linked_issues": true
+      }
+    }
+  ]
+}
