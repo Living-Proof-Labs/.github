@@ -18,6 +18,16 @@ and its relevant procedures at that same tag. A link alone does not load them.
 - Verify command examples against released artifacts and record the exact
   versions, commands, outcomes, and limitations in the pull request.
 
+## Organization documentation
+
+- `docs/` is the single authored source for the organization overview, vision,
+  architecture and directory published by `living-proof-labs.github.io`. Edit
+  here, never in the publisher. Declare pages, navigation and redirects in
+  `docs/site.json`; list directory rows in `docs/directory.json` only for
+  inventoried repositories. Run `task docs:check` before review.
+- Keep publishing tooling (theme, build, search, redirect pages, deployment) in
+  the publisher. Content changes merge here first; the publisher repins.
+
 ## Local directory tooling
 
 This repository owns the single organization repository inventory. Validate it

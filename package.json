@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/github/verify-inventory.mjs",
-    "test": "node --test tests/github/*.test.mjs"
+    "check": "node tools/github/verify-inventory.mjs && node tools/docs/check-docs.mjs",
+    "test": "node --test tests/github/*.test.mjs tests/docs/*.test.mjs"
   },
   "license": "Apache-2.0"
 }
