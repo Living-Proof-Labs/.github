@@ -10,9 +10,10 @@ This repository hosts our public GitHub organization profile. The welcome page
 is published from `profile/README.md`; contributor guidance is in
 [AGENTS.md](AGENTS.md).
 
-The [verification architecture proposal](docs/architecture/verification-architecture.md)
-is under review. It describes responsibility boundaries and a proposed thin
-consumer project without creating it or duplicating this repository's inventory.
+## Verification architecture
+
+Read the [proposal](docs/architecture/verification-architecture.md) for the
+planned thin consumer and the reusable tools it depends on.
 
 ## Organization operations
 

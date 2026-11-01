@@ -14,10 +14,10 @@ capability-pipeline simulation, and live evaluator integrations remain future wo
 Reports are not safety certification, and diagnosis hypotheses do not override
 policy grades.
 
-Our [verification architecture proposal](../docs/architecture/verification-architecture.md)
-is under review. It describes how versioned definitions, evidence, assessments,
-and reports fit together; it does not claim new integrations or authorize
-physical deployment.
+## Verification architecture
+
+Read the [proposal](../docs/architecture/verification-architecture.md) for how
+versioned definitions, evidence, assessments, and reports fit together.
 
 ## From a requirement to the next improvement
 
