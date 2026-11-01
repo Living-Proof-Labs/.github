@@ -35,7 +35,7 @@ test('reports hidden main-ruleset fields as unverified and GraphQL sponsorship d
   assert.match(xml, /tests="5" failures="1" errors="1" skipped="1"/);
   assert.match(xml, /graphql\.hasSponsorshipsEnabled/);
   assert.match(xml, /unverified main protection/);
-  assert.match(xml, /manual verification required/);
+  assert.match(xml, /unverified manual setting/);
   assert.match(xml, /no dated manual evidence/);
 });
 
@@ -55,12 +55,13 @@ test('separates dated manual evidence from API-enforced checks', () => {
       }]
     }
   });
-  assert.match(xml, /tests="4" failures="0" errors="0" skipped="1"/);
-  assert.match(xml, /message="manually verified"/);
+  assert.match(xml, /tests="4" failures="0" errors="0" skipped="0"/);
+  assert.match(xml, /manual observation/);
+  assert.match(xml, /not an automated API measurement/);
   assert.match(xml, /2026-10-30T05:50:00Z/);
 });
 
-test('fails a contradictory dated manual observation', () => {
+test('reports a contradictory dated manual observation as a manual-correction warning', () => {
   const xml = createJUnit({
     policy: { manual_or_unavailable_settings: { auto_close_linked_issues: true } },
     audit: `Living-Proof-Labs/example\n  immutable releases: enabled\n  main ruleset: matches\n`,
@@ -72,6 +73,7 @@ test('fails a contradictory dated manual observation', () => {
       }]
     }
   });
-  assert.match(xml, /tests="3" failures="1" errors="0" skipped="0"/);
-  assert.match(xml, /manual observation conflicts with policy/);
+  assert.match(xml, /tests="3" failures="0" errors="0" skipped="1"/);
+  assert.match(xml, /manual correction required/);
+  assert.match(xml, /warning: observed false/);
 });

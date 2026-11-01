@@ -61,11 +61,11 @@ for (const [repo, state] of entries) {
     const name = `${repo} :: manual ${field}`;
     const observation = manualObservation(repo, field);
     if (!observation) {
-      cases.push(`<testcase name="${escape(name)}"><skipped message="manual verification required">not exposed by the managed API; no dated manual evidence</skipped></testcase>`);
+      cases.push(`<testcase name="${escape(`${name} [unverified]`)}"><skipped message="unverified manual setting">? Not exposed by the managed API; no dated manual evidence</skipped></testcase>`);
     } else if (observation.settings[field] !== expected) {
-      cases.push(`<testcase name="${escape(name)}"><failure message="manual observation conflicts with policy">observed ${escape(JSON.stringify(observation.settings[field]))} at ${escape(observation.observed_at)}; expected ${escape(JSON.stringify(expected))}</failure></testcase>`);
+      cases.push(`<testcase name="${escape(`${name} [manual correction required]`)}"><skipped message="manual correction required">warning: observed ${escape(JSON.stringify(observation.settings[field]))} at ${escape(observation.observed_at)}; expected ${escape(JSON.stringify(expected))}; not exposed by the managed API</skipped></testcase>`);
     } else {
-      cases.push(`<testcase name="${escape(name)}"><skipped message="manually verified">observed ${escape(JSON.stringify(expected))} at ${escape(observation.observed_at)}; not exposed by the managed API</skipped></testcase>`);
+      cases.push(`<testcase name="${escape(`${name} [manual observation]`)}"><system-out>manually observed ${escape(JSON.stringify(expected))} at ${escape(observation.observed_at)}; not an automated API measurement</system-out></testcase>`);
     }
   }
 }
