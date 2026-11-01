@@ -59,7 +59,10 @@ is the publisher: it builds one pinned commit of this repository and owns the
 theme, search, redirect pages and deployment. It keeps no editable copy.
 
 Run `task docs:check` (also part of `task verify`) for missing pages, broken local
-links or fragments, unknown directory entries and unsupported Mermaid. After a
+links or fragments, unknown directory entries and unsupported Mermaid. The CI job `docs-preview`
+also builds this checkout with the publisher at the commit pinned in
+`.github/workflows/verify.yml` and runs its link, redirect, navigation, search and
+browser checks offline; the preview is uploaded as a review artifact. After a
 change merges here, the publisher repins in its own reviewed pull request;
 production publication remains separately authorized.
 
