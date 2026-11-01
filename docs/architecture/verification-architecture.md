@@ -1,184 +1,156 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-# Verification architecture proposal
+# Verification architecture
 
-**Status: proposal under review.** Living Proof Labs should make a verification
-path feel like a reusable product rather than a bespoke integration: select a
-robot configuration, world, scenario, and policy; run it through installed
-capabilities; retain the evidence; then publish a result people can inspect and
-compare. This document describes how the repositories fit together to provide
-that path while letting customers keep their own verification repositories and
-add only thin declarative glue.
+Living Proof Labs verification turns a selected robot configuration, world,
+scenario, and policy into retained evidence, an authoritative assessment, and
+a report people can inspect. The same contracts support local development,
+automated workflows, and future customer-owned verification projects.
 
-The proposed `livingproof-verification` consumer selects versioned inputs and
-publication choices. `livingproof` provides access to installed tools;
-`capability-verifier` executes procedures and evaluates provider evidence; and
-`livingproof-capability-report` turns the supplied run and assessment into run
-and series views. The sections below distinguish that target from the
-transitional implementation now in use.
+This page describes the current architecture and its tracked migrations. It is
+not a claim that every integration or hardware deployment is complete.
 
-The proposed consumer repository is tracked in [issue #11](https://github.com/Living-Proof-Labs/.github/issues/11).
-It remains planning-only and unassigned until implementation is explicitly
-approved.
+## Start here
 
-## Dependency direction
+| Need | Read |
+| --- | --- |
+| Find the component responsible for a task | [Responsibilities](#responsibilities) |
+| Follow a run from selection to publication | [Run and series flow](#run-and-series-flow) |
+| Understand what is implemented now | [Current implementation](#current-implementation) |
+| Track the remaining migrations | [Migration work](#migration-work) |
 
-![Dependency diagram](verification-architecture.png)
+## Responsibilities
 
-The editable source is [verification-architecture.dot](verification-architecture.dot).
-The rendered SVG is [verification-architecture.svg](verification-architecture.svg).
-Every arrow in this diagram means **dependent → dependency**. For example, the
-proposed consumer depends on `livingproof`, and the verifier depends on selected
-providers, robot profiles, worlds, specifications, and provenance helpers.
+```mermaid
+flowchart LR
+  consumer["Verification consumer\nselection, one lock, publication"]
+  access["livingproof\ndiscovery, installation, local invocation"]
+  verifier["capability-verifier\nresolve, execute, assess, compare"]
+  providers["Simulator providers\nphysics and observations"]
+  robots["Robot repositories\nmanifests, adapters, contract tests"]
+  worlds["livingproof-worlds\nversioned fixtures"]
+  reporter["livingproof-capability-report\nrender supplied assessments"]
+  publication["Optional publication destination"]
 
-## Data and publication flow
+  consumer --> verifier
+  consumer --> reporter
+  access --> verifier
+  access --> reporter
+  verifier --> providers
+  verifier --> robots
+  verifier --> worlds
+  verifier --> reporter
+  reporter --> publication
+```
 
-![Data and publication flow](verification-data-flow.png)
+Arrows show a dependency or supplied input, not ownership of every artifact.
+The consumer is intentionally thin: it selects a baseline and publishes
+results; it does not copy the execution, evaluation, or rendering engines.
 
-The editable source is [verification-data-flow.dot](verification-data-flow.dot).
-The rendered SVG is [verification-data-flow.svg](verification-data-flow.svg).
-
-## Design principles
-
-- `.github` owns the organization view, repository inventory, and this
-  architecture. It does not become a second verification engine.
-- `livingproof` is the lightweight plugin and tool discovery, installation, and
-  invocation entry point. It does not own evidence collection, grading,
-  simulator orchestration, or reporting decisions.
-- `capability-verifier` owns trial execution, orchestration, evidence
-  collection, internal evaluators, and the authoritative assessment,
-  aggregation, and comparison judgments.
-- `livingproof-capability-report` owns reusable run-level and series-level
-  rendering and site-generation code. It renders supplied runs and assessments;
-  it must not invent missing data or independently change a verdict.
-- Providers retain their subject-matter responsibilities. Simulator providers
-  execute physics and observations. Robot repositories own models,
-  controllers, configuration profiles, adapters, and reference tests.
-  `livingproof-worlds` owns versioned fixtures and engine representations.
-- `livingproof-common` remains narrow: identity and build provenance, not a
-  plugin manager, runner, or evaluator. GitHub Pages is an optional Living
-  Proof Labs publication destination, never a shared tool dependency.
-
-## Current and proposed state
-
-Today, the implementation is transitional. Robot-owned workflows and evidence
-glue currently compose locked inputs, simulator runs, and verifier calls for
-their own profiles. `capability-verifier` provides reference execution,
-evidence, and evaluator helpers; it is not yet the fleet-wide orchestrator.
-`livingproof-capability-report` currently contains portable rendering **and**
-grading/aggregation policy, so authoritative assessment and comparison have not
-yet been consolidated in one implementation. The G1 locked workflow is a
-useful concrete path: simulator evidence is collected first, verifier helpers
-assess it, then the reporter grades and renders the result. These demonstrated
-pieces do not claim that every robot, engine, or physical-deployment integration
-is complete.
-
-The proposal adds no new evaluator service. It defines a thin,
-customer-like `livingproof-verification` consumer, after approval, to hold
-declarative verification selections and publication choices. Shared tools stay
-in their existing owning repositories. No existing repository deletion is
-justified by this proposal.
-
-| Concern | Current owner | Proposed boundary |
+| Component | Responsibility | Boundary |
 | --- | --- | --- |
-| Organization inventory and architecture | `.github` | Keep the single ecosystem view here; do not duplicate inventory in a consumer. |
-| Plugin/tool access | `livingproof` | Discover, install, and invoke explicitly installed tools; no verification logic. |
-| Run composition and execution | Robot-owned workflows and evidence glue, with `capability-verifier` reference helpers | `capability-verifier` orchestrates selected providers and preserves complete trial evidence. |
-| Assessments, grades, and comparisons | Verifier evaluators produce assessments; the reporter currently owns grading/aggregation policy | `capability-verifier` becomes the authoritative assessment, aggregation, and comparison authority. A consumer supplies selections and receives results. |
-| Physics and raw observations | Selected simulator provider | Execute the engine and emit observations, without grading capability. |
-| Robot model, controller, configuration, adapter | Robot repository | Version and test the profile and adapter close to the robot assets. |
-| World fixtures and engine representations | `livingproof-worlds` and selected simulator providers | Keep worlds versioned and engine-neutral; keep conversion in adapters. |
-| Rendering and publication artifacts | `livingproof-capability-report`, which currently also grades | Render supplied run and series records without changing their judgments. |
-| Consumer definitions, locks, selection, publication settings | Proposed `livingproof-verification` | Declarative inputs and thin local/continuous-integration calls only. |
+| `.github` | Organization view, inventory, and this architecture | Does not become a verification engine |
+| Verification consumer | One selected baseline, verification lock, run/series selection, and publication settings | Planned repository [#11](https://github.com/Living-Proof-Labs/.github/issues/11); until approved, comparisons and the temporary lock live in `capability-verifier/comparisons/` |
+| Robot repository | Robot manifest, adapter, assets, feature flags, simulator compatibility, and contract tests | Does not own the cross-robot verification baseline after the manifest migration |
+| `livingproof` | Discovery, installation, and local invocation of installed tools | Is not a required hop for an automated workflow |
+| `capability-verifier` | Resolve the lock, execute trials, retain evidence, and produce authoritative grades and comparisons | Evaluator implementation may become more internally separated; it remains the authority |
+| Simulator provider | Physics execution and observations | Does not grade capability |
+| `livingproof-worlds` | Versioned fixtures and engine representations | Adapter code performs engine conversion |
+| `livingproof-capability-report` | Render supplied run and series assessments | Must not recompute a grade or invent missing evidence |
+| `livingproof-common` | Identity and build provenance | Is not a plugin manager, runner, or evaluator |
 
-The proposed consumer depends on capabilities; shared capabilities must not
-depend back on the consumer. Versioned specifications and contracts are
-dependencies of the components that interpret them. The diagram deliberately
-has no shared-tool dependency back onto the proposed consumer, and GitHub Pages
-is not a dependency of any shared tool, provider, evaluator, or reporter.
+GitHub Pages is an optional publication destination, not a shared-tool
+dependency. Shared capabilities never depend back on a consumer.
 
-`livingproof-verification` would access the verifier and reporter through
-`livingproof`. The verifier selects the relevant providers and evaluator
-responsibilities for a run. The reporter supplies both individual-run and
-series views; the consumer selects the runs, series policy, and optional
-publication destination.
+## Run and series flow
 
-The data-flow view keeps intent, resolved inputs, observations, authoritative
-judgment, and presentation separate. It is not a dependency graph: records
-move forward through the path, while the underlying tools remain independently
-versioned capabilities.
+```mermaid
+flowchart TD
+  definition["Verification definition\nrobot, world, scenario, policy"] --> manifest
+  lock["One verification lock\nversions, commits, digests"] --> manifest
+  manifest["Resolved run manifest\ninputs and expected artifact names"] --> execution
+  execution["Verifier and selected providers\nplanned trials"] --> evidence
+  evidence["Evidence record\nactual artifacts, checksums, status by seed"] --> assessment
+  assessment["Authoritative assessment\nsufficiency, grade, rationale"] --> report
+  evidence --> report
+  report["Rendered run or compatible series"] --> publication["Optional publication"]
+```
 
-## Records and authority
-
-These records are distinct and must retain their own identity and provenance.
-
-| Record | Created when | Authority and content |
+| Record | What it records | Authority |
 | --- | --- | --- |
-| Verification definition | Before a run | Human-authored declarative selection of robot configuration, world, simulator, specification, trial plan, and intended series policy. |
-| Dependency lock | Before a run | Reviewed versions, commits, digests, and compatible tool/provider references. It is not observed evidence. |
-| Resolved run manifest | Immediately before execution | The verifier resolves the definition and lock into the exact executable inputs, including selected configuration, provider, evaluator/policy versions, and trial identities. |
-| Evidence bundle | During execution | Providers and the verifier preserve observed files, digests, timestamps, trial status, and provenance. Partial, missing, and failed trials remain represented. |
-| Authoritative assessment | After evaluation | `capability-verifier` records evaluator outputs, sufficiency, aggregation, grade, and rationale. The report does not recalculate or replace this judgment. |
-| Rendered report | After assessment | The reporter renders a supplied run or declared compatible series, with links to its manifest, evidence, and assessment. |
+| Verification definition | Selected robot configuration, world, scenario, policy, and series intent | Consumer |
+| Verification lock | Reviewed versions, commits, digests, and compatibility choices | Consumer; temporarily `capability-verifier/comparisons/` |
+| Resolved run manifest | Exact executable inputs, planned trial identities, and **expected** media/evidence-link artifact names | Verifier |
+| Evidence record | **Actual** artifacts, checksums, timestamps, and pass, missing, or error status for every planned seed | Providers and verifier |
+| Assessment | Evidence sufficiency, authoritative grade, rationale, and comparison result | Verifier and its evaluators |
+| Report | A supplied assessment and linked provenance for one run or a declared compatible series | Reporter |
 
-Pipeline success, evidence sufficiency, and capability grade answer different
-questions. A completed pipeline can have insufficient evidence. A failed or
-partial trial cannot be silently removed to make a series look successful.
+Pipeline completion, evidence sufficiency, and a capability grade are different
+signals. Planned trial count remains the denominator: a missing or errored
+trial is listed by seed and is not silently removed from a series.
 
-Series comparison requires declared compatibility rules for inputs, versions,
-metrics, and missing-trial treatment. Equal random seeds across engines do not
-establish equivalent physics, observations, or capability results. Simulation
-results are evidence for the declared simulation context; they never authorize
-physical deployment.
+An evidence checksum, lock hash, and source-run link preserve provenance after
+an Actions artifact expires. They do not make expired evidence retrievable.
+Long-lived evidence storage is a separate decision.
 
-## G1 configuration-change journey
+Series comparison requires compatible inputs, versions, metrics, and
+missing-trial treatment. Equal random seeds across engines do not prove equal
+physics or results. Simulation evidence applies only to its declared context;
+it never authorizes physical deployment.
 
-1. A maintainer changes a versioned G1 controller or configuration profile in
-   `livingproof-unitree-g1`, preserving its adapter and reference tests.
-2. A review updates the consumer's verification definition and dependency lock
-   to select the intended G1 configuration, world, specification, simulator,
-   and trial plan.
-3. The same local and continuous-integration entry point invokes the shared
-   path through `livingproof`, then `capability-verifier`; it does not copy a
-   runner into the consumer.
-4. Before trials start, the verifier saves the resolved run manifest. Selected
-   simulator helpers produce observations; the verifier retains evidence for
-   every planned trial, including failed and incomplete trials.
-5. The verifier records authoritative assessments and the declared aggregation
-   result. The reporter renders the supplied run and any declared compatible
-   series. Publication settings may select GitHub Pages, but that selection
-   does not affect execution or judgment.
-6. A maintainer can compare provenance-linked reports to decide what to improve.
-   No simulation report is a physical-deployment authorization.
+## Current implementation
 
-## Migration stages
+Three robot repositories now use the verifier's pinned reusable
+`walk-hallway.yml` workflow directly. This is a valid automated entry point;
+it plans from the lock, gathers evidence per configuration, verifies, renders,
+and publishes the workflow result without an extra command-line hop through
+`livingproof`.
 
-1. **Contract review.** Publish and review this boundary, record schemas for
-   the six records above, and identify which existing verifier workflow and
-   simulator helpers provide each step. No new repository is required.
-2. **Parity fixture.** Reproduce one existing, released fixture through the
-   same local and continuous-integration tool path. Compare resolved inputs,
-   evidence digests, assessments, and rendered output with the existing path.
-3. **Thin consumer, if approved.** Create `livingproof-verification` only after
-   issue #11 is approved. Add declarative definitions and locks, not copied
-   orchestration, evaluator, simulator, or report code.
-4. **Explicit series policy.** Add run selection and compatibility policies.
-   Preserve partial and failed trials in a series instead of filtering them out.
-5. **Publication choice.** Configure a Living Proof Labs Pages destination only
-   where wanted. Keep the report artifacts portable so another consumer can
-   publish elsewhere.
+| Robot | Merged thin consumer | Verified main workflow |
+| --- | --- | --- |
+| G1 | [`21c9131`](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/commit/21c9131ca79ea4ec032ad3372408ff38684cf278) | [successful run](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/actions/runs/41329597362) |
+| Go1 | [`cb21338`](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/commit/cb21338ec490d0b39133ee6da9bc64a0452dd229) | [successful run](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/41329614220) |
+| T1 | [`6d69ff0`](https://github.com/Living-Proof-Labs/livingproof-booster-t1/commit/6d69ff0d48c051e5c39f4834462bf45980d90cfd) | [successful run](https://github.com/Living-Proof-Labs/livingproof-booster-t1/actions/runs/41329731207) |
 
-Each stage must preserve existing evidence parity before it replaces a path.
-The local and continuous-integration interfaces must exercise the same shared
-tool path. Migration does not require moving execution into `livingproof`.
+The reusable workflow and simulator helpers already remove duplicated robot
+workflow glue. The remaining migrations below make the one-lock and
+verifier-authority boundaries explicit.
 
-## Review questions
+`livingproof` remains the local discovery, installation, and invocation layer.
+Both its local path and the direct reusable workflow must use the same
+contracts and verification engine.
 
-- Are the six record boundaries sufficient to diagnose a result without
-  conflating intent, resolved inputs, evidence, assessment, and presentation?
-- Which existing verifier workflow and simulator helpers should form the first
-  parity fixture?
-- What compatibility and missing-trial policy is required before the first
-  series comparison?
-- Which report artifacts and provenance links should remain available after a
-  publication destination expires?
+### Open boundaries being migrated
+
+- `livingproof-capability-report` still contains grading and aggregation code.
+  [Issue #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30)
+  removes that implementation; the verifier is already the agreed authority.
+- Robot repositories still carry `verification.lock.json` files. Their manifest
+  and contract-test migrations retire those transitional locks.
+- The dedicated verification consumer is not approved yet. Its temporary lock
+  remains in `capability-verifier/comparisons/` until [#11](https://github.com/Living-Proof-Labs/.github/issues/11) is approved.
+
+## Migration work
+
+| Change | Tracked work | Result |
+| --- | --- | --- |
+| Define a generic robot manifest | [robot-capability-specs #27](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/27) | Robots publish what they provide: configurations, adapters, assets, feature flags, and simulator compatibility |
+| Own one verification lock | [capability-verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) | The verifier resolves manifests and fans trials out and results back in |
+| Separate evaluator implementation | [capability-verifier #21](https://github.com/Living-Proof-Labs/capability-verifier/issues/21) | Grading can evolve behind an evaluator interface without a new evaluator repository |
+| Render supplied assessments only | [livingproof-capability-report #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) | Reporter grading and aggregation are removed; absent assessment data remains explicit |
+| Publish robot manifests and contract-test them | [G1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/issues/4), [Go1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/issues/4), [T1 #7](https://github.com/Living-Proof-Labs/livingproof-booster-t1/issues/7) | Robot-owned verification locks are retired |
+| Add a Gazebo lock variant | [livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4) | Another simulator can participate through the same lock and adapter contracts |
+| Create the dedicated consumer when approved | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) | Move the temporary comparisons lock into one customer-like verification repository |
+| Render Mermaid in the documentation site | [living-proof-labs.github.io #18](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/issues/18) | Separate documentation-site work; GitHub renders the diagrams above |
+
+Until the manifest migration lands, robot repositories still contain their
+existing `verification.lock.json` files. Those are transitional inputs, not a
+second long-term baseline. The intended end state is one verification consumer
+lock plus robot manifests and contract tests.
+
+## First parity fixture
+
+G1 stock is the first parity fixture. Its reusable workflow must retain the
+planned trial count, record each seed's actual evidence checksum, and compare
+the resolved inputs, evidence, assessment, and rendered report with the prior
+path before replacing it.

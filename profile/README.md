@@ -10,7 +10,7 @@ inspectable evidence so developers can improve robots with clear feedback.
 | --- | --- |
 | Vision and feedback loop | [Documentation](https://docs.livingprooflabs.com/vision.html#from-a-requirement-to-the-next-improvement) |
 | Requirements, evidence, assessments, and reports | [What goes in, what comes out](https://docs.livingprooflabs.com/vision.html#what-goes-in-what-comes-out) |
-| Reusable verification ecosystem | [Verification architecture proposal](../docs/architecture/verification-architecture.md) |
+| Reusable verification ecosystem | [Verification architecture](../docs/architecture/verification-architecture.md) |
 | Project manuals | [Published documentation](https://docs.livingprooflabs.com/#published-manuals) |
 | Released examples and reports | [See it today](https://docs.livingprooflabs.com/vision.html#see-it-today) |
 
