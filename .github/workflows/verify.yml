@@ -31,7 +31,7 @@ jobs:
       # Publisher revision whose build, link, redirect, navigation, search and
       # browser checks this content must pass. Move it when the publisher changes.
       PUBLISHER_REPOSITORY: Living-Proof-Labs/living-proof-labs.github.io
-      PUBLISHER_COMMIT: 634d9490a4e9f004f70fca650fcdbd928c70f1b8
+      PUBLISHER_COMMIT: 69740235ced2c4b88b17f2885aec0760474bf7fa
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
