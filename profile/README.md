@@ -1,38 +1,31 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Helping robots help humans
 
-**[Start here: documentation](https://docs.livingprooflabs.com/)**
+Living Proof Labs connects capability requirements, observed behavior, and
+inspectable evidence so developers can improve robots with clear feedback.
 
-Living Proof Labs connects robot capability requirements, observed behavior,
-and evidence people can inspect. We are building a feedback loop from versioned
-software and scenarios to assessments, explicit policy grades, traceable reports,
-and the developer's next improvement.
+## Explore Living Proof Labs
 
-Today, recorded fixtures demonstrate evidence collection and reporting. A
-standalone MuJoCo example exercises a native simulation engine; robot execution,
-capability-pipeline simulation, and live evaluator integrations remain future work.
-Reports are not safety certification, and diagnosis hypotheses do not override
-policy grades.
+| Looking for | Start here |
+| --- | --- |
+| Vision and feedback loop | [Documentation](https://docs.livingprooflabs.com/vision.html#from-a-requirement-to-the-next-improvement) |
+| Requirements, evidence, assessments, and reports | [What goes in, what comes out](https://docs.livingprooflabs.com/vision.html#what-goes-in-what-comes-out) |
+| Reusable verification ecosystem | [Verification architecture proposal](../docs/architecture/verification-architecture.md) |
+| Project manuals | [Published documentation](https://docs.livingprooflabs.com/#published-manuals) |
+| Released examples and reports | [See it today](https://docs.livingprooflabs.com/vision.html#see-it-today) |
 
-## Verification architecture
+## Available today
 
-Read the [proposal](../docs/architecture/verification-architecture.md) for how
-versioned definitions, evidence, assessments, and reports fit together.
+The G1, Go1, and T1 repositories have working CI paths that collect simulator
+evidence, verify it, and render reports. Current configurations report
+capability **FAIL**; that is a capability result, not a pipeline failure.
 
-## From a requirement to the next improvement
+These runs demonstrate versioned simulation evidence and reporting. They do
+not establish hardware-deployment authorization, safety certification, or
+Gazebo robot readiness.
 
-Read our [vision and developer feedback loop](https://docs.livingprooflabs.com/vision.html#from-a-requirement-to-the-next-improvement).
+## Get involved
 
-## What goes in, what comes out
-
-Explore [specifications, scenarios, evidence, assessments, policy, and reports](https://docs.livingprooflabs.com/vision.html#what-goes-in-what-comes-out).
-
-## See it today
-
-Follow the [recorded fixture examples and released report downloads](https://docs.livingprooflabs.com/vision.html#see-it-today).
-
-## Find your next step
-
-Choose a [rendered project manual](https://docs.livingprooflabs.com/#published-manuals).
-Bring a concrete example to the relevant repository's Issues tab: what you
-expected, what you observed, and which versions were involved.
+Choose a [project manual](https://docs.livingprooflabs.com/#published-manuals),
+then bring a concrete example to that repository's Issues tab: what you
+expected, what you observed, and the versions involved.
