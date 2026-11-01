@@ -21,27 +21,41 @@ not a claim that every integration or hardware deployment is complete.
 
 ## Responsibilities
 
+Who invokes the shared tools:
+
 ```mermaid
-flowchart LR
-  consumer["Verification consumer<br/>selection, one lock, publication"]
-  access["livingproof<br/>discovery, installation, local invocation"]
-  verifier["capability-verifier<br/>resolve, execute, assess, compare"]
-  providers["Simulator providers<br/>physics and observations"]
-  robots["Robot repositories<br/>manifests, adapters, contract tests"]
-  worlds["livingproof-worlds<br/>versioned fixtures"]
-  reporter["livingproof-capability-report<br/>render supplied assessments"]
-  publication["Optional publication destination"]
+flowchart TD
+  consumer["Verification consumer"]
+  access["livingproof"]
+  verifier["capability-verifier"]
+  reporter["capability-report"]
+  publication["Optional publication"]
 
   consumer --> verifier
-  consumer --> reporter
   access --> verifier
+  consumer --> reporter
   access --> reporter
-  verifier --> providers
-  verifier --> robots
-  verifier --> worlds
   verifier --> reporter
   reporter --> publication
 ```
+
+What `capability-verifier` draws on to run trials:
+
+```mermaid
+flowchart LR
+  verifier["capability-verifier"]
+  providers["Simulators"]
+  robots["Robots"]
+  worlds["Worlds"]
+
+  verifier --> providers
+  verifier --> robots
+  verifier --> worlds
+```
+
+The table below names each component's repository and responsibility;
+`capability-report` is `livingproof-capability-report`, the robots are the robot
+repositories and the worlds are `livingproof-worlds`.
 
 Arrows show a dependency or supplied input, not ownership of every artifact.
 The consumer is intentionally thin: it selects a baseline and publishes
