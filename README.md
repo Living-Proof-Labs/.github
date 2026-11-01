@@ -3,7 +3,7 @@
 Helping robots help humans through clear capability requirements, inspectable
 evidence, and understandable reports.
 
-- **New to LPL?** Start with the [welcome page](profile/README.md).
+- **Start here:** Visit the [welcome page](profile/README.md).
 - **Working on verification?** Read the [verification architecture proposal](docs/architecture/verification-architecture.md).
 - **Operating this organization?** Use the quick start below, then the
   [repository operations guide](docs/repository-operations.md).

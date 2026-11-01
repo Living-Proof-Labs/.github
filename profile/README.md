@@ -16,9 +16,9 @@ inspectable evidence so developers can improve robots with clear feedback.
 
 ## Available today
 
-The G1, Go1, and T1 repositories have working CI paths that collect simulator
-evidence, verify it, and render reports. Current configurations report
-capability **FAIL**; that is a capability result, not a pipeline failure.
+The G1, Go1, and T1 robot projects have automated workflows that collect
+simulator evidence, verify it, and render reports. Current configurations
+report capability **FAIL**; that is a capability result, not a pipeline failure.
 
 These runs demonstrate versioned simulation evidence and reporting. They do
 not establish hardware-deployment authorization, safety certification, or
