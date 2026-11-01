@@ -48,7 +48,7 @@ diagram on the documentation site and in GitHub's Markdown view, so there is no
 Graphviz to install and no generated PNG or SVG to commit.
 
 ```mermaid
-flowchart LR
+flowchart TD
   requirement[Capability requirement] --> evidence[Simulation evidence]
   evidence --> verifier{Verifier}
   verifier -->|PASS / FAIL per trial| report[Capability report]
@@ -64,7 +64,10 @@ Keep to what both renderers support:
 - Do not add `%%{init: ...}%%` themes, colors or fonts; the site and GitHub apply
   their own light and dark styles.
 - Keep diagrams small enough for a phone: the site scales a wide diagram down to
-  the screen, so prefer top-to-bottom (`flowchart TD`) and split a large one in two.
+  the screen, so labels shrink. Prefer top-to-bottom (`flowchart TD`), short node
+  labels with detail in the text, a fan-out drawn `LR` so it stacks, and split a
+  large diagram in two. The publisher's browser test fails below about 12 px
+  effective label size on a 390 px screen.
 - The site renders with the Mermaid 12.2.0 it vendors; GitHub uses its own bundled
   Mermaid, which may be a different version. Check a new diagram in the pull
   request's GitHub file view as well as in the publisher's docs preview, which
