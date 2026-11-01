@@ -24,6 +24,22 @@
         "limit_ref_updates_per_push": false,
         "auto_close_linked_issues": true
       }
+    },
+    {
+      "observed_at": "2026-11-01T06:19:00Z",
+      "source": "authenticated browser review",
+      "repositories": [
+        "Living-Proof-Labs/livingproof-unitree-g1",
+        "Living-Proof-Labs/livingproof-unitree-go1",
+        "Living-Proof-Labs/livingproof-booster-t1",
+        "Living-Proof-Labs/livingproof-worlds"
+      ],
+      "settings": {
+        "preserve_repository_in_archive_program": true,
+        "include_git_lfs_objects_in_archives": false,
+        "limit_ref_updates_per_push": false,
+        "auto_close_linked_issues": true
+      }
     }
   ]
 }
