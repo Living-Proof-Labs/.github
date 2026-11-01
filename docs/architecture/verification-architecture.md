@@ -23,13 +23,13 @@ not a claim that every integration or hardware deployment is complete.
 
 ```mermaid
 flowchart LR
-  consumer["Verification consumer\nselection, one lock, publication"]
-  access["livingproof\ndiscovery, installation, local invocation"]
-  verifier["capability-verifier\nresolve, execute, assess, compare"]
-  providers["Simulator providers\nphysics and observations"]
-  robots["Robot repositories\nmanifests, adapters, contract tests"]
-  worlds["livingproof-worlds\nversioned fixtures"]
-  reporter["livingproof-capability-report\nrender supplied assessments"]
+  consumer["Verification consumer<br/>selection, one lock, publication"]
+  access["livingproof<br/>discovery, installation, local invocation"]
+  verifier["capability-verifier<br/>resolve, execute, assess, compare"]
+  providers["Simulator providers<br/>physics and observations"]
+  robots["Robot repositories<br/>manifests, adapters, contract tests"]
+  worlds["livingproof-worlds<br/>versioned fixtures"]
+  reporter["livingproof-capability-report<br/>render supplied assessments"]
   publication["Optional publication destination"]
 
   consumer --> verifier
@@ -50,7 +50,7 @@ results; it does not copy the execution, evaluation, or rendering engines.
 | Component | Responsibility | Boundary |
 | --- | --- | --- |
 | `.github` | Organization view, inventory, and this architecture | Does not become a verification engine |
-| Verification consumer | One selected baseline, verification lock, run/series selection, and publication settings | Planned repository [#11](https://github.com/Living-Proof-Labs/.github/issues/11); until approved, comparisons and the temporary lock live in `capability-verifier/comparisons/` |
+| Verification consumer | One selected baseline, verification lock, run/series selection, and publication settings | Planned repository [#11](https://github.com/Living-Proof-Labs/.github/issues/11); [verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) designates `capability-verifier/comparisons/` as the temporary location pending implementation |
 | Robot repository | Robot manifest, adapter, assets, feature flags, simulator compatibility, and contract tests | Does not own the cross-robot verification baseline after the manifest migration |
 | `livingproof` | Discovery, installation, and local invocation of installed tools | Is not a required hop for an automated workflow |
 | `capability-verifier` | Resolve the lock, execute trials, retain evidence, and produce authoritative grades and comparisons | Evaluator implementation may become more internally separated; it remains the authority |
@@ -66,12 +66,12 @@ dependency. Shared capabilities never depend back on a consumer.
 
 ```mermaid
 flowchart TD
-  definition["Verification definition\nrobot, world, scenario, policy"] --> manifest
-  lock["One verification lock\nversions, commits, digests"] --> manifest
-  manifest["Resolved run manifest\ninputs and expected artifact names"] --> execution
-  execution["Verifier and selected providers\nplanned trials"] --> evidence
-  evidence["Evidence record\nactual artifacts, checksums, status by seed"] --> assessment
-  assessment["Authoritative assessment\nsufficiency, grade, rationale"] --> report
+  definition["Verification definition<br/>robot, world, scenario, policy"] --> manifest
+  lock["One verification lock<br/>versions, commits, digests"] --> manifest
+  manifest["Resolved run manifest<br/>inputs and expected artifact names"] --> execution
+  execution["Verifier and selected providers<br/>planned trials"] --> evidence
+  evidence["Evidence record<br/>actual artifacts, checksums, status by seed"] --> assessment
+  assessment["Authoritative assessment<br/>sufficiency, grade, rationale"] --> report
   evidence --> report
   report["Rendered run or compatible series"] --> publication["Optional publication"]
 ```
@@ -79,7 +79,7 @@ flowchart TD
 | Record | What it records | Authority |
 | --- | --- | --- |
 | Verification definition | Selected robot configuration, world, scenario, policy, and series intent | Consumer |
-| Verification lock | Reviewed versions, commits, digests, and compatibility choices | Consumer; temporarily `capability-verifier/comparisons/` |
+| Verification lock | Reviewed versions, commits, digests, and compatibility choices | Consumer; verifier #20 designates `capability-verifier/comparisons/` as a temporary future location |
 | Resolved run manifest | Exact executable inputs, planned trial identities, and **expected** media/evidence-link artifact names | Verifier |
 | Evidence record | **Actual** artifacts, checksums, timestamps, and pass, missing, or error status for every planned seed | Providers and verifier |
 | Assessment | Evidence sufficiency, authoritative grade, rationale, and comparison result | Verifier and its evaluators |
@@ -108,9 +108,9 @@ and publishes the workflow result without an extra command-line hop through
 
 | Robot | Merged thin consumer | Verified main workflow |
 | --- | --- | --- |
-| G1 | [`21c9131`](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/commit/21c9131ca79ea4ec032ad3372408ff38684cf278) | [successful run](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/actions/runs/41329597362) |
-| Go1 | [`cb21338`](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/commit/cb21338ec490d0b39133ee6da9bc64a0452dd229) | [successful run](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/41329614220) |
-| T1 | [`6d69ff0`](https://github.com/Living-Proof-Labs/livingproof-booster-t1/commit/6d69ff0d48c051e5c39f4834462bf45980d90cfd) | [successful run](https://github.com/Living-Proof-Labs/livingproof-booster-t1/actions/runs/41329731207) |
+| G1 | [`21c9131`](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/commit/21c9131ca79ea4ec032ad3372408ff38684cf278) | [successful run](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/actions/runs/41338061709) |
+| Go1 | [`cb21338`](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/commit/cb21338ec490d0b39133ee6da9bc64a0452dd229) | [successful run](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/41338077952) |
+| T1 | [`6d69ff0`](https://github.com/Living-Proof-Labs/livingproof-booster-t1/commit/6d69ff0d48c051e5c39f4834462bf45980d90cfd) | [successful run](https://github.com/Living-Proof-Labs/livingproof-booster-t1/actions/runs/41338094107) |
 
 The reusable workflow and simulator helpers already remove duplicated robot
 workflow glue. The remaining migrations below make the one-lock and
@@ -127,8 +127,9 @@ contracts and verification engine.
   removes that implementation; the verifier is already the agreed authority.
 - Robot repositories still carry `verification.lock.json` files. Their manifest
   and contract-test migrations retire those transitional locks.
-- The dedicated verification consumer is not approved yet. Its temporary lock
-  remains in `capability-verifier/comparisons/` until [#11](https://github.com/Living-Proof-Labs/.github/issues/11) is approved.
+- The dedicated verification consumer is not approved yet. Verifier #20
+  designates `capability-verifier/comparisons/` as the temporary location for
+  its lock; that path is not delivered on the current verifier main branch.
 
 ## Migration work
 
@@ -140,8 +141,8 @@ contracts and verification engine.
 | Render supplied assessments only | [livingproof-capability-report #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) | Reporter grading and aggregation are removed; absent assessment data remains explicit |
 | Publish robot manifests and contract-test them | [G1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/issues/4), [Go1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/issues/4), [T1 #7](https://github.com/Living-Proof-Labs/livingproof-booster-t1/issues/7) | Robot-owned verification locks are retired |
 | Add a Gazebo lock variant | [livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4) | Another simulator can participate through the same lock and adapter contracts |
-| Create the dedicated consumer when approved | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) | Move the temporary comparisons lock into one customer-like verification repository |
-| Render Mermaid in the documentation site | [living-proof-labs.github.io #18](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/issues/18) | Separate documentation-site work; GitHub renders the diagrams above |
+| Create the dedicated consumer when approved | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) | Move the implemented temporary comparison lock into one customer-like verification repository |
+| Render Mermaid in the documentation site | [living-proof-labs.github.io #18](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/issues/18) | Separate documentation-site work; GitHub Markdown is the supported renderer for the diagrams above |
 
 Until the manifest migration lands, robot repositories still contain their
 existing `verification.lock.json` files. Those are transitional inputs, not a
