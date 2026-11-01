@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: CC-BY-4.0
+digraph verification_architecture {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", pad="0.25", nodesep="0.45", ranksep="0.7"];
+  node [shape=box, style="rounded,filled", fillcolor="#f4f7fb", color="#385b8c", fontname="Arial", fontsize=11, margin="0.14,0.08"];
+  edge [color="#536b85", fontname="Arial", fontsize=9, arrowsize=0.7];
+
+  consumer [label="Proposed\nlivingproof-verification\n(declarations, locks, selection, publication)", fillcolor="#fff4dc", color="#aa6b00"];
+  access [label="livingproof\n(plugin discovery, installation, invocation)", fillcolor="#e7f3ff"];
+  verifier [label="capability-verifier\n(run orchestration, evidence, evaluators,\nauthoritative assessment and comparison)", fillcolor="#e6f5ea", color="#34734a"];
+  reporter [label="livingproof-capability-report\n(run and series rendering)", fillcolor="#f0eafa", color="#714b9b"];
+  simulator [label="Selected simulator providers\n(physics and observations)"];
+  robot [label="Robot repositories\n(models, controllers, configurations, adapters)"];
+  worlds [label="livingproof-worlds\n(versioned fixtures)"];
+  specs [label="Versioned specifications\nand contracts", fillcolor="#f7f7f7", color="#666666"];
+  common [label="livingproof-common\n(identity and build provenance)", fillcolor="#f7f7f7", color="#666666"];
+
+  consumer -> access [label="access shared tools"];
+  access -> verifier [label="invoke"];
+  access -> reporter [label="invoke"];
+  verifier -> simulator [label="select and execute"];
+  verifier -> robot [label="select profile/adapter"];
+  verifier -> worlds [label="select fixture"];
+  specs -> verifier [label="consume"];
+  specs -> robot [label="consume"];
+  common -> access [label="provenance"];
+  common -> verifier [label="provenance"];
+  common -> reporter [label="provenance"];
+  consumer -> reporter [label="select reports"];
+}
