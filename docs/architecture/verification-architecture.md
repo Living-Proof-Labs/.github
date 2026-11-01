@@ -2,10 +2,20 @@
 
 # Verification architecture proposal
 
-**Status: proposal under review.** This document describes a target division of
-responsibility for Living Proof Labs verification work. It does not create
-`livingproof-verification`, move code, alter a repository's settings, or claim
-that every integration described here is already available.
+**Status: proposal under review.** Living Proof Labs should make a verification
+path feel like a reusable product rather than a bespoke integration: select a
+robot configuration, world, scenario, and policy; run it through installed
+capabilities; retain the evidence; then publish a result people can inspect and
+compare. This document describes how the repositories fit together to provide
+that path while letting customers keep their own verification repositories and
+add only thin declarative glue.
+
+The proposed `livingproof-verification` consumer selects versioned inputs and
+publication choices. `livingproof` provides access to installed tools;
+`capability-verifier` executes procedures and evaluates provider evidence; and
+`livingproof-capability-report` turns the supplied run and assessment into run
+and series views. The sections below distinguish that target from the
+transitional implementation now in use.
 
 The proposed consumer repository is tracked in [issue #11](https://github.com/Living-Proof-Labs/.github/issues/11).
 It remains planning-only and unassigned until implementation is explicitly
