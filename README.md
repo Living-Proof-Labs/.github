@@ -47,9 +47,14 @@ to a published release tag, exact commit, and verified tool blob. Run
 `task github:settings:report` for the same read-only audit without treating
 existing drift as a CI failure. Both download and verify the released tool
 before executing it with this inventory. The released policy keeps its UI-only
-preferences (sponsorships, Archive Program preservation, Git LFS archives,
-ref-update limits, and linked-issue closing) explicit for manual review; the
-API audit does not misrepresent them as enforced. Neither task applies settings.
+preferences (Archive Program preservation, Git LFS archives, ref-update limits,
+and linked-issue closing) explicit for manual review. The API audit reports
+them as skipped JUnit cases rather than as passing API checks or failures.
+Dated matching browser observations live in
+[`config/github/manual-settings-evidence.json`](config/github/manual-settings-evidence.json);
+repositories without an observation remain visibly skipped and require manual
+review. Actual API drift and access errors still fail strict verification.
+Neither task applies settings.
 Applying any settings or branch policy remains a separately authorized operation.
 
 After the administrator configures the unattended `repository-audit` and

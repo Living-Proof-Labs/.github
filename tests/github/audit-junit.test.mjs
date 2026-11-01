@@ -9,14 +9,16 @@ import test from 'node:test';
 const root = path.resolve(import.meta.dirname, '../..');
 const tool = path.join(root, 'tools/github/audit-junit.mjs');
 
-function createJUnit({ policy, audit }) {
+function createJUnit({ policy, audit, manualEvidence }) {
   const directory = mkdtempSync(path.join(tmpdir(), 'repository-settings-junit-'));
   const policyFile = path.join(directory, 'policy.json');
   const auditFile = path.join(directory, 'audit.txt');
   const outputFile = path.join(directory, 'results.xml');
   writeFileSync(policyFile, JSON.stringify(policy));
   writeFileSync(auditFile, audit);
-  const result = spawnSync(process.execPath, [tool, policyFile, auditFile, outputFile], { encoding: 'utf8' });
+  const evidenceFile = path.join(directory, 'manual-evidence.json');
+  writeFileSync(evidenceFile, JSON.stringify(manualEvidence ?? { observations: [] }));
+  const result = spawnSync(process.execPath, [tool, policyFile, auditFile, outputFile, evidenceFile], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   return readFileSync(outputFile, 'utf8');
 }
@@ -30,8 +32,46 @@ test('reports hidden main-ruleset fields as unverified and GraphQL sponsorship d
     },
     audit: `Living-Proof-Labs/example\n  repository settings: match\n  sponsorship settings: 1 difference(s)\n  graphql.hasSponsorshipsEnabled: true -> false\n  immutable releases: enabled\n  main ruleset: unknown\n`
   });
-  assert.match(xml, /tests="5" failures="1" errors="2"/);
+  assert.match(xml, /tests="5" failures="1" errors="1" skipped="1"/);
   assert.match(xml, /graphql\.hasSponsorshipsEnabled/);
   assert.match(xml, /unverified main protection/);
   assert.match(xml, /manual verification required/);
+  assert.match(xml, /no dated manual evidence/);
+});
+
+test('separates dated manual evidence from API-enforced checks', () => {
+  const xml = createJUnit({
+    policy: {
+      repository: { has_wiki: false },
+      manual_or_unavailable_settings: { include_git_lfs_objects_in_archives: false }
+    },
+    audit: `Living-Proof-Labs/example\n  repository settings: match\n  immutable releases: enabled\n  main ruleset: matches\n`,
+    manualEvidence: {
+      schema_version: 1,
+      observations: [{
+        observed_at: '2026-10-30T05:50:00Z',
+        repositories: ['Living-Proof-Labs/example'],
+        settings: { include_git_lfs_objects_in_archives: false }
+      }]
+    }
+  });
+  assert.match(xml, /tests="4" failures="0" errors="0" skipped="1"/);
+  assert.match(xml, /message="manually verified"/);
+  assert.match(xml, /2026-10-30T05:50:00Z/);
+});
+
+test('fails a contradictory dated manual observation', () => {
+  const xml = createJUnit({
+    policy: { manual_or_unavailable_settings: { auto_close_linked_issues: true } },
+    audit: `Living-Proof-Labs/example\n  immutable releases: enabled\n  main ruleset: matches\n`,
+    manualEvidence: {
+      observations: [{
+        observed_at: '2026-10-30T05:50:00Z',
+        repositories: ['Living-Proof-Labs/example'],
+        settings: { auto_close_linked_issues: false }
+      }]
+    }
+  });
+  assert.match(xml, /tests="3" failures="1" errors="0" skipped="0"/);
+  assert.match(xml, /manual observation conflicts with policy/);
 });

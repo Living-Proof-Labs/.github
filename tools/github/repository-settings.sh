@@ -7,6 +7,7 @@ node=(bash "$root/tools/with-node.sh" node)
 
 policy_file=config/github/repository-policy.json
 inventory_file=config/github/repositories.json
+manual_evidence_file=config/github/manual-settings-evidence.json
 fail_on_drift=false
 result_file=
 if [ "${1:-}" = "--fail-on-drift" ]; then
@@ -54,7 +55,7 @@ if [ "$tool_status" -ne 0 ]; then
   exit "$tool_status"
 fi
 if [ -n "$result_file" ]; then
-  "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file"
+  "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file" "$manual_evidence_file"
 fi
 differences=$(sed -n 's/^\([0-9][0-9]*\) difference(s) found; [0-9][0-9]* error(s).$/\1/p' "$audit_output")
 if [ -z "$differences" ]; then
