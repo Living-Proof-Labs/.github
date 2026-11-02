@@ -12,7 +12,7 @@
       "repository": "livingproof-capability-report",
       "title": "Capability reporter",
       "url": "https://docs.livingprooflabs.com/livingproof-capability-report/",
-      "scope": "Bundle validation and reports that render the verifier's grades"
+      "scope": "Bundle validation and reports that render the grades they are given"
     },
     {
       "repository": "capability-verifier",
