@@ -19,9 +19,7 @@ let repository;
 for (const line of lines) {
   if (line.startsWith('Living-Proof-Labs/')) {
     repository = line.trim();
-    entries.set(repository, { differences: new Map(), immutable: 'unknown', ruleset: 'unknown', pages: 'unknown' });
-  } else if (repository && line.startsWith('  pages: ')) {
-    entries.get(repository).pages = line.trim().slice(7);
+    entries.set(repository, { differences: new Map(), immutable: 'unknown', ruleset: 'unknown' });
   } else if (repository && line.startsWith('  ') && line.includes(': ') && line.includes(' -> ')) {
     const [field, actual] = line.trim().split(': ', 2);
     entries.get(repository).differences.set(field, actual);
@@ -52,12 +50,6 @@ for (const [repo, state] of entries) {
   if (state.ruleset === 'matches') cases.push(`<testcase name="${escape(ruleset)}"/>`);
   else if (state.ruleset === 'unknown') cases.push(`<testcase name="${escape(ruleset)}"><error message="unverified main protection">bypass actors or another protected field was unavailable</error></testcase>`);
   else cases.push(`<testcase name="${escape(ruleset)}"><failure message="main protection drift">${escape(state.ruleset)}</failure></testcase>`);
-  if (policy.pages) {
-    const pages = `${repo} :: pages`;
-    if (state.pages === 'matches') cases.push(`<testcase name="${escape(pages)}"/>`);
-    else if (state.pages.startsWith('missing') || state.pages.startsWith('drifted')) cases.push(`<testcase name="${escape(pages)}"><failure message="pages drift">${escape(state.pages)}</failure></testcase>`);
-    else cases.push(`<testcase name="${escape(pages)}"><error message="unverified pages state">${escape(state.pages)}</error></testcase>`);
-  }
   for (const [field, expected] of Object.entries(policy.graphql_repository ?? {})) {
     const actual = state.differences.get(`graphql.${field}`);
     const name = `${repo} :: graphql.${field}`;

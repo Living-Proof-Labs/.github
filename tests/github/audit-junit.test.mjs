@@ -77,18 +77,3 @@ test('reports a contradictory dated manual observation as a manual-correction wa
   assert.match(xml, /manual correction required/);
   assert.match(xml, /warning: observed false/);
 });
-
-test('reports Pages drift as a failure and inaccessible Pages as unverified', () => {
-  const policy = { repository: {}, pages: { build_type: 'workflow' } };
-  const audit = [
-    'Living-Proof-Labs/ok', '  pages: matches',
-    'Living-Proof-Labs/legacy', '  pages: drifted (source legacy -> workflow)',
-    'Living-Proof-Labs/none', '  pages: missing',
-    'Living-Proof-Labs/hidden', '  pages: inaccessible (HTTP 404; not treated as missing)'
-  ].map((line) => `${line}\n  immutable releases: enabled\n  main ruleset: matches`).join('\n');
-  const xml = createJUnit({ policy, audit: `${audit}\n` });
-  assert.match(xml, /pages drift">drifted/);
-  assert.match(xml, /pages drift">missing/);
-  assert.match(xml, /unverified pages state">inaccessible/);
-  assert.doesNotMatch(xml, /Living-Proof-Labs\/legacy :: pages\)/);
-});
