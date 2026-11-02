@@ -14,6 +14,7 @@
     "livingproof-sim-mujoco",
     "livingproof-unitree-g1",
     "livingproof-unitree-go1",
+    "livingproof-verification",
     "livingproof-worlds",
     "robot-capability-specs",
     "unitree-foxglove-sdk",
