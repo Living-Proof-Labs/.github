@@ -57,17 +57,12 @@ fi
 if [ -n "$result_file" ]; then
   "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file" "$manual_evidence_file"
 fi
-differences=$(sed -n 's/^\([0-9][0-9]*\) difference(s) found; [0-9][0-9]* error(s).$/\1/p' "$audit_output")
-if [ -z "$differences" ]; then
-  echo "Audit did not return a recognizable summary; refusing to classify state." >&2
-  exit 4
-fi
-if grep -q 'immutable releases: unknown' "$audit_output"; then
-  echo "Audit status: incomplete ($differences difference(s); immutable release state unknown)."
-  if [ "$fail_on_drift" = true ]; then exit 3; fi
-elif [ "$differences" -gt 0 ]; then
-  echo "Audit status: drift detected ($differences difference(s))."
-  if [ "$fail_on_drift" = true ]; then exit 2; fi
-else
-  echo "Audit status: compliant."
-fi
+# Exit status and summary: Pages "missing" and "inaccessible" are reported, not enforced
+# (see tools/github/audit-status.mjs).
+strict_flag=()
+if [ "$fail_on_drift" = true ]; then strict_flag=(--fail-on-drift); fi
+set +e
+"${node[@]}" "$root/tools/github/audit-status.mjs" "$audit_output" "${strict_flag[@]}"
+status=$?
+set -e
+exit "$status"
