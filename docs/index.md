@@ -35,8 +35,8 @@ same observation can meet one requirement and fail another.
 <div markdown>
 ### See how verification fits together
 Read the [verification architecture](architecture/verification-architecture.md):
-who owns each step from robot selection to a published report, and what is
-implemented today.
+who owns each step from robot selection to a published report, what is
+delivered and what is still being migrated.
 </div>
 <div markdown>
 ### Find your part
@@ -61,12 +61,17 @@ and test changes, while developers retain responsibility for investigating them.
 and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-diagnosis).
 
 !!! info "Current scope"
-    Today, versioned specifications, deterministic fixtures, recorded/mock
-    assessments and portable reports demonstrate parts of this loop. Standalone
-    MuJoCo and Gazebo examples exercise native simulation engines. Connected simulation
-    verification, physical-robot execution, live evaluator providers and automated
-    diagnosis-to-code workflows remain integration work. Reports do not certify
-    safety, and an engine demonstration is not evidence of an integrated pipeline.
+    **Delivered:** robot verification in MuJoCo simulation. CI in
+    [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
+    runs the walk-hallway capability for a pinned robot configuration; the capability
+    verifier grades the evidence and the reporter renders that stored grade. The
+    [robot reports](https://docs.livingprooflabs.com/livingproof-verification/) publish
+    the latest grade, run history and evidence (Unitree G1 stock today).
+    **Planned:** more robots and variants on the published reports, Gazebo as a second
+    simulator (unfinished), robot manifests replacing the robot repositories'
+    transitional locks, live evaluator providers and diagnosis-to-code workflows.
+    **Not supported:** physical-robot execution. Reports do not certify safety, and a
+    simulation result applies only to its declared context.
 
 Search on this site covers this introduction and its local reference pages.
 Open a project's manual to search that project's documentation.
@@ -80,10 +85,11 @@ manual; this table points you to the right one.
 | --- | --- | --- |
 | Try the demo end to end | [Quickstart](quickstart.md) | A fresh clone, `task demo` and a rendered report |
 | Write or review a capability specification | [Robot capability specifications](https://docs.livingprooflabs.com/robot-capability-specs/) | Requirements, conditions and acceptance criteria |
-| Run verification and grade the evidence | [Capability verifier](https://docs.livingprooflabs.com/capability-verifier/) | Execution, portable evidence and policy grading |
-| Read and share reports | [Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/) | Bundle validation and reports in JSON, HTML and CSV |
+| Run verification and grade the evidence | [Capability verifier](https://docs.livingprooflabs.com/capability-verifier/) | Execution, portable evidence and grading |
+| See how a robot performs today | [Robot verification reports](https://docs.livingprooflabs.com/livingproof-verification/) | The latest grade, run history and evidence per robot and variant |
+| Read and share reports | [Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/) | Bundle validation and reports of the verifier's stored grades in JSON, HTML and CSV |
 | Use the command line and plugins | [LivingProof](https://docs.livingprooflabs.com/livingproof/) | Command entry point and installed plugins |
-| Try a simulation engine | [MuJoCo simulator](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) | A standalone native engine example, not yet connected to the capability pipeline |
+| Try a simulation engine | [MuJoCo simulator](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) | The MuJoCo engine the robot verification runs in |
 | Contribute to any project | [Collaboration guidelines](https://docs.livingprooflabs.com/collaboration-guidelines/) | Shared contribution and engineering standards |
 
 <a id="livingproof"></a>
