@@ -57,8 +57,8 @@ and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-
 
 !!! info "Current scope"
     Today, versioned specifications, deterministic fixtures, recorded/mock
-    assessments and portable reports demonstrate parts of this loop. A standalone
-    MuJoCo example exercises a native simulation engine. Connected simulation
+    assessments and portable reports demonstrate parts of this loop. Standalone
+    MuJoCo and Gazebo examples exercise native simulation engines. Connected simulation
     verification, physical-robot execution, live evaluator providers and automated
     diagnosis-to-code workflows remain integration work. Reports do not certify
     safety, and an engine demonstration is not evidence of an integrated pipeline.

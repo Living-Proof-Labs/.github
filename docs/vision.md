@@ -4,7 +4,7 @@
 
 !!! info "An evolving system, with explicit limits"
     The current demonstrations use recorded fixtures and portable reports.
-    A standalone MuJoCo engine example is available; capability-pipeline simulation,
+    Standalone MuJoCo and Gazebo engine examples are available; capability-pipeline simulation,
     physical-robot execution and live evaluator integrations are future work.
     The workflow below describes both the implemented pieces and the direction.
 
@@ -21,8 +21,8 @@ requirement to a run, its evidence, and a useful next step.
 **Continuous integration is the execution platform we are building toward for
 simulation verification:** software changes trigger repeatable scenarios, evidence
 capture, and reports. Today's fixtures already run in continuous integration;
-capability-pipeline simulator adapters are future work. A standalone MuJoCo engine
-example exists; it does not establish that integration. Physical robot runs need their own hardware
+capability-pipeline simulator adapters are future work. Standalone MuJoCo and Gazebo
+engine examples exist; they do not establish that integration. Physical robot runs need their own hardware
 execution environment and controls. We do not control hardware from continuous
 integration today.
 
@@ -67,8 +67,8 @@ The current pause examples use recorded fixture data, not a moving robot.
 ## Simulation and eventual hardware
 
 Simulation can make scenarios repeatable and allow software changes to be checked
-before a physical run. The MuJoCo project currently demonstrates native engine
-execution; connecting that execution to capability scenarios, evidence manifests
+before a physical run. The MuJoCo and Gazebo projects currently demonstrate native
+engine execution; connecting that execution to capability scenarios, evidence manifests
 and evaluation is a separate integration boundary, not a delivered end-to-end flow.
 
 Hardware adds physical conditions, device configuration and operational controls.
