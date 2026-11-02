@@ -5,7 +5,7 @@
 Go from a fresh clone to a passing demo, then open a report a person reads.
 Everything here uses recorded fixture data: no robot, simulator, model call or
 live human review is involved. The
-[capability verifier quickstart](https://github.com/Living-Proof-Labs/capability-verifier/tree/v1.0.1#quickstart)
+[capability verifier v1.0.1 README](https://github.com/Living-Proof-Labs/capability-verifier/tree/v1.0.1)
 owns the details.
 
 !!! tip "No Docker?"
