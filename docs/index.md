@@ -18,6 +18,11 @@ it, not leave them with an unexplained score.
 
 <div class="reading-paths" markdown>
 <div markdown>
+### Run the demo
+The [quickstart](quickstart.md) takes you from a fresh clone to a rendered
+report, using recorded fixture data.
+</div>
+<div markdown>
 ### Understand the vision
 Follow the [requirement-to-improvement loop](vision.md), with a shared vocabulary
 for specifications, evidence, assessments and policy.
