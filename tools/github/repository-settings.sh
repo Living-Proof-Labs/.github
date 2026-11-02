@@ -62,7 +62,10 @@ if [ -z "$differences" ]; then
   echo "Audit did not return a recognizable summary; refusing to classify state." >&2
   exit 4
 fi
-if grep -q 'immutable releases: unknown' "$audit_output"; then
+if grep -q 'pages: inaccessible' "$audit_output"; then
+  echo "Audit status: incomplete ($differences difference(s); Pages state inaccessible)."
+  if [ "$fail_on_drift" = true ]; then exit 3; fi
+elif grep -q 'immutable releases: unknown' "$audit_output"; then
   echo "Audit status: incomplete ($differences difference(s); immutable release state unknown)."
   if [ "$fail_on_drift" = true ]; then exit 3; fi
 elif [ "$differences" -gt 0 ]; then
