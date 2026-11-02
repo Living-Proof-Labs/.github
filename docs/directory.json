@@ -77,6 +77,11 @@
       "summary": "Simulator project"
     },
     {
+      "repository": "livingproof-sim-gazebo",
+      "title": "Gazebo simulator",
+      "summary": "Simulator project; hosted manual not yet published"
+    },
+    {
       "repository": "unitree-foxglove-sdk",
       "title": "Unitree Foxglove SDK",
       "summary": "Robot and visualization project"
