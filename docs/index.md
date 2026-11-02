@@ -71,6 +71,21 @@ and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-
 Search on this site covers this introduction and its local reference pages.
 Open a project's manual to search that project's documentation.
 
+## Find your task
+
+Start from what you are trying to do. Each project owns and publishes its own
+manual; this table points you to the right one.
+
+| I want to… | Start with | You will find |
+| --- | --- | --- |
+| Try the demo end to end | [Quickstart](quickstart.md) | A fresh clone, `task demo` and a rendered report |
+| Write or review a capability specification | [Robot capability specifications](https://docs.livingprooflabs.com/robot-capability-specs/) | Requirements, conditions and acceptance criteria |
+| Run verification and grade the evidence | [Capability verifier](https://docs.livingprooflabs.com/capability-verifier/) | Execution, portable evidence and policy grading |
+| Read and share reports | [Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/) | Bundle validation and reports in JSON, HTML and CSV |
+| Use the command line and plugins | [LivingProof](https://docs.livingprooflabs.com/livingproof/) | Command entry point and installed plugins |
+| Try a simulation engine | [MuJoCo simulator](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) | A standalone native engine example, not yet connected to the capability pipeline |
+| Contribute to any project | [Collaboration guidelines](https://docs.livingprooflabs.com/collaboration-guidelines/) | Shared contribution and engineering standards |
+
 <a id="livingproof"></a>
 
 ## Published manuals
