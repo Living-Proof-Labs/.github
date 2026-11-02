@@ -1,7 +1,7 @@
 {
   "repository": "Living-Proof-Labs/collaboration-guidelines",
-  "tag": "vX.Y.Z-PLACEHOLDER",
-  "commit": "RELEASE-COMMIT-PLACEHOLDER",
+  "tag": "v7.3.0",
+  "commit": "d6d004ab30ac15a537fa26ef066a09d35cd75138",
   "tool_path": "tools/github/repository-settings.mjs",
   "tool_blob_sha": "8638490649fc79ff0fba70895537ea790b8dca54",
   "policy_path": "config/github/repository-policy.json",
