@@ -66,8 +66,8 @@ and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-
     runs the walk-hallway capability for a pinned robot configuration; the capability
     verifier grades the evidence and the reporter renders that stored grade. The
     [robot reports](https://docs.livingprooflabs.com/livingproof-verification/) publish
-    the latest grade, run history and evidence (Unitree G1 stock today).
-    **Planned:** more robots and variants on the published reports, Gazebo as a second
+    the latest grade, run history and evidence for each published robot and variant.
+    **Planned:** more robots and variants on the published reports (Go1 next), Gazebo as a second
     simulator (unfinished), robot manifests replacing the robot repositories'
     transitional locks, live evaluator providers and diagnosis-to-code workflows.
     **Not supported:** physical-robot execution. Reports do not certify safety, and a

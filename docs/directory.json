@@ -95,12 +95,12 @@
     {
       "repository": "livingproof-worlds",
       "title": "Test worlds",
-      "summary": "Versioned, engine-neutral robot test worlds (released v1.1.0); hosted manual not yet published"
+      "summary": "Versioned, engine-neutral robot test worlds (latest release v1.1.1); hosted manual not yet published"
     },
     {
       "repository": "livingproof-unitree-g1",
       "title": "Unitree G1",
-      "summary": "Robot package: humanoid; reports published under robot verification; hosted manual not yet published"
+      "summary": "Robot package: humanoid; hosted manual not yet published"
     },
     {
       "repository": "livingproof-unitree-go1",

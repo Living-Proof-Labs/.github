@@ -72,7 +72,7 @@ results; it does not copy the execution, evaluation, or rendering engines.
 | `capability-verifier` | Resolve the lock, execute trials, retain evidence, and produce authoritative grades and comparisons | Evaluator implementation may become more internally separated; it remains the authority |
 | Simulator provider | Physics execution and observations | Does not grade capability |
 | `livingproof-worlds` | Versioned fixtures and engine representations | Adapter code performs engine conversion |
-| `livingproof-capability-report` | Render the verifier's stored run and series assessments (render-only since v3; [#30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) is done) | Must not recompute a grade or invent missing evidence |
+| `livingproof-capability-report` | Render the verifier's stored run and series assessments (render-only since [v2.0.0](https://github.com/Living-Proof-Labs/livingproof-capability-report/releases/tag/v2.0.0); [#30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) is done) | Must not recompute a grade or invent missing evidence |
 | `livingproof-common` | Identity and build provenance | Is not a plugin manager, runner, or evaluator |
 
 GitHub Pages is an optional publication destination, not a shared-tool
@@ -106,9 +106,10 @@ signals. Planned trial count remains the denominator: a missing or errored
 trial is listed by seed and is not silently removed from a series.
 
 An evidence checksum, lock hash, and source-run link preserve provenance after
-an Actions artifact expires. They do not make expired evidence retrievable;
-keeping the evidence linked from published reports is tracked in
-[livingproof-verification #11](https://github.com/Living-Proof-Labs/livingproof-verification/issues/11).
+an Actions artifact expires. They do not make expired evidence retrievable, so
+the published reports keep their own copies of the evidence they link
+([livingproof-verification #11](https://github.com/Living-Proof-Labs/livingproof-verification/issues/11),
+done).
 
 Series comparison requires compatible inputs, versions, metrics, and
 missing-trial treatment. Equal random seeds across engines do not prove equal
@@ -123,10 +124,10 @@ calls the verifier's pinned reusable `walk-hallway.yml` workflow for each review
 definition and lock, then publishes the
 [robot reports](https://docs.livingprooflabs.com/livingproof-verification/) to
 GitHub Pages: the latest grade, run history and provenance per robot and variant.
-Today that is Unitree G1 `stock` in MuJoCo (walk-hallway, graded FAIL 12/20 with
-18 required in its latest run). `capability-verifier` grades and writes the
-assessment into the bundle; `livingproof-capability-report` (v3) only validates
-and renders it.
+The [live index](https://docs.livingprooflabs.com/livingproof-verification/) lists
+which robots and variants are published and their latest grades. `capability-verifier`
+grades and writes the assessment into the bundle; `livingproof-capability-report`
+(render-only since v2.0.0) only validates and renders it.
 
 The robot repositories (G1, Go1, T1) also call the same reusable workflow from
 their own CI. `livingproof` remains the local discovery, installation, and
@@ -155,8 +156,9 @@ have since changed as described above.
 - Gazebo cannot yet run robot verification; its adapter work
   ([livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4))
   is unfinished.
-- Only G1 `stock` is on the published reports; Go1 and T1 are not yet added to
-  the consumer.
+- Not every robot is on the published reports yet; the
+  [live index](https://docs.livingprooflabs.com/livingproof-verification/) shows which
+  are. Go1 is being added to the consumer.
 
 ## Migration work
 
@@ -165,10 +167,10 @@ have since changed as described above.
 | Define a generic robot manifest | [robot-capability-specs #27](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/27) (done) | Robots publish what they provide: configurations, adapters, assets, feature flags, and simulator compatibility |
 | Own one verification lock | [capability-verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) | The verifier resolves manifests and fans trials out and results back in |
 | Separate evaluator implementation | [capability-verifier #21](https://github.com/Living-Proof-Labs/capability-verifier/issues/21) | Grading can evolve behind an evaluator interface without a new evaluator repository |
-| Render supplied assessments only | [livingproof-capability-report #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) (done, reporter v3) | Reporter grading and aggregation are removed; absent assessment data remains explicit |
+| Render supplied assessments only | [livingproof-capability-report #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) (done, reporter v2.0.0) | Reporter grading and aggregation are removed; absent assessment data remains explicit |
 | Publish robot manifests and contract-test them | [G1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/issues/4), [Go1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/issues/4), [T1 #7](https://github.com/Living-Proof-Labs/livingproof-booster-t1/issues/7) | Robot-owned verification locks are retired |
 | Add a Gazebo lock variant | [livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4) | Another simulator can participate through the same lock and adapter contracts |
-| Create the dedicated consumer | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) (delivered as `livingproof-verification`; publishing G1) | One customer-like verification repository with its own definitions, locks and published reports |
+| Create the dedicated consumer | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) (open; `livingproof-verification` publishes the [robot reports](https://docs.livingprooflabs.com/livingproof-verification/)) | One customer-like verification repository with its own definitions, locks and published reports |
 | Render Mermaid in the documentation site | [living-proof-labs.github.io #18](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/issues/18) (done) | The documentation site renders the diagrams above |
 
 Until the manifest migration lands, robot repositories still contain their
