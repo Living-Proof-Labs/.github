@@ -3,22 +3,28 @@
   "description": "Root documentation directory. Every repository must be in config/github/repositories.json; the publisher renders these rows in order.",
   "manuals": [
     {
+      "repository": "livingproof-verification",
+      "title": "Robot verification reports",
+      "url": "https://docs.livingprooflabs.com/livingproof-verification/",
+      "scope": "Published robot reports: the latest grade, run history and evidence per robot and variant"
+    },
+    {
       "repository": "livingproof",
       "title": "LivingProof",
       "url": "https://docs.livingprooflabs.com/livingproof/",
       "scope": "Command entry point and installed plugins"
     },
     {
-      "repository": "livingproof-capability-report",
-      "title": "Capability reporter",
-      "url": "https://docs.livingprooflabs.com/livingproof-capability-report/",
-      "scope": "Bundle validation and reports that render the grades they are given"
-    },
-    {
       "repository": "capability-verifier",
       "title": "Capability verifier",
       "url": "https://docs.livingprooflabs.com/capability-verifier/",
-      "scope": "Execution, portable evidence and policy grading"
+      "scope": "Execution, portable evidence and grading (the grading authority)"
+    },
+    {
+      "repository": "livingproof-capability-report",
+      "title": "Capability reporter",
+      "url": "https://docs.livingprooflabs.com/livingproof-capability-report/",
+      "scope": "Bundle validation and reports that render the verifier's stored grades"
     },
     {
       "repository": "robot-capability-specs",
@@ -36,7 +42,7 @@
       "repository": "livingproof-sim-mujoco",
       "title": "MuJoCo simulator",
       "url": "https://docs.livingprooflabs.com/livingproof-sim-mujoco/",
-      "scope": "Standalone native engine example; no capability-pipeline integration implied"
+      "scope": "MuJoCo engine used by the delivered walk-hallway robot verification"
     },
     {
       "repository": "collaboration-guidelines",
@@ -47,49 +53,89 @@
   ],
   "projects": [
     {
+      "repository": "livingproof-verification",
+      "title": "Robot verification",
+      "summary": "Verification definitions, locks and the published robot reports"
+    },
+    {
       "repository": "livingproof",
       "title": "LivingProof",
       "summary": "Command-line entry point"
     },
     {
-      "repository": "livingproof-capability-report",
-      "title": "Capability report",
-      "summary": "Capability reporting"
-    },
-    {
       "repository": "capability-verifier",
       "title": "Capability verifier",
-      "summary": "Verification tools"
+      "summary": "Runs trials, keeps evidence and grades it"
+    },
+    {
+      "repository": "livingproof-capability-report",
+      "title": "Capability report",
+      "summary": "Renders the verifier's stored grades"
     },
     {
       "repository": "robot-capability-specs",
       "title": "Robot capability specifications",
-      "summary": "Capability specifications"
+      "summary": "Capability specifications and the robot manifest schema"
     },
     {
       "repository": "livingproof-common",
       "title": "Shared library",
-      "summary": "Shared package support"
+      "summary": "Shared version and provenance utilities"
     },
     {
       "repository": "livingproof-sim-mujoco",
       "title": "MuJoCo simulator",
-      "summary": "Simulator project"
+      "summary": "Simulator used by the delivered robot verification"
     },
     {
       "repository": "livingproof-sim-gazebo",
       "title": "Gazebo simulator",
-      "summary": "Simulator project; hosted manual not yet published"
+      "summary": "Simulator project; robot verification support unfinished; hosted manual not yet published"
+    },
+    {
+      "repository": "livingproof-worlds",
+      "title": "Test worlds",
+      "summary": "Versioned, engine-neutral robot test worlds (latest release v1.1.1); hosted manual not yet published"
+    },
+    {
+      "repository": "livingproof-unitree-g1",
+      "title": "Unitree G1",
+      "summary": "Robot package: humanoid; hosted manual not yet published"
+    },
+    {
+      "repository": "livingproof-unitree-go1",
+      "title": "Unitree Go1",
+      "summary": "Robot package: quadruped; hosted manual not yet published"
+    },
+    {
+      "repository": "livingproof-booster-t1",
+      "title": "Booster T1",
+      "summary": "Robot package: humanoid; hosted manual not yet published"
     },
     {
       "repository": "unitree-foxglove-sdk",
       "title": "Unitree Foxglove SDK",
-      "summary": "Robot and visualization project"
+      "summary": "Robot and visualization example; hosted manual not yet published"
     },
     {
       "repository": "collaboration-guidelines",
       "title": "Collaboration guidelines",
       "summary": "Contributor guidance"
+    },
+    {
+      "repository": ".github",
+      "title": "Organization directory",
+      "summary": "This documentation source and the repository inventory"
+    },
+    {
+      "repository": "living-proof-labs.github.io",
+      "title": "Documentation site publisher",
+      "summary": "Builds and deploys docs.livingprooflabs.com"
+    },
+    {
+      "repository": "website",
+      "title": "Website",
+      "summary": "Living Proof Labs website"
     }
   ]
 }
