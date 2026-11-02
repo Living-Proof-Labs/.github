@@ -9,6 +9,12 @@
       "license": "CC-BY-4.0"
     },
     {
+      "source": "docs/quickstart.md",
+      "path": "quickstart.md",
+      "title": "Quickstart",
+      "license": "CC-BY-4.0"
+    },
+    {
       "source": "docs/vision.md",
       "path": "vision.md",
       "title": "Vision and terminology",
