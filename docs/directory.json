@@ -12,13 +12,13 @@
       "repository": "livingproof-capability-report",
       "title": "Capability reporter",
       "url": "https://docs.livingprooflabs.com/livingproof-capability-report/",
-      "scope": "Bundle validation, policy grading and reports"
+      "scope": "Bundle validation and reports that render the verifier's grades"
     },
     {
       "repository": "capability-verifier",
       "title": "Capability verifier",
       "url": "https://docs.livingprooflabs.com/capability-verifier/",
-      "scope": "Fixture execution and portable evidence"
+      "scope": "Execution, portable evidence and policy grading"
     },
     {
       "repository": "robot-capability-specs",
