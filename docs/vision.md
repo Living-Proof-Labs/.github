@@ -129,9 +129,11 @@ bundle need not represent a single robot execution. Keep its referenced evidence
 files with it; different specification and software contexts remain separate in
 grading.
 
-In a reporting workflow, the execution pipeline supplies the manifest, evidence,
-and assessments. The installed reporter validates that input, grades under its
-supported policy, and renders the stored decisions. Our examples supply recorded
+In a reporting workflow, the capability verifier collects the evidence, keeps
+each assessment, and grades it under an explicit, versioned policy. The installed
+reporter validates that bundle and renders the grades it is given. Its legacy
+`grade` command still handles older bundles and is
+[being removed](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30). Our examples supply recorded
 fixtures in place of observations from a robot or simulator.
 
 ## See it today
