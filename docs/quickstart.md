@@ -7,43 +7,27 @@ Unitree G1 stock controller walks a MuJoCo hallway for 20 seeded trials, the
 capability verifier assesses each trial, and the capability report grades the
 result against an 18-of-20 pass bar. No robot is involved; this is simulation.
 
-No simulator? [Use the fixtures](#no-simulator-start-with-the-fixtures).
+No Docker on amd64? [Use the fixtures](#no-simulator-start-with-the-fixtures).
 
-## 1. Install the prerequisites
+## 1. Run the demo with Docker
 
-You need Linux x86-64 with Python 3.12, git, jq, [uv](https://docs.astral.sh/uv/),
-OSMesa and, optionally, Docker for the locked reporter image. No GPU is needed:
-the controller runs on torch CPU and rendering uses OSMesa. On Debian or Ubuntu:
+All you need is git and Docker. No Python setup, no GPU:
 
 ```sh
-sudo apt-get install -y git jq libosmesa6
+git clone https://github.com/Living-Proof-Labs/livingproof-verification.git && cd livingproof-verification
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/living-proof-labs/capability-verifier-hallway:1.14.0@sha256:bd537e8f3688dae58be52223b5a3feb36186554d6321c0eacc7b793cc575ac05 capability verify run --reporter source verifications/unitree-g1-stock-mujoco-hallway.toml
 ```
 
-The first run downloads about 1.2 GB of Python packages (MuJoCo, torch CPU,
-onnxruntime) and, with Docker, a 54 MB reporter image.
+Expect `12/20` trials to pass: `FAIL` against a bar of 18 of 20, in about a
+minute on a decent CPU. The image is amd64-only for now, and it needs a real
+`git clone`, not a git worktree.
 
-## 2. Run the G1 hallway verification
+## 2. Develop in the devcontainer
 
-```sh
-git clone https://github.com/Living-Proof-Labs/livingproof-verification.git
-cd livingproof-verification
-uv venv .venv
-VIRTUAL_ENV=.venv uv pip install \
-  "livingproof-common @ https://github.com/Living-Proof-Labs/livingproof-common/releases/download/v1.0.0/livingproof_common-1.0.0-py3-none-any.whl" \
-  "livingproof @ git+https://github.com/Living-Proof-Labs/livingproof@v1.4.9" \
-  "capability-verifier @ git+https://github.com/Living-Proof-Labs/capability-verifier@v1.11.0"
-.venv/bin/livingproof capability verify lock --check \
-  --workflow .github/workflows/verify.yml verifications/unitree-g1-stock-mujoco-hallway.toml
-.venv/bin/livingproof capability verify run verifications/unitree-g1-stock-mujoco-hallway.toml
-```
-
-`run` checks out the robot at its locked commit, records evidence in
-simulation, assesses each trial with the capability verifier and renders the
-report: the same steps CI runs. Without Docker, use
-`.venv/bin/livingproof capability verify run --reporter source verifications/unitree-g1-stock-mujoco-hallway.toml`.
-Video recordings are CI-only. The
-[livingproof-verification README](https://github.com/Living-Proof-Labs/livingproof-verification#readme)
-owns the details.
+To change controllers or verifications, open the repository in its
+devcontainer, for example with VS Code **Reopen in Container**. It is the
+recommended setup. For a manual setup (Python 3.12 or newer), follow the
+[livingproof-verification README](https://github.com/Living-Proof-Labs/livingproof-verification#readme).
 
 ## 3. Read the result
 

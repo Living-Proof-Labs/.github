@@ -19,8 +19,8 @@ it, not leave them with an unexplained score.
 <div class="reading-paths" markdown>
 <div markdown>
 ### Run a verification
-The [quickstart](quickstart.md) takes you from a fresh clone to a rendered
-report: the Unitree G1 stock controller, 20 seeded trials in a MuJoCo hallway
+The [quickstart](quickstart.md) takes you from a fresh clone and a single
+`docker run` to a rendered report: the Unitree G1 stock controller, 20 seeded trials in a MuJoCo hallway
 simulation. A fixture demo is the fallback when no simulator is available.
 </div>
 <div markdown>
