@@ -18,9 +18,10 @@ it, not leave them with an unexplained score.
 
 <div class="reading-paths" markdown>
 <div markdown>
-### Run the demo
+### Run a verification
 The [quickstart](quickstart.md) takes you from a fresh clone to a rendered
-report, using recorded fixture data.
+report: the Unitree G1 stock controller, 20 seeded trials in a MuJoCo hallway
+simulation. A fixture demo is the fallback when no simulator is available.
 </div>
 <div markdown>
 ### Understand the vision
@@ -83,7 +84,7 @@ manual; this table points you to the right one.
 
 | I want to… | Start with | You will find |
 | --- | --- | --- |
-| Try the demo end to end | [Quickstart](quickstart.md) | A fresh clone, `task demo` and a rendered report |
+| Verify a controller end to end | [Quickstart](quickstart.md) | A fresh clone, a G1 hallway simulation run and a rendered report; fixture demo as fallback |
 | Write or review a capability specification | [Robot capability specifications](https://docs.livingprooflabs.com/robot-capability-specs/) | Requirements, conditions and acceptance criteria |
 | Run verification and grade the evidence | [Capability verifier](https://docs.livingprooflabs.com/capability-verifier/) | Execution, portable evidence and grading |
 | See how a robot performs today | [Robot verification reports](https://docs.livingprooflabs.com/livingproof-verification/) | The latest grade, run history and evidence per robot and variant |

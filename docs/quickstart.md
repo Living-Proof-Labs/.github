@@ -2,17 +2,85 @@
 
 # Quickstart
 
-Go from a fresh clone to a passing demo, then open a report a person reads.
-Everything here uses recorded fixture data: no robot, simulator, model call or
-live human review is involved. The
+Verify a real controller in simulation with Living Proof Verification™: the
+Unitree G1 stock controller walks a MuJoCo hallway for 20 seeded trials, the
+capability verifier assesses each trial, and the capability report grades the
+result against an 18-of-20 pass bar. No robot is involved; this is simulation.
+
+No simulator? [Use the fixtures](#no-simulator-start-with-the-fixtures).
+
+## 1. Install the prerequisites
+
+You need Linux x86-64 with Python 3.12, git, jq, [uv](https://docs.astral.sh/uv/),
+OSMesa and, optionally, Docker for the locked reporter image. No GPU is needed:
+the controller runs on torch CPU and rendering uses OSMesa. On Debian or Ubuntu:
+
+```sh
+sudo apt-get install -y git jq libosmesa6
+```
+
+The first run downloads about 1.2 GB of Python packages (MuJoCo, torch CPU,
+onnxruntime) and, with Docker, a 54 MB reporter image.
+
+## 2. Run the G1 hallway verification
+
+```sh
+git clone https://github.com/Living-Proof-Labs/livingproof-verification.git
+cd livingproof-verification
+uv venv .venv
+VIRTUAL_ENV=.venv uv pip install \
+  "livingproof-common @ https://github.com/Living-Proof-Labs/livingproof-common/releases/download/v1.0.0/livingproof_common-1.0.0-py3-none-any.whl" \
+  "livingproof @ git+https://github.com/Living-Proof-Labs/livingproof@v1.4.9" \
+  "capability-verifier @ git+https://github.com/Living-Proof-Labs/capability-verifier@v1.11.0"
+.venv/bin/livingproof capability verify lock --check \
+  --workflow .github/workflows/verify.yml verifications/unitree-g1-stock-mujoco-hallway.toml
+.venv/bin/livingproof capability verify run verifications/unitree-g1-stock-mujoco-hallway.toml
+```
+
+`run` checks out the robot at its locked commit, records evidence in
+simulation, assesses each trial with the capability verifier and renders the
+report: the same steps CI runs. Without Docker, use
+`.venv/bin/livingproof capability verify run --reporter source verifications/unitree-g1-stock-mujoco-hallway.toml`.
+Video recordings are CI-only. The
+[livingproof-verification README](https://github.com/Living-Proof-Labs/livingproof-verification#readme)
+owns the details.
+
+## 3. Read the result
+
+The run ends with the tally, also saved as
+`artifacts/runs/unitree-g1-stock-mujoco-hallway/summary.json`:
+
+```text
+12/20 trials PASS (needs 18), Wilson 95% [0.3866, 0.7812]: FAIL
+{
+  "definition": "unitree-g1-stock-mujoco-hallway.toml",
+  "bundle-version": "1.1.0",
+  "configurations": {
+    "stock": {
+      "FAIL": 8,
+      "PASS": 12
+    }
+  }
+}
+```
+
+Open `artifacts/runs/unitree-g1-stock-mujoco-hallway/stock/reports/report.html`
+in a browser. `report.md` and `report.json` sit beside it.
+
+The stock controller passes some trials and not others, so the result is
+`FAIL`: below the pass bar of 18 of 20. That is expected. Living Proof
+Verification shows what breaks, trial by trial, with the evidence behind each
+one. Compare yours with the
+[live report](https://docs.livingprooflabs.com/livingproof-verification/).
+
+## No simulator? Start with the fixtures
+
+No simulator or Linux machine to hand? The fixture demo runs the same verifier
+on recorded evidence with just Docker and Task, in about a minute. The
 [capability verifier v1.0.1 README](https://github.com/Living-Proof-Labs/capability-verifier/tree/v1.0.1)
 owns the details.
 
-!!! tip "No Docker?"
-    Skip to [step 3](#3-open-a-rendered-report). It needs only a browser and a
-    download.
-
-## 1. Install the prerequisites
+### Install the prerequisites
 
 Install [Git](https://git-scm.com/downloads),
 [Docker with Compose v2](https://docs.docker.com/compose/install/) and
@@ -20,7 +88,7 @@ Install [Git](https://git-scm.com/downloads),
 You do not need Python, uv or Node.js; the project's Dockerfile supplies the
 runtime.
 
-## 2. Clone the released demo and run it
+### Clone the released demo and run it
 
 ```sh
 git clone --branch v1.0.1 https://github.com/Living-Proof-Labs/capability-verifier.git
@@ -49,7 +117,7 @@ you should expect:
     proxy that blocks that host stops the build before any test runs. Retry from
     a network that can reach `deb.debian.org`.
 
-## 3. Open a rendered report
+### Open a rendered report
 
 The demo prints JSON. To see the report a person reads, download a published
 example bundle and open its `report.html`. This bundle comes from the
