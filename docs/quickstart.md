@@ -7,8 +7,6 @@ Unitree G1 stock controller walks a MuJoCo hallway for 20 seeded trials, the
 capability verifier assesses each trial, and the capability report grades the
 result against an 18-of-20 pass bar. No robot is involved; this is simulation.
 
-No Docker on amd64? [Use the fixtures](#no-simulator-start-with-the-fixtures).
-
 ## 1. Run the demo with Docker
 
 All you need is git and Docker. No Python setup, no GPU:
@@ -26,7 +24,7 @@ minute on a decent CPU. The image is amd64-only for now, and it needs a real
 
 To change controllers or verifications, open the repository in its
 devcontainer, for example with VS Code **Reopen in Container**. It is the
-recommended setup. For a manual setup (Python 3.12 or newer), follow the
+recommended setup. For a manual setup (Python 3.12), follow the
 [livingproof-verification README](https://github.com/Living-Proof-Labs/livingproof-verification#readme).
 
 ## 3. Read the result
