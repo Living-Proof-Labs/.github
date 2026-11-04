@@ -75,6 +75,42 @@ results; it does not copy the execution, evaluation, or rendering engines.
 | `livingproof-capability-report` | Render the verifier's stored run and series assessments (render-only since [v2.0.0](https://github.com/Living-Proof-Labs/livingproof-capability-report/releases/tag/v2.0.0); [#30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) is done) | Must not recompute a grade or invent missing evidence |
 | `livingproof-common` | Identity and build provenance | Is not a plugin manager, runner, or evaluator |
 
+### Who owns what
+
+In short: you build the robot software, Living Proof Labs provides the
+verification workflow, and you get evidence of what it can do, version after version.
+
+| Part | Owned by | Notes |
+| --- | --- | --- |
+| Controller or policy | Customer | The software under test; it runs inside the simulated robot during each trial |
+| Robot repository: manifest, adapter, assets and contract tests | Customer | The robot manifest declares configurations and simulator compatibility; the thin adapter connects the controller to the simulator provider |
+| Verification consumer: definitions and verification lock | Customer | The lock pins the reviewed versions, commits and digests of every tool, world and robot input; changing it is a reviewed change |
+| CI runners | Customer | The reusable workflow runs on the caller's GitHub Actions runners (`ubuntu-24.04`, CPU only) |
+| Evidence and reports | Customer | Evidence bundles and rendered reports are stored as workflow artifacts in the caller's repository; publishing to GitHub Pages is optional |
+| Capability specs, worlds, simulator providers | Living Proof Labs (open source) | `robot-capability-specs`, `livingproof-worlds`, `livingproof-sim-*` |
+| Verifier, grading policy and reusable workflow | Living Proof Labs (open source) | `capability-verifier`, including `walk-hallway.yml` |
+| Reporter | Living Proof Labs (open source) | `livingproof-capability-report`, render-only |
+
+The reusable workflow's main inputs: `repository` and `ref` (the robot
+repository to verify, defaulting to the caller), `configurations` (which lock
+configurations to run, defaulting to all), `artifact-prefix`, `check` (lint,
+profile validation and the robot repository's tests), `comment` (post the
+result on same-repository pull requests) and `media`. Its outputs name the
+configurations that ran and the download pattern for their reports.
+
+Where your code goes: the reusable workflow checks out your robot repository
+only on your own workflow run's runners, and Living Proof Labs runs no
+infrastructure that receives or pulls it. The workflow does not cache your
+repository, and it does not upload source files as artifacts. What it does
+upload, as workflow artifacts in your repository, are test results, evidence
+(trial observations, your lock, robot and configuration profiles, the source
+commit, and any extra fields your adapter's `environment()` returns), verifier
+decisions, recordings and rendered reports; the optional pull request comment
+posts the report there too. Anyone who can read your repository's workflow
+runs can read these, so on a public repository they are public, as are the job
+logs. Keep anything confidential out of adapter output, profiles and log
+messages.
+
 GitHub Pages is an optional publication destination, not a shared-tool
 dependency. Shared capabilities never depend back on a consumer.
 
