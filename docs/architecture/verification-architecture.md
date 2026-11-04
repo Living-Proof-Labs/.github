@@ -98,8 +98,18 @@ profile validation and the robot repository's tests), `comment` (post the
 result on same-repository pull requests) and `media`. Its outputs name the
 configurations that ran and the download pattern for their reports.
 
-<!-- TODO(Cody): confirm whether controller code ever leaves the customer's CI
-(e.g. third-party actions, published media) before stating that it does not. -->
+Where your code goes: the reusable workflow checks out your robot repository
+only on your own workflow run's runners, and Living Proof Labs runs no
+infrastructure that receives or pulls it. The workflow does not cache your
+repository, and it does not upload source files as artifacts. What it does
+upload, as workflow artifacts in your repository, are test results, evidence
+(trial observations, your lock, robot and configuration profiles, the source
+commit, and any extra fields your adapter's `environment()` returns), verifier
+decisions, recordings and rendered reports; the optional pull request comment
+posts the report there too. Anyone who can read your repository's workflow
+runs can read these, so on a public repository they are public, as are the job
+logs. Keep anything confidential out of adapter output, profiles and log
+messages.
 
 GitHub Pages is an optional publication destination, not a shared-tool
 dependency. Shared capabilities never depend back on a consumer.
