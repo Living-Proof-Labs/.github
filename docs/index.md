@@ -1,20 +1,91 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-# Helping robots help humans
+# Prove what your robot can do, every software version.
 
 <a id="living-proof-labs-documentation"></a>
 
 <div class="lead" markdown>
-A capability claim should lead somewhere you can inspect: a requirement, a run,
-the evidence behind its assessment, and a useful next step.
-**Living Proof Labs is building that connection.**
+Open tools for robotics teams to write capability requirements as user stories,
+run them repeatably, and get a traceable report, not an unexplained score.
 </div>
 
-A software change can alter what a robot does. We want developers to ask
-*“Does it still pause when asked—and under which conditions?”* and follow the
-answer from versioned software through a repeatable scenario to an explainable
-report. When a result changes, evidence should help people investigate and improve
-it, not leave them with an unexplained score.
+<div class="hero-actions" markdown>
+[Try the quickstart](quickstart.md){ .md-button .md-button--primary }
+[See the robot reports](https://docs.livingprooflabs.com/livingproof-verification/){ .md-button }
+[Talk to us about a design partnership](https://livingprooflabs.com/#contact){ .hero-tertiary }
+</div>
+
+## The problem
+
+Your robot passed yesterday. After today's software update, does it still pause
+when asked? Under which conditions? And can you show why? A single score cannot
+answer that. You need the requirement, the run and the evidence behind each
+result, kept together for every software version.
+
+## How it works
+
+<div class="how-steps" markdown>
+<div markdown>
+### 1. Write the story
+State a capability as a user story with conditions and acceptance criteria.
+[Robot capability specifications](https://docs.livingprooflabs.com/robot-capability-specs/)
+</div>
+<div markdown>
+### 2. Run it
+Run the scenario repeatably in simulation and keep the evidence.
+[Capability verifier](https://docs.livingprooflabs.com/capability-verifier/)
+</div>
+<div markdown>
+### 3. Assess the evidence
+Check each requirement against the evidence, then grade with an explicit, versioned policy.
+[Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/)
+</div>
+<div markdown>
+### 4. Read the report
+See what passed, what did not, and why, traced back to the evidence.
+[Robot reports](https://docs.livingprooflabs.com/livingproof-verification/)
+</div>
+</div>
+
+[Walk through the full loop](vision.md#from-a-requirement-to-the-next-improvement)
+and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-diagnosis).
+
+## Available now / Next
+
+<div class="now-building" markdown>
+<div markdown>
+<span class="badge badge-now">Available now</span>
+
+**Living Proof Verification™**, open source:
+
+- Robot verification in MuJoCo simulation: CI in
+  [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
+  runs the walk-hallway capability for a pinned robot configuration
+- Versioned capability specifications and an explicit, versioned grading policy
+- [Robot reports](https://docs.livingprooflabs.com/livingproof-verification/) with
+  the latest grade, run history and evidence per robot and variant
+</div>
+<div markdown>
+<span class="badge badge-next">Next</span>
+
+- More robots and variants on the published reports, Go1 next
+- Gazebo as a second simulator
+- Physical robots running the same scenarios, with partner companies
+- **Living Proof Diagnosis™**: agents and people reviewing evidence and code
+  together to suggest a path to a fix
+</div>
+</div>
+
+Reports are evidence for engineering decisions, not safety certification; a
+simulation result applies only to its declared context.
+
+## Who it's for
+
+- Robot software engineers who need to know what a change did to behavior.
+- Test and QA leads who need repeatable, explainable results.
+- Robot companies and integrators who need evidence they can share.
+
+## Choose your path
 
 <div class="reading-paths" markdown>
 <div markdown>
@@ -29,11 +100,6 @@ Follow the [requirement-to-improvement loop](vision.md), with a shared vocabular
 for specifications, evidence, assessments and policy.
 </div>
 <div markdown>
-### Explore what works today
-Start with [recorded fixture examples](vision.md#see-it-today). Inspect how the
-same observation can meet one requirement and fail another.
-</div>
-<div markdown>
 ### See how verification fits together
 Read the [verification architecture](architecture/verification-architecture.md):
 who owns each step from robot selection to a published report, what is
@@ -45,34 +111,6 @@ Choose a [project manual](#published-manuals) for commands, contracts, execution
 reporting or contribution. Each project owns its technical detail.
 </div>
 </div>
-
-## From software to a useful next step
-
-**Versioned software and requirements → execution and evidence → separate
-assessments → explicit policy → traceable report → investigation and iteration.**
-
-The intended execution paths include repeatable simulation and, eventually,
-physical robots in their own controlled environments. Evidence keeps the original
-observations and their context. Deterministic checks, human judgment and agentic
-evaluation should remain distinguishable; a versioned policy explains how supported
-assessments become a grade. Log analysis and coding agents can then help propose
-and test changes, while developers retain responsibility for investigating them.
-
-[Walk through the full loop](vision.md#from-a-requirement-to-the-next-improvement)
-and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-diagnosis).
-
-!!! info "Current scope"
-    **Delivered:** robot verification in MuJoCo simulation. CI in
-    [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
-    runs the walk-hallway capability for a pinned robot configuration; the capability
-    verifier grades the evidence and the reporter renders that stored grade. The
-    [robot reports](https://docs.livingprooflabs.com/livingproof-verification/) publish
-    the latest grade, run history and evidence for each published robot and variant.
-    **Planned:** more robots and variants on the published reports (Go1 next), Gazebo as a second
-    simulator (unfinished), robot manifests replacing the robot repositories'
-    transitional locks, live evaluator providers and diagnosis-to-code workflows.
-    **Not supported:** physical-robot execution. Reports do not certify safety, and a
-    simulation result applies only to its declared context.
 
 Search on this site covers this introduction and its local reference pages.
 Open a project's manual to search that project's documentation.
@@ -87,7 +125,7 @@ manual; this table points you to the right one.
 | Verify a controller end to end | [Quickstart](quickstart.md) | A fresh clone, a G1 hallway simulation run and a rendered report; fixture demo as fallback |
 | Write or review a capability specification | [Robot capability specifications](https://docs.livingprooflabs.com/robot-capability-specs/) | Requirements, conditions and acceptance criteria |
 | Run verification and grade the evidence | [Capability verifier](https://docs.livingprooflabs.com/capability-verifier/) | Execution, portable evidence and grading |
-| See how a robot performs today | [Robot verification reports](https://docs.livingprooflabs.com/livingproof-verification/) | The latest grade, run history and evidence per robot and variant |
+| See how a robot performs in simulation today | [Robot verification reports](https://docs.livingprooflabs.com/livingproof-verification/) | The latest grade, run history and evidence per robot and variant |
 | Read and share reports | [Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/) | Bundle validation and reports of the verifier's stored grades in JSON, HTML and CSV |
 | Use the command line and plugins | [LivingProof](https://docs.livingprooflabs.com/livingproof/) | Command entry point and installed plugins |
 | Try a simulation engine | [MuJoCo simulator](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) | The MuJoCo engine the robot verification runs in |
