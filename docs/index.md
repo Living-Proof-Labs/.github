@@ -60,11 +60,11 @@ evidence of what it can do, version after version.**
 ### You bring
 - The software that runs your robot, meaning its controller or policy.
 - Your robot model and a thin adapter.
-- Your CI compute. Runs work on CPU runners, so no GPU is needed.
+- Your CI compute. Runs on standard CI runners, no GPU needed.
 </div>
 <div markdown>
 ### We provide
-**Living Proof Verification™**, open source:
+**Living Proof Verification™**, open-source:
 
 - Capability specs written as user stories.
 - Versioned simulation worlds and a runner.
@@ -82,9 +82,9 @@ See [responsibilities](architecture/verification-architecture.md#responsibilitie
 
 **Where we fit:** Living Proof Verification™ is for anyone building robot
 software who wants proof it's getting better: a developer comparing two
-controllers, or a quality team checking a release. It isn't a training or
-machine-learning tool. Picture opening one report that shows which version
-handles the hallway better, what changed, and the evidence behind each result.
+controllers, or a quality team checking a release. It doesn't train models; it
+verifies the controllers you build. Picture one report that shows which version
+does better, whether it meets the bar, and why.
 
 ## Current scope: available now / next
 
@@ -92,7 +92,7 @@ handles the hallway better, what changed, and the evidence behind each result.
 <div markdown>
 <span class="badge badge-now">Available now</span>
 
-**Living Proof Verification™**, open source:
+**Living Proof Verification™**, open-source:
 
 - Robot verification in MuJoCo simulation for the Unitree G1 and Go1: CI in
   [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
