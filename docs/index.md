@@ -80,7 +80,7 @@ evidence of what it can do, version after version.**
 
 See [responsibilities](architecture/verification-architecture.md#responsibilities) in the architecture.
 
-## Available now / Next
+## Current scope: available now / next
 
 <div class="now-building" markdown>
 <div markdown>
@@ -88,9 +88,9 @@ See [responsibilities](architecture/verification-architecture.md#responsibilitie
 
 **Living Proof Verification™**, open source:
 
-- Robot verification in MuJoCo simulation: CI in
+- Robot verification in MuJoCo simulation for the Unitree G1 and Go1: CI in
   [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
-  runs the walk-hallway capability for a pinned robot configuration
+  runs the walk-hallway capability for each pinned robot configuration
 - Versioned capability specifications and an explicit, versioned grading policy
 - [Robot reports](https://docs.livingprooflabs.com/livingproof-verification/) with
   the latest grade, run history and evidence per robot and variant
@@ -98,7 +98,7 @@ See [responsibilities](architecture/verification-architecture.md#responsibilitie
 <div markdown>
 <span class="badge badge-next">Next</span>
 
-- More robots and variants on the published reports, Go1 next
+- More robots and variants on the published reports
 - Gazebo as a second simulator
 - Physical robots running the same scenarios, with partner companies
 - **Living Proof Diagnosis™**: agents and people reviewing evidence and code
@@ -106,8 +106,9 @@ See [responsibilities](architecture/verification-architecture.md#responsibilitie
 </div>
 </div>
 
-Reports are evidence for engineering decisions, not safety certification; a
-simulation result applies only to its declared context.
+**Not supported:** physical-robot execution. Reports are evidence for engineering
+decisions, not safety certification; a simulation result applies only to its
+declared context.
 
 ## Who it's for
 
