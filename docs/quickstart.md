@@ -128,4 +128,4 @@ checksums behind it.
 - See how the same observation can
   [meet one requirement and fail another](vision.md#see-it-today).
 - Read [what a grade does, and does not, mean](vision.md#evaluation-is-not-diagnosis).
-- Choose a [project manual](index.md#published-manuals) for your part of the work.
+- Choose a [project manual](index.md#project-directory) for your part of the work.

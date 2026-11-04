@@ -41,7 +41,7 @@ delivered and what is still being migrated.
 </div>
 <div markdown>
 ### Find your part
-Choose a [project manual](#published-manuals) for commands, contracts, execution,
+Choose a [project manual](#project-directory) for commands, contracts, execution,
 reporting or contribution. Each project owns its technical detail.
 </div>
 </div>
@@ -77,44 +77,37 @@ and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-
 Search on this site covers this introduction and its local reference pages.
 Open a project's manual to search that project's documentation.
 
-## Find your task
-
-Start from what you are trying to do. Each project owns and publishes its own
-manual; this table points you to the right one.
-
-| I want to… | Start with | You will find |
-| --- | --- | --- |
-| Verify a controller end to end | [Quickstart](quickstart.md) | A fresh clone, a G1 hallway simulation run and a rendered report; fixture demo as fallback |
-| Write or review a capability specification | [Robot capability specifications](https://docs.livingprooflabs.com/robot-capability-specs/) | Requirements, conditions and acceptance criteria |
-| Run verification and grade the evidence | [Capability verifier](https://docs.livingprooflabs.com/capability-verifier/) | Execution, portable evidence and grading |
-| See how a robot performs today | [Robot verification reports](https://docs.livingprooflabs.com/livingproof-verification/) | The latest grade, run history and evidence per robot and variant |
-| Read and share reports | [Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/) | Bundle validation and reports of the verifier's stored grades in JSON, HTML and CSV |
-| Use the command line and plugins | [LivingProof](https://docs.livingprooflabs.com/livingproof/) | Command entry point and installed plugins |
-| Try a simulation engine | [MuJoCo simulator](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) | The MuJoCo engine the robot verification runs in |
-| Contribute to any project | [Collaboration guidelines](https://docs.livingprooflabs.com/collaboration-guidelines/) | Shared contribution and engineering standards |
-
+<a id="find-your-task"></a>
+<a id="published-manuals"></a>
 <a id="livingproof"></a>
-
-## Published manuals
-
-Each manual is independently published. Its documentation source revision may
-be newer than its package release; check Version and source before installation.
-
-<!-- directory:manuals -->
-The published-manual table is generated from [`directory.json`](directory.json),
-which may list only repositories in the canonical
-[repository inventory](../config/github/repositories.json).
-<!-- /directory:manuals -->
 
 ## Project directory
 
-These links open the current project repositories. A repository listing does not
-mean that a hosted manual or a planned integration is available.
+New here? Start with the [Quickstart](quickstart.md): one `docker run` from a
+fresh clone to a rendered report. Then find the project for your part of the work.
 
-<!-- directory:projects -->
-The project table is generated from [`directory.json`](directory.json) and the
-canonical [repository inventory](../config/github/repositories.json).
-<!-- /directory:projects -->
+| Project | Description | Repository | Manual |
+| --- | --- | --- | --- |
+| Robot verification | Verification definitions and the published robot reports: the latest grade, run history and evidence per robot and variant. | [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification) | [Robot reports](https://docs.livingprooflabs.com/livingproof-verification/) |
+| Robot capability specifications | Write or review capability requirements, conditions and acceptance criteria, plus the robot manifest schema. | [robot-capability-specs](https://github.com/Living-Proof-Labs/robot-capability-specs) | [Manual](https://docs.livingprooflabs.com/robot-capability-specs/) |
+| Capability verifier | Runs trials, keeps portable evidence and grades it. | [capability-verifier](https://github.com/Living-Proof-Labs/capability-verifier) | [Manual](https://docs.livingprooflabs.com/capability-verifier/) |
+| Capability reporter | Validates evidence bundles and renders the verifier's stored grades as JSON, HTML and CSV reports. | [livingproof-capability-report](https://github.com/Living-Proof-Labs/livingproof-capability-report) | [Manual](https://docs.livingprooflabs.com/livingproof-capability-report/) |
+| LivingProof | The command-line entry point and its installed plugins. | [livingproof](https://github.com/Living-Proof-Labs/livingproof) | [Manual](https://docs.livingprooflabs.com/livingproof/) |
+| Common library | Shared version and provenance utilities. | [livingproof-common](https://github.com/Living-Proof-Labs/livingproof-common) | [Manual](https://docs.livingprooflabs.com/livingproof-common/) |
+| MuJoCo simulator | The simulator the delivered robot verification runs in. | [livingproof-sim-mujoco](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco) | [Manual](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) |
+| Gazebo simulator | A second simulator; robot verification support is unfinished. | [livingproof-sim-gazebo](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo) | Not yet published |
+| Test worlds | Versioned, engine-neutral robot test worlds. | [livingproof-worlds](https://github.com/Living-Proof-Labs/livingproof-worlds) | Not yet published |
+| Unitree G1 | Robot package for the Unitree G1 humanoid. | [livingproof-unitree-g1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1) | Not yet published |
+| Unitree Go1 | Robot package for the Unitree Go1 quadruped. | [livingproof-unitree-go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1) | Not yet published |
+| Booster T1 | Robot package for the Booster T1 humanoid. | [livingproof-booster-t1](https://github.com/Living-Proof-Labs/livingproof-booster-t1) | Not yet published |
+| Unitree Foxglove SDK | Robot visualization example. | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk) | Not yet published |
+| Collaboration guidelines | Shared contribution and engineering standards for every project. | [collaboration-guidelines](https://github.com/Living-Proof-Labs/collaboration-guidelines) | [Manual](https://docs.livingprooflabs.com/collaboration-guidelines/) |
+| Organization directory | This documentation source and the repository inventory. | [.github](https://github.com/Living-Proof-Labs/.github) | Not yet published |
+| Documentation site publisher | Builds and deploys docs.livingprooflabs.com. | [living-proof-labs.github.io](https://github.com/Living-Proof-Labs/living-proof-labs.github.io) | Not yet published |
+| Website | The Living Proof Labs website. | [website](https://github.com/Living-Proof-Labs/website) | Not yet published |
+
+Each manual is published independently. Its source can be newer than its package
+release; check Version and source before installation.
 
 ## Help improve the documentation
 

@@ -204,7 +204,7 @@ let you check download integrity. Reports preserve their recorded specification
 versions and keep different contexts separate; there is no combined grade.
 
 
-[Choose a rendered manual](https://docs.livingprooflabs.com/#published-manuals).
+[Choose a rendered manual](https://docs.livingprooflabs.com/#project-directory).
 
 Adapted from the Living Proof Labs organization profile,
 [original source](https://github.com/Living-Proof-Labs/.github/blob/cce66579ff8b0e26279d35a715c0ffac4c70891b/profile/README.md),
