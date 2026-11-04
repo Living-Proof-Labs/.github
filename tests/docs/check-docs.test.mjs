@@ -65,7 +65,7 @@ test('a directory entry outside the inventory fails', () => {
 
 test('the homepage directory links every listed repository and manual', () => {
   const dir = copy();
-  edit(dir, 'docs/index.md', (t) => t.replace('](https://docs.livingprooflabs.com/capability-verifier/)', '](https://example.com/)'));
+  edit(dir, 'docs/index.md', (t) => t.replace(/^(\| Capability verifier \|.*)\]\(https:\/\/docs\.livingprooflabs\.com\/capability-verifier\/\)/m, '$1](https://example.com/)'));
   assert.ok(check(dir).some((e) => e.includes('row capability-verifier manual must be https://docs.livingprooflabs.com/capability-verifier/')));
 });
 
