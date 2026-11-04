@@ -50,6 +50,36 @@ See what passed, what did not, and why, traced back to the evidence.
 [Walk through the full loop](vision.md#from-a-requirement-to-the-next-improvement)
 and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-diagnosis).
 
+## What you bring, what you get
+
+**You build the robot software. We provide the verification workflow. You get
+evidence of what it can do, version after version.**
+
+<div class="how-steps" markdown>
+<div markdown>
+### You bring
+- The software that runs your robot, meaning its controller or policy.
+- Your robot model and a thin adapter.
+- Your CI compute. Runs work on CPU runners, so no GPU is needed.
+</div>
+<div markdown>
+### We provide
+**Living Proof Verification™**, open source:
+
+- Capability specs written as user stories.
+- Versioned simulation worlds and a runner.
+- The verifier, the reporter and a reusable CI workflow.
+</div>
+<div markdown>
+### You get
+- A pass or fail for each capability, with the evidence and the grade behind it.
+- The same check on every software version, so you can see what changed.
+- A report you can share with partners.
+</div>
+</div>
+
+See [responsibilities](architecture/verification-architecture.md#responsibilities) in the architecture.
+
 ## Available now / Next
 
 <div class="now-building" markdown>
