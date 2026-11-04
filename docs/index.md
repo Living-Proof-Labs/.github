@@ -80,6 +80,12 @@ evidence of what it can do, version after version.**
 
 See [responsibilities](architecture/verification-architecture.md#responsibilities) in the architecture.
 
+**Where we fit:** Living Proof Verification™ is for anyone building robot
+software who wants proof it's getting better: a developer comparing two
+controllers, or a quality team checking a release. It isn't a training or
+machine-learning tool. Picture opening one report that shows which version
+handles the hallway better, what changed, and the evidence behind each result.
+
 ## Current scope: available now / next
 
 <div class="now-building" markdown>
