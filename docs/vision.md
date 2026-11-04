@@ -16,6 +16,30 @@ Imagine a developer asking: *Does this robot pause when asked? How quickly? What
 changed after the last software update?* We want the answer to lead from a clear
 requirement to a run, its evidence, and a useful next step.
 
+## Glossary
+
+<div class="glossary" markdown>
+
+| Term | Plain meaning | Example |
+| --- | --- | --- |
+| **Living Proof Labs** | The company building these tools. | Living Proof Labs publishes this documentation. |
+| **Living Proof Verification™** | The open-source verification tooling available today: specifications, runs, evidence, grading and reports. | Grading a controller in a walk-hallway simulation run. |
+| **Living Proof Diagnosis™** | Our vision, not yet available: agents and people reviewing evidence and code together to suggest why a result changed and a path to a fix. | A hypothesis about a failed run, for a developer to investigate. |
+| **Capability** | Something a robot should be able to do, stated so that it can be checked. | Pausing when asked. |
+| **Specification** | The versioned, written requirement for a capability: the conditions, the limits and what counts as acceptable. | "Motion stops within 500 milliseconds of a pause request." |
+| **Scenario** | One concrete situation that exercises a specification: the starting state, what happens, and what should be observed. | A moving robot receives a pause request. |
+| **Fixture** | Recorded input data used in place of a live robot or simulator, so a run gives the same result every time. | A recording in which motion stopped 120 milliseconds after the request. |
+| **Evidence** | The observations a run collected, kept with the versions they came from and checksums that show they were not altered. | Elapsed time and whether motion was inhibited, with a SHA-256 digest. |
+| **Assessment** | One evaluator's judgement of whether the evidence meets the requirement, with its reason. Each evaluator's assessment is kept separately. | The pause-rules check: PASS, "Pause state and 500 ms limit assessed". |
+| **Policy** | The versioned rule that combines assessments into a grade. | `all-required-v1`: any failing required assessment makes the grade FAIL, and a missing assessment gives INSUFFICIENT_EVIDENCE. |
+| **Grade** | The outcome the policy produces. It says whether this evidence met this requirement; it is not a safety certification or an explanation of why. | PASS, FAIL or INSUFFICIENT_EVIDENCE. |
+| **Report** | The record people and tools read. It traces the grade back to the specification, evidence, assessments and policy, and opening it again does not change the grade. | `report.html` in a downloaded example bundle. |
+
+</div>
+
+The [quickstart](quickstart.md) produces each of these. The loop below shows how
+they connect.
+
 ## From a requirement to the next improvement
 
 **Continuous integration is the execution platform we are building toward for
