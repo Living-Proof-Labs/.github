@@ -2,11 +2,11 @@
 
 # Helping robots help humans
 
-!!! info "An evolving system, with explicit limits"
-    The current demonstrations use recorded fixtures and portable reports.
-    Standalone MuJoCo and Gazebo engine examples are available; capability-pipeline simulation,
-    physical-robot execution and live evaluator integrations are future work.
-    The workflow below describes both the implemented pieces and the direction.
+!!! info "Available now, and next"
+    **Available now:** Living Proof Verification™ runs real Unitree G1 controllers in MuJoCo
+    simulation, with recorded fixtures as a quick fallback, and produces portable reports.
+    **Next:** runs on physical robots with partner companies, and Living Proof Diagnosis™.
+    The workflow below describes both what is available and the direction.
 
 Robots earn our confidence through what they can do, under conditions we can
 understand. **Living Proof Labs is building an open way to connect robot capability
