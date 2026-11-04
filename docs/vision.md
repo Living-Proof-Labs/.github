@@ -3,7 +3,7 @@
 # Helping robots help humans
 
 !!! info "Available now, and next"
-    **Available now:** Living Proof Verification™ runs real Unitree G1 controllers in MuJoCo
+    **Available now:** Living Proof Verification™ runs real Unitree G1 and Go1 controllers in MuJoCo
     simulation, with recorded fixtures as a quick fallback, and produces portable reports.
     **Next:** runs on physical robots with partner companies, and Living Proof Diagnosis™.
     The workflow below describes both what is available and the direction.
