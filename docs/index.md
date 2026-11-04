@@ -77,7 +77,7 @@ and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-
 Search on this site covers this introduction and its local reference pages.
 Open a project's manual to search that project's documentation.
 
-<a id="project-directory"></a>
+<a id="find-your-task"></a>
 <a id="published-manuals"></a>
 <a id="livingproof"></a>
 

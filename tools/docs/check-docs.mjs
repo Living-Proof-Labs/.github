@@ -11,6 +11,19 @@ import { fileURLToPath } from 'node:url';
 export const MERMAID_TYPES = ['flowchart', 'graph', 'sequenceDiagram', 'stateDiagram-v2', 'classDiagram', 'erDiagram'];
 const MARKERS = ['manuals', 'projects'];
 
+// Cells of the table under "## Project directory", header and separator excluded.
+export function directoryRows(text) {
+  const lines = text.split('\n');
+  const start = lines.findIndex((l) => /^## Project directory\s*$/.test(l));
+  if (start < 0) return [];
+  const rows = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^## /.test(line)) break;
+    if (line.startsWith('|')) rows.push(line.slice(1, -1).split(' | ').map((c) => c.trim()));
+  }
+  return rows.slice(2);
+}
+
 export function slugify(text) {
   return text
     .replace(/<[^>]+>/g, '')
@@ -103,11 +116,27 @@ export function check(root) {
   if (home && pages.has(home.source)) {
     for (const kind of MARKERS) {
       const text = pages.get(home.source);
-      for (const row of directory[kind] || []) {
-        const url = kind === 'manuals' ? row.url : `https://github.com/Living-Proof-Labs/${row.repository}`;
-        if (url && !text.includes(`](${url})`)) errors.push(`${home.source}: project directory does not link ${url}`);
-      }
     }
+  }
+
+  const listed = (directory.projects || []).map((p) => p.repository);
+  for (const repo of inventory) if (!listed.includes(repo)) errors.push(`${site.directory}: projects is missing inventory repository ${repo}`);
+  if (home && pages.has(home.source)) {
+    const owner = 'https://github.com/Living-Proof-Labs/';
+    const manuals = new Map((directory.manuals || []).map((m) => [m.repository, m.url]));
+    const rows = directoryRows(pages.get(home.source));
+    const repos = rows.map((r) => (r[2] || '').match(/\]\(https:\/\/github\.com\/Living-Proof-Labs\/([^)]+)\)/)?.[1] || r[2]);
+    for (const repo of listed) if (!repos.includes(repo)) errors.push(`${home.source}: project directory is missing row ${repo}`);
+    for (const repo of repos) if (!listed.includes(repo)) errors.push(`${home.source}: project directory has extra row ${repo}`);
+    if (repos.length === listed.length && repos.every((r) => listed.includes(r)) && repos.join() !== listed.join()) errors.push(`${home.source}: project directory rows are not in directory.json order`);
+    rows.forEach((r, i) => {
+      const repo = repos[i];
+      if (!listed.includes(repo)) return;
+      if (!(r[2] || '').includes(`](${owner}${repo})`)) errors.push(`${home.source}: row ${repo} must link ${owner}${repo}`);
+      const url = manuals.get(repo);
+      const want = url ? `](${url})` : 'Not yet published';
+      if (!(r[3] || '').includes(want)) errors.push(`${home.source}: row ${repo} manual must be ${url || 'Not yet published'}`);
+    });
   }
 
   const ids = new Map([...pages].map(([source, text]) => [source, anchors(text)]));

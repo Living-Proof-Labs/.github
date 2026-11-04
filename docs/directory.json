@@ -58,9 +58,9 @@
       "summary": "Verification definitions, locks and the published robot reports"
     },
     {
-      "repository": "livingproof",
-      "title": "LivingProof",
-      "summary": "Command-line entry point"
+      "repository": "robot-capability-specs",
+      "title": "Robot capability specifications",
+      "summary": "Capability specifications and the robot manifest schema"
     },
     {
       "repository": "capability-verifier",
@@ -73,9 +73,9 @@
       "summary": "Renders the verifier's stored grades"
     },
     {
-      "repository": "robot-capability-specs",
-      "title": "Robot capability specifications",
-      "summary": "Capability specifications and the robot manifest schema"
+      "repository": "livingproof",
+      "title": "LivingProof",
+      "summary": "Command-line entry point"
     },
     {
       "repository": "livingproof-common",

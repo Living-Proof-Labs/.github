@@ -65,8 +65,8 @@ test('a directory entry outside the inventory fails', () => {
 
 test('the homepage directory links every listed repository and manual', () => {
   const dir = copy();
-  edit(dir, 'docs/index.md', (t) => t.replace('](https://github.com/Living-Proof-Labs/website)', '](https://example.com)'));
-  assert.ok(check(dir).some((e) => e.includes('does not link https://github.com/Living-Proof-Labs/website')));
+  edit(dir, 'docs/index.md', (t) => t.replace('](https://docs.livingprooflabs.com/capability-verifier/)', '](https://example.com/)'));
+  assert.ok(check(dir).some((e) => e.includes('row capability-verifier manual must be https://docs.livingprooflabs.com/capability-verifier/')));
 });
 
 test('a redirect must target a published page and must not hide one', () => {
@@ -83,4 +83,22 @@ test('Mermaid outside the supported types or with a theme override fails', () =>
   const errors = check(dir).join('\n');
   assert.match(errors, /Mermaid type "pie title x"/);
   assert.match(errors, /%%\{init\}%% overrides the site theme/);
+});
+
+test('the directory must list every inventory repository', () => {
+  const dir = copy();
+  json(dir, 'docs/directory.json', (d) => ({ ...d, projects: d.projects.filter((p) => p.repository !== 'website') }));
+  assert.ok(check(dir).some((e) => e.includes('missing inventory repository website')));
+});
+
+test('a directory table row missing from directory.json fails', () => {
+  const dir = copy();
+  edit(dir, 'docs/index.md', (t) => t.replace(/^\| Website \|.*\n/m, ''));
+  assert.ok(check(dir).some((e) => e.includes('project directory is missing row website')));
+});
+
+test('an extra directory table row fails', () => {
+  const dir = copy();
+  edit(dir, 'docs/index.md', (t) => t.replace(/^(\| Website \|.*\n)/m, '$1| Extra | X. | [extra](https://github.com/Living-Proof-Labs/extra) | Not yet published |\n'));
+  assert.ok(check(dir).some((e) => e.includes('project directory has extra row extra')));
 });
