@@ -103,8 +103,9 @@ export function check(root) {
   if (home && pages.has(home.source)) {
     for (const kind of MARKERS) {
       const text = pages.get(home.source);
-      if (!text.includes(`<!-- directory:${kind} -->`) || !text.includes(`<!-- /directory:${kind} -->`)) {
-        errors.push(`${home.source}: missing <!-- directory:${kind} --> markers`);
+      for (const row of directory[kind] || []) {
+        const url = kind === 'manuals' ? row.url : `https://github.com/Living-Proof-Labs/${row.repository}`;
+        if (url && !text.includes(`](${url})`)) errors.push(`${home.source}: project directory does not link ${url}`);
       }
     }
   }

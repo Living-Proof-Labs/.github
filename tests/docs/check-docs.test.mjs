@@ -63,10 +63,10 @@ test('a directory entry outside the inventory fails', () => {
   assert.ok(check(dir).some((e) => e.includes('not-registered is not in config/github/repositories.json')));
 });
 
-test('the homepage keeps its generated directory markers', () => {
+test('the homepage directory links every listed repository and manual', () => {
   const dir = copy();
-  edit(dir, 'docs/index.md', (t) => t.replace('<!-- directory:projects -->', ''));
-  assert.ok(check(dir).some((e) => e.includes('missing <!-- directory:projects --> markers')));
+  edit(dir, 'docs/index.md', (t) => t.replace('](https://github.com/Living-Proof-Labs/website)', '](https://example.com)'));
+  assert.ok(check(dir).some((e) => e.includes('does not link https://github.com/Living-Proof-Labs/website')));
 });
 
 test('a redirect must target a published page and must not hide one', () => {

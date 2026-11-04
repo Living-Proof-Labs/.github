@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Root documentation directory. Every repository must be in config/github/repositories.json; the publisher renders these rows in order.",
+  "description": "Root documentation directory. Every repository must be in config/github/repositories.json; docs/index.md must link each repository and manual in its project directory table.",
   "manuals": [
     {
       "repository": "livingproof-verification",
