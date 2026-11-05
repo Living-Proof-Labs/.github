@@ -13,12 +13,12 @@ All you need is git and Docker. No Python setup, no GPU:
 
 ```sh
 git clone https://github.com/Living-Proof-Labs/livingproof-verification.git && cd livingproof-verification
-docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/living-proof-labs/capability-verifier-hallway:1.14.0@sha256:bd537e8f3688dae58be52223b5a3feb36186554d6321c0eacc7b793cc575ac05 capability verify run --reporter source verifications/unitree-g1-stock-mujoco-hallway.toml
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" ghcr.io/living-proof-labs/capability-verifier-hallway:1.15.2 capability verify run --reporter source verifications/unitree-g1-stock-mujoco-hallway.toml
 ```
 
 Expect `12/20` trials to pass: `FAIL` against a bar of 18 of 20, in about a
-minute on a decent CPU. The image is amd64-only for now, and it needs a real
-`git clone`, not a git worktree.
+minute on a decent CPU. The image runs natively on amd64 and arm64, and it
+needs a real `git clone`, not a git worktree.
 
 ## 2. Develop in the devcontainer
 
