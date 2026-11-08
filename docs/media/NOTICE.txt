@@ -1,8 +1,10 @@
 Provenance for the hallway comparison recording
 
 These three files are unchanged copies of Living Proof Labs' own recording.
-The website repository still has the originals. This copy does not remove or
-replace them.
+They were copied from Living-Proof-Labs/website commit
+2bddea0327f016e1a1a7f57d1fb4bc7384754393. Git history at that commit still
+has the files. This note does not claim they remain on the website's current
+branch or at a public website URL.
 
 Source repository: Living-Proof-Labs/website
 Source commit: 2bddea0327f016e1a1a7f57d1fb4bc7384754393
@@ -12,7 +14,9 @@ Source paths:
   assets/video/g1-comparison.en.vtt
 
 The video and poster were added in 6465ffc91d2be8844586301f8c6261c5f243b8d8.
-Those two blobs have no later commit on the website repository.
+Those blob contents were not replaced. Website commit
+47be2bc708f34e93ff6fff86c092a35176b5a818 removed these three paths from the
+website branch.
 
 The caption track was added in that same commit, blob
 9f808f55ab8cdaa6cb0837017bb0dac54d5ff29d.
