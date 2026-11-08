@@ -12,9 +12,18 @@ Source paths:
   assets/video/g1-comparison.en.vtt
 
 The video and poster were added in 6465ffc91d2be8844586301f8c6261c5f243b8d8.
-The caption track was corrected in 12e05a55ad13c1df7439c94f960231409fa241e5
-so the on-screen specification line reads v1.5.0 and the tally is labeled as
-the 1 Nov 2026 snapshot. The bytes below are the files at the source commit.
+Those two blobs have no later commit on the website repository.
+
+The caption track was added in that same commit, blob
+9f808f55ab8cdaa6cb0837017bb0dac54d5ff29d.
+Commit c8ec453eb00a549b1bc2c37b3d5a1d816f05e0ec (blob
+a64294b291eed24da316c99037e22ee3522a8301) replaced the 00:33.500–00:43.500
+tally cue with two cues that label a 1 Nov 2026 snapshot, and it changed the
+last cue to start "Spec v1.5.0 at time of recording".
+Commit 12e05a55ad13c1df7439c94f960231409fa241e5 (blob
+bb67a1f5199d206704cf19945a4fa6ce680f9cf8) edits only that last cue, removing
+the words " at time of recording". The copied caption file is that blob, which
+is also the blob at the source commit above.
 
 Git blob SHA-1:
   g1-comparison.mp4            4faae73777c9c853420769a37bfd364dcec247a9

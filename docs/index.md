@@ -69,6 +69,9 @@ One recorded comparison shows that loop on a single date: the same hallway, two 
     <a href="https://docs.livingprooflabs.com/livingproof-verification/">live report →</a>
     for current results.
   </figcaption>
+  <p id="g1-comparison-limit" style="margin:0.75rem 0 0">
+    Historical recording: the Booster T1 pane in the segment from 00:47 to 00:56 is an open checkerboard scene, not the hallway shown in the Unitree G1 comparison. That segment does not establish equivalent test conditions or comparable results across the robots shown there.
+  </p>
 </figure>
 
 [Walk through the full loop](vision.md#from-a-requirement-to-the-next-improvement)
