@@ -27,6 +27,11 @@ and its relevant procedures at that same tag. A link alone does not load them.
   inventoried repositories. Run `task docs:check` before review.
 - Keep publishing tooling (theme, build, search, redirect pages, deployment) in
   the publisher. Content changes merge here first; the publisher repins.
+- Keep page media in `docs/media/`. Serving it from the published site needs a
+  publisher build change that copies that directory, in the same reviewed pull
+  request that repins `content.lock.json`. The docs preview job copies the
+  directory into the review artifact so the preview link check can pass before
+  that publisher change.
 
 ## Local directory tooling
 

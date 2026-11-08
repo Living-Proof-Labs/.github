@@ -62,9 +62,13 @@ Run `task docs:check` (also part of `task verify`) for missing pages, broken loc
 links or fragments, unknown directory entries and unsupported Mermaid. The CI job `docs-preview`
 also builds this checkout with the publisher at the commit pinned in
 `.github/workflows/verify.yml` and runs its link, redirect, navigation, search and
-browser checks offline; the preview is uploaded as a review artifact. After a
-change merges here, the publisher repins in its own reviewed pull request;
-production publication remains separately authorized.
+browser checks offline; the preview is uploaded as a review artifact. That
+publisher build copies declared Markdown pages only, so the preview job then
+copies `docs/media/` into the built site before those checks. Production does
+not use that preview step. After a change merges here, the publisher repins
+`content.lock.json` in its own reviewed pull request and has to copy
+`docs/media/` in its build before the recording is served from the published
+site. Publication remains separately authorized.
 
 ## Read, verify, and apply
 
