@@ -97,6 +97,12 @@ test('a directory table row missing from directory.json fails', () => {
   assert.ok(check(dir).some((e) => e.includes('project directory is missing row website')));
 });
 
+test('a local video, poster or caption file must exist', () => {
+  const dir = copy();
+  edit(dir, 'docs/index.md', (t) => t.replace('media/g1-comparison.mp4', 'media/missing-comparison.mp4'));
+  assert.ok(check(dir).some((e) => e.includes('missing media media/missing-comparison.mp4')));
+});
+
 test('an extra directory table row fails', () => {
   const dir = copy();
   edit(dir, 'docs/index.md', (t) => t.replace(/^(\| Website \|.*\n)/m, '$1| Extra | X. | [extra](https://github.com/Living-Proof-Labs/extra) | Not yet published |\n'));

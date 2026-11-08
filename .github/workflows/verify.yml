@@ -47,10 +47,16 @@ jobs:
         run: docker build --target development -t root-docs publisher
       - name: Build and check this content with the pinned publisher, offline
         run: |
+          # The pinned publisher copies declared Markdown only. Copy docs/media
+          # into the built site before its link check and browser tests so the
+          # review artifact serves the recording and the relative download link
+          # resolves. This leaves the publisher pin unchanged. Production does
+          # not run this step; the publisher has to copy docs/media itself when
+          # it repins content.lock.json.
           docker run --rm --network none --user "$(id -u):$(id -g)" \
             -e CONTENT_DIR=/content \
             -v "$PWD/publisher:/workspace" -v "$PWD/content:/content:ro" \
-            root-docs task verify
+            root-docs bash -eu -c 'task build && mkdir -p artifacts/site/media && cp -a /content/docs/media/. artifacts/site/media/ && task check && task test'
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

@@ -1,0 +1,48 @@
+Provenance for the hallway comparison recording
+
+These three files are unchanged copies of Living Proof Labs' own recording.
+The website repository still has the originals. This copy does not remove or
+replace them.
+
+Source repository: Living-Proof-Labs/website
+Source commit: 2bddea0327f016e1a1a7f57d1fb4bc7384754393
+Source paths:
+  assets/video/g1-comparison.mp4
+  assets/video/g1-comparison-poster.jpg
+  assets/video/g1-comparison.en.vtt
+
+The video and poster were added in 6465ffc91d2be8844586301f8c6261c5f243b8d8.
+Those two blobs have no later commit on the website repository.
+
+The caption track was added in that same commit, blob
+9f808f55ab8cdaa6cb0837017bb0dac54d5ff29d.
+Commit c8ec453eb00a549b1bc2c37b3d5a1d816f05e0ec (blob
+a64294b291eed24da316c99037e22ee3522a8301) replaced the 00:33.500–00:43.500
+tally cue with two cues that label a 1 Nov 2026 snapshot, and it changed the
+last cue to start "Spec v1.5.0 at time of recording".
+Commit 12e05a55ad13c1df7439c94f960231409fa241e5 (blob
+bb67a1f5199d206704cf19945a4fa6ce680f9cf8) edits only that last cue, removing
+the words " at time of recording". The copied caption file is that blob, which
+is also the blob at the source commit above.
+
+Git blob SHA-1:
+  g1-comparison.mp4            4faae73777c9c853420769a37bfd364dcec247a9
+  g1-comparison-poster.jpg     e84323eb05b7136260ea32bad34e058d2505d433
+  g1-comparison.en.vtt         bb67a1f5199d206704cf19945a4fa6ce680f9cf8
+
+SHA-256:
+  g1-comparison.mp4            918330b81b9e4de5c6a5b9c5b3aa81de21c42e9ddd246c049e8b1acdb07ca0ca
+  g1-comparison-poster.jpg     f4cf729e36fd5a6def52a151346e1aae842023694f74895ab3190452de361455
+  g1-comparison.en.vtt         7652f3d89dc87f712ba55926603391c5bd85d1ea0e1382dbe0f042880b246428
+
+Recording: 1280x720 H.264, 66.04 seconds, no audio track. Poster is the
+1280x720 JPEG shipped with the recording.
+
+The website repository does not publish a license file. This copy does not
+relicense the recording. The surrounding page prose remains CC-BY-4.0, as
+declared for docs/index.md in docs/site.json. The recording stays Living
+Proof Labs material, kept here so the documentation does not depend on a
+marketing-site URL.
+
+The page caption dates the recording 1 Nov 2026, specification v1.5.0, and
+sends readers to the live report for current results.

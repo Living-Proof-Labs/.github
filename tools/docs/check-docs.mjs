@@ -75,6 +75,16 @@ export function links(text) {
   return found;
 }
 
+// Relative src, poster and href values in HTML. Markdown links are handled separately.
+export function embeddedTargets(text) {
+  const found = [];
+  for (const { line, text: prose } of scan(text).prose) {
+    const stripped = prose.replace(/`[^`]*`/g, '');
+    for (const m of stripped.matchAll(/\b(?:src|poster|href)="([^"]*)"/g)) found.push({ line, target: m[1] });
+  }
+  return found;
+}
+
 export function check(root) {
   const errors = [];
   const read = (rel) => readFileSync(path.join(root, rel), 'utf8');
@@ -160,6 +170,19 @@ export function check(root) {
       }
       if (fragment && ids.has(resolved) && !ids.get(resolved).has(fragment)) {
         errors.push(`${source}:${line}: broken fragment ${target} (no #${fragment} in ${resolved})`);
+      }
+    }
+    for (const { line, target } of embeddedTargets(text)) {
+      if (!target || target.startsWith('#') || /^[a-z][\w+.-]*:/i.test(target) || target.startsWith('//')) continue;
+      const [file] = target.split('#');
+      if (!file) continue;
+      const resolved = path.posix.normalize(path.posix.join(where, decodeURIComponent(file)));
+      if (resolved.startsWith('..') || resolved.startsWith('/')) {
+        errors.push(`${source}:${line}: ${target} leaves the repository`);
+        continue;
+      }
+      if (!existsSync(path.join(root, resolved))) {
+        errors.push(`${source}:${line}: missing media ${target} (${resolved} does not exist)`);
       }
     }
     for (const fence of scan(text).fences) {
