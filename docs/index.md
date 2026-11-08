@@ -47,6 +47,30 @@ See what passed, what did not, and why, traced back to the evidence.
 </div>
 </div>
 
+One recorded comparison shows that loop on a single date: the same hallway, two controllers, measured together. The caption dates the recording. Current results are on the live report linked under the video.
+
+<figure style="margin:1.25rem 0 1.5rem;max-width:100%;padding:0.9rem 1rem;border:1px solid var(--md-default-fg-color--lightest);border-radius:0.6rem">
+  <video
+    controls
+    playsinline
+    preload="metadata"
+    poster="media/g1-comparison-poster.jpg"
+    width="1280"
+    height="720"
+    style="display:block;width:100%;max-width:100%;height:auto;background:#0b1120;border-radius:0.6rem"
+    aria-describedby="g1-comparison-caption"
+  >
+    <source src="media/g1-comparison.mp4" type="video/mp4" />
+    <track kind="captions" src="media/g1-comparison.en.vtt" srclang="en" label="English" default />
+    <a href="media/g1-comparison.mp4">Download the comparison video (MP4)</a>
+  </video>
+  <figcaption id="g1-comparison-caption" style="margin:0.75rem 0 0">
+    Snapshot recorded 1 Nov 2026, spec v1.5.0. See the
+    <a href="https://docs.livingprooflabs.com/livingproof-verification/">live report →</a>
+    for current results.
+  </figcaption>
+</figure>
+
 [Walk through the full loop](vision.md#from-a-requirement-to-the-next-improvement)
 and [learn what a grade does—and does not—mean](vision.md#evaluation-is-not-diagnosis).
 
