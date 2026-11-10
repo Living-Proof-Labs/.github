@@ -4,8 +4,9 @@
 
 Verify a real controller in simulation with Living Proof Verification™: the
 Unitree G1 stock controller walks a MuJoCo hallway for 20 seeded trials, the
-capability verifier assesses each trial, and the capability report grades the
-result against an 18-of-20 pass bar. No robot is involved; this is simulation.
+capability verifier assesses each trial and grades the result against an
+18-of-20 pass bar, and the capability reporter renders that grade. No robot is
+involved; this is simulation.
 
 ## 1. Run the demo with Docker
 

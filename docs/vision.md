@@ -3,9 +3,9 @@
 # Helping robots help humans
 
 !!! info "Available now, and next"
-    **Available now:** Living Proof Verification™ runs real Unitree G1 and Go1 controllers in MuJoCo
+    **Available now:** Living Proof Verification™ runs real Unitree G1, Go1 and Booster T1 controllers in MuJoCo
     simulation, with recorded fixtures as a quick fallback, and produces portable reports.
-    **Next:** runs on physical robots with partner companies, and Living Proof Diagnosis™.
+    **Next:** Gazebo as a second simulator, physical-robot runs with partner companies, and Living Proof Diagnosis™.
     The workflow below describes both what is available and the direction.
 
 Robots earn our confidence through what they can do, under conditions we can
@@ -48,19 +48,21 @@ The loop below shows how they connect.
 
 ## From a requirement to the next improvement
 
-**Continuous integration is the execution platform we are building toward for
-simulation verification:** software changes trigger repeatable scenarios, evidence
-capture, and reports. Today's fixtures already run in continuous integration;
-capability-pipeline simulator adapters are future work. Standalone MuJoCo and Gazebo
-engine examples exist; they do not establish that integration. Physical robot runs need their own hardware
-execution environment and controls. We do not control hardware from continuous
-integration today.
+**Continuous integration runs MuJoCo hallway verification today.** A change in
+[livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
+runs the walk-hallway scenario for the pinned Unitree G1, Go1 and Booster T1
+configurations, keeps the evidence, grades it and publishes the report. Recorded
+fixtures also run in continuous integration. Gazebo is not connected to that loop
+yet. Physical robot runs need their own hardware execution environment and controls.
+We do not control hardware from continuous integration today.
 
-This is the intended loop, with future execution paths marked explicitly:
+This is the loop. MuJoCo simulation runs it now; Gazebo, hardware and diagnosis
+are still next:
 
 1. Version software, requirements, and scenarios.
-2. Execute fixtures in continuous integration today; simulation and separate
-   hardware execution environments are planned.
+2. Execute the MuJoCo hallway in continuous integration for the published Unitree
+   G1, Go1 and Booster T1 configurations. Gazebo and separate hardware execution
+   environments are next.
 3. Collect evidence and logs with their versioned context.
 4. Retain evaluator assessments and apply an explicit versioned grading policy.
 5. Produce a traceable report.
@@ -97,9 +99,11 @@ The current pause examples use recorded fixture data, not a moving robot.
 ## Simulation and eventual hardware
 
 Simulation can make scenarios repeatable and allow software changes to be checked
-before a physical run. The MuJoCo and Gazebo projects currently demonstrate native
-engine execution; connecting that execution to capability scenarios, evidence manifests
-and evaluation is a separate integration boundary, not a delivered end-to-end flow.
+before a physical run. MuJoCo hallway verification is a delivered end-to-end flow
+for the published Unitree G1, Go1 and Booster T1 configurations: simulation,
+evidence, a grade and a published report. Gazebo demonstrates native engine
+execution; connecting it to capability scenarios, evidence and evaluation is still
+unfinished.
 
 Hardware adds physical conditions, device configuration and operational controls.
 It needs a dedicated execution environment and people responsible for operating
@@ -161,10 +165,8 @@ grading.
 
 In a reporting workflow, the capability verifier collects the evidence, keeps
 each assessment, and grades it under an explicit, versioned policy. The installed
-reporter validates that bundle and renders the grades it is given. Its legacy
-`grade` command still handles older bundles and is
-[being removed](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30). Our examples supply recorded
-fixtures in place of observations from a robot or simulator.
+reporter validates that bundle and renders the grades it is given. Our examples
+supply recorded fixtures in place of observations from a robot or simulator.
 
 ## See it today
 
