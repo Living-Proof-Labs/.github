@@ -12,7 +12,7 @@ run them repeatably, and get a traceable report, not an unexplained score.
 <div class="hero-actions" markdown>
 [Try the quickstart](quickstart.md){ .md-button .md-button--primary }
 [See the robot reports](https://docs.livingprooflabs.com/livingproof-verification/){ .md-button }
-[Talk to us about a design partnership](https://livingprooflabs.com/#contact){ .hero-tertiary }
+[Talk to us about a design partnership](https://www.linkedin.com/company/living-proof-labs/){ .hero-tertiary }
 </div>
 
 ## The problem
@@ -37,7 +37,9 @@ Run the scenario repeatably in simulation and keep the evidence.
 </div>
 <div markdown>
 ### 3. Assess the evidence
-Check each requirement against the evidence, then grade with an explicit, versioned policy.
+The capability verifier checks each requirement against the evidence and writes
+the grade under an explicit, versioned policy. The capability reporter validates
+the bundle and renders that stored grade.
 [Capability reporter](https://docs.livingprooflabs.com/livingproof-capability-report/)
 </div>
 <div markdown>
@@ -121,7 +123,7 @@ does better, whether it meets the bar, and why.
 
 **Living Proof Verification™**, open-source:
 
-- Robot verification in MuJoCo simulation for the Unitree G1 and Go1: CI in
+- Robot verification in MuJoCo simulation for the Unitree G1, Go1 and Booster T1: CI in
   [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
   runs the walk-hallway capability for each pinned robot configuration
 - Versioned capability specifications and an explicit, versioned grading policy
@@ -131,7 +133,7 @@ does better, whether it meets the bar, and why.
 <div markdown>
 <span class="badge badge-next">Next</span>
 
-- More robots and variants on the published reports
+- Robots and variants not yet on the published reports
 - Gazebo as a second simulator
 - Physical robots running the same scenarios, with partner companies
 - **Living Proof Diagnosis™**: agents and people reviewing evidence and code

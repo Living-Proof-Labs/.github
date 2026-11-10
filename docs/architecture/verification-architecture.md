@@ -192,9 +192,12 @@ have since changed as described above.
 - Gazebo cannot yet run robot verification; its adapter work
   ([livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4))
   is unfinished.
-- Not every robot is on the published reports yet; the
-  [live index](https://docs.livingprooflabs.com/livingproof-verification/) shows which
-  are. Go1 is being added to the consumer.
+- The [live index](https://docs.livingprooflabs.com/livingproof-verification/)
+  publishes three MuJoCo hallway variants: Unitree G1 stock
+  (`unitree-g1` / `stock-mujoco-hallway`), Unitree Go1 playground
+  (`unitree-go1` / `playground-mujoco-hallway`) and Booster T1 stock
+  (`booster-t1` / `stock-mujoco-hallway`). Further robots and variants are not
+  on it yet.
 
 ## Migration work
 
