@@ -77,12 +77,15 @@ Keep to what both renderers support:
 
 Each project manual has its own Zensical configuration, so the brand is not
 inherited automatically. To make a manual match livingprooflabs.com and this
-site, its owner can copy three files from the root site repository and change that
-project's `mkdocs.yml` only:
+site, copy the pinned stylesheet, then the favicon and header logo from the
+root site repository, and change that project's `mkdocs.yml` only:
 
-1. Copy [`docs/brand.css`](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/docs/brand.css)
-   into the manual's docs directory (for example `docs/assets/brand.css`) and
-   list it under `extra_css`.
+1. Copy [`brand/docs/brand.css`](https://github.com/Living-Proof-Labs/collaboration-guidelines/blob/v7.5.0/brand/docs/brand.css)
+   from collaboration-guidelines at the tag recorded in the publisher's
+   [`docs-brand.lock.json`](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/docs-brand.lock.json).
+   The lock's `version` field is that tag (`v7.5.0`) and its `path` field is
+   `brand/docs/brand.css`. Place the file in the manual's docs directory (for
+   example `docs/assets/brand.css`) and list it under `extra_css`.
 2. Copy [`docs/favicon.svg`](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/docs/favicon.svg)
    next to it and set `theme.favicon` to its path.
 3. Copy [`docs/overrides/partials/logo.html`](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/docs/overrides/partials/logo.html)
