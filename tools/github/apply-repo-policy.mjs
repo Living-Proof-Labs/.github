@@ -12,8 +12,7 @@
  * file. --dry-run prints current -> desired and performs no write calls.
  * --apply writes only the fields that differ.
  *
- * pages.https_enforced is applied when the policy sets that boolean. The
- * pinned v7.3.0 policy does not set it (pages is only build_type). This
+ * pages.https_enforced is applied when the policy sets that boolean. This
  * command does not invent Enforce HTTPS, and it does not create Pages sites.
  */
 import { createHash } from 'node:crypto';

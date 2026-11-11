@@ -110,14 +110,13 @@ the repository already has a Pages site, a difference becomes
 (`https_enforced` and, when it also differs, `build_type`). The custom domain
 is not sent.
 
-The pinned policy blob `018783d2796110656c91f68424aa0e4ce2379662`
-(collaboration-guidelines `v7.3.0`, commit
-`d6d004ab30ac15a537fa26ef066a09d35cd75138`, which is still the file on `main`)
-sets `pages.build_type` to `workflow` and does **not** set
-`pages.https_enforced`. Until collaboration-guidelines adds that boolean and
-this repository repins `commit` and `policy_blob_sha`, a dry-run says so and
-`--apply` does not change Enforce HTTPS. The command will not invent the
-value.
+The pinned policy blob `2e268a4208f5c55d85f4b3ecb7e21ef9a1e56927`
+(collaboration-guidelines `v7.9.0`, commit
+`abd193684ab2baad7abaa1a843d802dc2353faf5`) sets `pages.build_type` to
+`workflow` and `pages.https_enforced` to `true`. `--apply` writes Enforce
+HTTPS when an existing Pages site differs. If GitHub rejects that write, the
+report names the repository, the Pages setting, and GitHub's error message,
+then continues with the remaining repositories and exits non-zero.
 
 ### Token permissions
 

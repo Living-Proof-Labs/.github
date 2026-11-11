@@ -10,7 +10,7 @@ import { classify } from '../../tools/github/audit-status.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
 const tool = path.join(root, 'tools/github/audit-status.mjs');
 
-/** v7.3.0 audit output: one block per repository, then the summary line it prints. */
+/** v7.9.0 audit output: one block per repository, then the summary line it prints. */
 function audit(repositories) {
   let total = 0;
   const blocks = repositories.map(({ name, pages, settings = [], immutable = 'enabled' }) => {
@@ -42,7 +42,7 @@ const published = [{ name: 'docs', pages: 'matches' }];
 
 test('strict audit is green when the only differences are repositories without Pages or with unreadable Pages', () => {
   const text = audit([...published, ...noPages, ...unreadable]);
-  assert.match(text, /^17 difference\(s\) found/m); // what v7.3.0 alone would fail on
+  assert.match(text, /^17 difference\(s\) found/m); // what the pinned audit tool would fail on
   const result = strict(text);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /compliant \(17 Pages state\(s\) missing or unreadable, reported but not enforced\)/);
