@@ -102,7 +102,9 @@ no API.
 
 The command does not create a GitHub Pages site. A repository with no site is
 skipped for Pages. A 404 from a repository whose `has_pages` is not `false` is
-a permission failure, not an absent site.
+a permission failure, not an absent site. An archived repository is reported
+as `skipped (archived)` in both dry-run and apply, and it is left unread and
+unwritten.
 
 ### Enforce HTTPS
 

@@ -110,7 +110,10 @@ function orgFetch(state) {
     assert.equal(url.pathname === '/user' || url.pathname.startsWith('/user/'), false);
     if (method === 'GET' && url.pathname === '/orgs/ExampleOrg/repos') {
       const page = url.searchParams.get('page');
-      return jsonResponse(page === '1' ? state.names.map((name) => ({ name })) : []);
+      return jsonResponse(page === '1' ? state.names.map((name) => ({
+        name,
+        archived: state.repos[name]?.archived === true
+      })) : []);
     }
     if (url.pathname === '/graphql') {
       const parsed = JSON.parse(init.body);
@@ -566,6 +569,34 @@ test('Pages 404 on a repository that reports a site is a permission failure and 
   assert.match(io.out(), /not treated as absent/);
   assert.equal(calls.some((call) => call.method === 'POST' && call.url.pathname.endsWith('/pages')), false);
   assert.doesNotMatch(`${io.out()}${io.err()}`, /test-token-value/);
+});
+
+test('archived repositories are skipped in dry-run and apply', async () => {
+  const policy = pinned();
+  const state = {
+    policy,
+    names: ['alpha', 'legacy'],
+    repos: {
+      alpha: baseRepo(policy, 'alpha'),
+      legacy: { archived: true }
+    }
+  };
+  const { fetchImpl, calls } = orgFetch(state);
+  const policyFile = writePolicy(policy);
+  for (const mode of ['--dry-run', '--apply']) {
+    calls.length = 0;
+    const io = capture();
+    const code = await main([mode, '--policy', policyFile, '--org', 'ExampleOrg'], {
+      env: { GH_TOKEN: TOKEN },
+      io,
+      fetchImpl
+    });
+    assert.equal(code, 0, `${mode}\n${io.err()}\n${io.out()}`);
+    assert.match(io.out(), /ExampleOrg\/legacy\n  skipped \(archived\)/);
+    assert.match(io.out(), /ExampleOrg\/alpha\n  no changes/);
+    assert.equal(calls.some((call) => call.url.pathname.startsWith('/repos/ExampleOrg/legacy')), false);
+    assert.equal(calls.filter(isWriteCall).length, 0);
+  }
 });
 
 test('the command wrapper is secret-free and invokes the policy tool', () => {

@@ -561,7 +561,7 @@ export async function listOrgRepositories(api, org) {
     if (!Array.isArray(batch)) throw new Error(`GET /orgs/${org}/repos did not return a repository list.`);
     for (const repository of batch) {
       if (!isRepositoryName(repository?.name)) throw new Error('Organization repository list included an invalid name.');
-      repositories.push({ name: repository.name });
+      repositories.push({ name: repository.name, archived: repository.archived === true });
     }
     if (batch.length < 100) return repositories;
   }
@@ -658,6 +658,17 @@ export async function run({ policy, org, repo, dryRun, api }) {
   }
   const repositories = [];
   for (const item of listed) {
+    if (item.archived) {
+      repositories.push({
+        name: item.name,
+        archived: true,
+        lines: [],
+        skipped: [],
+        failures: [],
+        writeFailures: 0
+      });
+      continue;
+    }
     const observed = await observe(api, org, item.name, policy);
     const planned = planRepository(policy, observed, { owner: org, name: item.name });
     let writeFailures = 0;
@@ -696,6 +707,10 @@ export function renderReport(report, { dryRun, org, policySource }) {
   lines.push('');
   for (const repository of report.repositories) {
     lines.push(`${org}/${repository.name}`);
+    if (repository.archived) {
+      lines.push('  skipped (archived)');
+      continue;
+    }
     if (repository.lines.length === 0 && repository.skipped.length === 0 && repository.failures.length === 0) {
       lines.push('  no changes');
     }
