@@ -3,7 +3,7 @@
 /**
  * Classify a repository-settings audit and choose the wrapper's exit status.
  *
- * The pinned tool (collaboration-guidelines v7.3.0) counts every repository whose Pages
+ * The pinned tool (collaboration-guidelines v7.9.0) counts every repository whose Pages
  * state is not `matches` as one difference, including repositories that have no Pages
  * site (`missing`) and ones whose Pages state the audit token cannot read
  * (`inaccessible`). Neither is drift this organization enforces: most repositories

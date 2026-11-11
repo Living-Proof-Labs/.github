@@ -151,6 +151,9 @@ function orgFetch(state) {
         return jsonResponse(repo.pages);
       }
       assert.equal(method, 'PUT');
+      if (repo.pagesWriteStatus) {
+        return jsonResponse({ message: repo.pagesWriteMessage ?? 'Unprocessable Entity' }, repo.pagesWriteStatus);
+      }
       repo.pages = { ...repo.pages, ...JSON.parse(init.body) };
       return jsonResponse(null, 204);
     }
@@ -205,15 +208,27 @@ test('git blob SHA matches git hash-object for the pinned policy fixture', () =>
 
 test('pinned policy download uses the commit, checks the blob, and sends no token', async () => {
   const pin = JSON.parse(readFileSync(path.join(root, 'config/github/repository-policy.json'), 'utf8'));
+  assert.equal(pin.tag, 'v7.9.0');
+  assert.equal(pin.commit, 'abd193684ab2baad7abaa1a843d802dc2353faf5');
+  assert.equal(pin.policy_blob_sha, '2e268a4208f5c55d85f4b3ecb7e21ef9a1e56927');
+  assert.equal(pin.tool_blob_sha, 'fcbd05593ca55ce8c7de9c32c91b1fc5caf60dfd');
   let seen;
   const policy = await fetchPinnedPolicy(pin, async (url, init) => {
-    seen = { url, authorization: init.headers.Authorization };
-    return { ok: true, status: 200, arrayBuffer: async () => pinnedBytes };
+    seen = { url, authorization: init.headers?.Authorization };
+    const response = await fetch(url, { headers: init.headers });
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return { ok: response.ok, status: response.status, arrayBuffer: async () => bytes };
   });
   assert.equal(seen.authorization, undefined);
-  assert.match(seen.url, new RegExp(`/${pin.commit}/config/github/repository-policy.json$`));
-  assert.doesNotMatch(seen.url, /\/v7\.3\.0\//);
+  assert.equal(seen.url, `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.policy_path}`);
+  assert.doesNotMatch(seen.url, /\/v7\.9\.0\//);
   assert.equal(policy.pages.build_type, 'workflow');
+  assert.equal(policy.pages.https_enforced, true);
+  validatePolicy(policy);
+  const toolUrl = `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.tool_path}`;
+  const toolResponse = await fetch(toolUrl);
+  assert.equal(toolResponse.ok, true);
+  assert.equal(gitBlobSha(Buffer.from(await toolResponse.arrayBuffer())), pin.tool_blob_sha);
   await assert.rejects(
     () => fetchPinnedPolicy({ ...pin, policy_blob_sha: 'b'.repeat(40) }, async () => ({
       ok: true,
@@ -554,6 +569,52 @@ test('apply sends Enforce HTTPS without the custom domain or unchanged Pages fie
   assert.equal(writes[0].url.pathname, '/repos/ExampleOrg/alpha/pages');
   assert.deepEqual(JSON.parse(writes[0].body), { https_enforced: true });
   assert.match(io.out(), /pages\.https_enforced: false -> true/);
+});
+
+test('a rejected Enforce HTTPS write names the repository, the setting, and the GitHub error, then continues', async (t) => {
+  const policy = withHttps(pinned());
+  const githubMessage = 'The certificate does not exist or is not yet available.';
+  const state = {
+    policy,
+    names: ['website', 'alpha'],
+    repos: {
+      website: baseRepo(policy, 'website', {
+        pages: { build_type: 'workflow', https_enforced: false, cname: 'livingprooflabs.com' },
+        pagesWriteStatus: 422,
+        pagesWriteMessage: githubMessage
+      }),
+      alpha: baseRepo(policy, 'alpha', {
+        settings: { ...structuredClone(policy.repository), has_wiki: true }
+      })
+    }
+  };
+  const { fetchImpl, calls } = orgFetch(state);
+  const io = capture();
+  const code = await main(['--apply', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg'], {
+    env: { GH_TOKEN: TOKEN },
+    io,
+    fetchImpl
+  });
+  assert.equal(code, 1);
+  const writes = calls.filter(isWriteCall);
+  assert.deepEqual(writes.map((call) => `${call.method} ${call.url.pathname}`), [
+    'PUT /repos/ExampleOrg/website/pages',
+    'PATCH /repos/ExampleOrg/alpha'
+  ]);
+  assert.deepEqual(JSON.parse(writes[0].body), { https_enforced: true });
+  assert.equal(state.repos.website.pages.https_enforced, false);
+  assert.equal(state.repos.alpha.settings.has_wiki, false);
+  assert.match(io.out(), new RegExp(
+    'ExampleOrg/website[\\s\\S]*' +
+    'pages\\.https_enforced: false -> true[\\s\\S]*' +
+    'ERROR pages: HTTP 422 \\(The certificate does not exist or is not yet available\\.\\)[\\s\\S]*' +
+    'outcome: not fully written[\\s\\S]*' +
+    'ExampleOrg/alpha[\\s\\S]*' +
+    'outcome: written'
+  ));
+  assert.match(io.out(), /2 change\(s\); 1 error\(s\)\./);
+  assert.doesNotMatch(`${io.out()}${io.err()}`, /test-token-value/);
+  assert.doesNotMatch(writes[0].body, /cname|livingprooflabs/);
 });
 
 test('Pages 404 on a repository that reports a site is a permission failure and creates nothing', async (t) => {
