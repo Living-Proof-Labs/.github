@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { statelessInstallationToken } from './installation-token.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const tool = path.join(root, 'tools/github/audit-junit.mjs');
@@ -110,4 +111,25 @@ test('reports a contradictory dated manual observation as a manual-correction wa
   assert.match(xml, /tests="3" failures="0" errors="0" skipped="1"/);
   assert.match(xml, /manual correction required/);
   assert.match(xml, /warning: observed false/);
+});
+
+test('junit results redact a stateless installation token', () => {
+  const fixture = statelessInstallationToken();
+  const xml = createJUnit({
+    policy: { repository: { has_wiki: false } },
+    audit: [
+      'Living-Proof-Labs/example',
+      '  repository settings: 1 difference(s)',
+      `  has_wiki: ${fixture.token} -> false`,
+      '  immutable releases: enabled',
+      '  main ruleset: matches',
+      ` ERROR: ${fixture.token}`
+    ].join('\n')
+  });
+  assert.equal(xml.includes(fixture.header), false);
+  assert.equal(xml.includes(fixture.payload), false);
+  assert.equal(xml.includes(fixture.signature), false);
+  assert.equal(xml.includes(fixture.appId), false);
+  assert.equal(xml.includes(fixture.token.slice(4)), false);
+  assert.match(xml, /\[redacted\]/);
 });

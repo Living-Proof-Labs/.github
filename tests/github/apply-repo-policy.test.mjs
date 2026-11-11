@@ -19,6 +19,7 @@ import {
   policyNotices,
   validatePolicy
 } from '../../tools/github/apply-repo-policy.mjs';
+import { statelessInstallationToken } from './installation-token.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const fixturePath = path.join(root, 'tests/github/fixtures/pinned-repository-policy.json');
@@ -299,6 +300,47 @@ test('the client refuses user endpoints and write calls before fetch, and redact
     assert.match(error.detail, /\[redacted\]/);
     return true;
   });
+});
+
+test('a printed error redacts a stateless token, a JWT, and classic tokens', async (t) => {
+  const fixture = statelessInstallationToken();
+  const jwt = `${fixture.header}.${fixture.payload}.${fixture.signature}`;
+  const personal = `ghp_${'D'.repeat(36)}`;
+  const file = writePolicy(t, pinned());
+  async function printedError(message) {
+    const io = capture();
+    const code = await main(['--dry-run', '--policy', file, '--org', 'ExampleOrg'], {
+      env: { GH_TOKEN: TOKEN },
+      io,
+      fetchImpl: async (input) => {
+        const url = input instanceof URL ? input : new URL(input);
+        if (url.pathname === '/orgs/ExampleOrg/repos') return jsonResponse([{ name: 'alpha', archived: false }]);
+        return jsonResponse({ message }, 422);
+      }
+    });
+    assert.equal(code, 1);
+    return `${io.out()}${io.err()}`;
+  }
+  const printed = await printedError(`nope ${TOKEN} ${fixture.token}`);
+  assert.ok(printed.length > 0);
+  assert.equal(printed.includes(fixture.header), false);
+  assert.equal(printed.includes(fixture.payload), false);
+  assert.equal(printed.includes(fixture.signature), false);
+  assert.equal(printed.includes(fixture.appId), false);
+  assert.equal(printed.includes(fixture.token.slice(4)), false);
+  assert.equal(printed.includes(TOKEN), false);
+  assert.match(printed, /\[redacted\]/);
+  assert.match(printed, /HTTP 422/);
+
+  const classicPrinted = await printedError(`bearer ${jwt} ${personal}`);
+  assert.equal(classicPrinted.includes(fixture.header), false);
+  assert.equal(classicPrinted.includes(fixture.payload), false);
+  assert.equal(classicPrinted.includes('D'.repeat(20)), false);
+
+  const late = await printedError(`${'n'.repeat(160)} ${fixture.token}`);
+  assert.equal(late.includes(fixture.appId), false);
+  assert.equal(late.includes(fixture.payload), false);
+  assert.equal(late.includes(fixture.signature), false);
 });
 
 test('a matching repository produces no changes', () => {

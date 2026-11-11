@@ -2,6 +2,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pagesHttpsEnforced } from './pages-https.mjs';
+import { redactSecrets } from './redact-secrets.mjs';
 
 const [policyFile, auditFile, outputFile, manualEvidenceFile] = process.argv.slice(2);
 const policy = JSON.parse(readFileSync(policyFile, 'utf8'));
@@ -14,7 +15,7 @@ if (manualEvidence.schema_version !== undefined && manualEvidence.schema_version
 if (!Array.isArray(manualEvidence.observations)) {
   throw new Error('Manual settings evidence must contain an observations array.');
 }
-const lines = readFileSync(auditFile, 'utf8').split('\n');
+const lines = redactSecrets(readFileSync(auditFile, 'utf8')).split('\n');
 const entries = new Map();
 let repository;
 for (const line of lines) {

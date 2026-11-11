@@ -47,10 +47,17 @@ mkdir -p "$(dirname "$tool_file")" "$(dirname "$released_policy_file")"
 fetch_pinned_file "$tool_path" "$expected_sha" "$tool_file"
 fetch_pinned_file "$policy_path" "$expected_policy_sha" "$released_policy_file"
 audit_output="$work_dir/audit-output.txt"
+raw_output="$work_dir/audit-raw.txt"
+raw_error="$work_dir/audit-raw.err"
 set +e
-"${node[@]}" "$tool_file" --inventory "$inventory_file" "$@" | tee "$audit_output"
-tool_status=${PIPESTATUS[0]}
+"${node[@]}" "$tool_file" --inventory "$inventory_file" "$@" >"$raw_output" 2>"$raw_error"
+tool_status=$?
 set -e
+# Redact before the log and the JUnit artifact. A legacy [A-Za-z0-9_] mask
+# stops at the first dot in a stateless ghs_ token and leaves the JWT.
+"${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_output" | tee "$audit_output"
+"${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_error" >&2
+rm -f "$raw_output" "$raw_error"
 if [ "$tool_status" -ne 0 ]; then
   exit "$tool_status"
 fi

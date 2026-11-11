@@ -6,6 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { classify } from '../../tools/github/audit-status.mjs';
+import { statelessInstallationToken } from './installation-token.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const tool = path.join(root, 'tools/github/audit-status.mjs');
@@ -99,6 +100,19 @@ test('without --fail-on-drift drift is reported but exits 0, and an unrecognizab
   const broken = spawnSync(process.execPath, [tool, file, '--fail-on-drift'], { encoding: 'utf8' });
   assert.equal(broken.status, 4);
   assert.match(broken.stderr, /refusing to classify/);
+});
+
+test('audit status output does not print a stateless installation token', () => {
+  const fixture = statelessInstallationToken();
+  const text = `${audit([{ name: 'docs', pages: 'matches' }])}ERROR: ${fixture.token}\n`;
+  const result = strict(text);
+  const printed = `${result.stdout}${result.stderr}`;
+  assert.equal(result.status, 0, printed);
+  assert.equal(printed.includes(fixture.header), false);
+  assert.equal(printed.includes(fixture.payload), false);
+  assert.equal(printed.includes(fixture.signature), false);
+  assert.equal(printed.includes(fixture.appId), false);
+  assert.match(printed, /compliant/);
 });
 
 test('only Pages lines are exempted, never a setting that happens to mention pages', () => {
