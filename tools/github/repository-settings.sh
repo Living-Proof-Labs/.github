@@ -55,8 +55,7 @@ if [ "$tool_status" -ne 0 ]; then
   exit "$tool_status"
 fi
 # Compare pages.https_enforced for sites the audit could read. A repository
-# with no Pages site is not drift. An exemption list in the pinned policy is
-# honoured; v7.9.0 has none, so a later repin is what exempts website.
+# with no Pages site is not drift. v7.10.0 exempts website; that line is not drift.
 "${node[@]}" "$root/tools/github/audit-pages-https.mjs" "$released_policy_file" "$audit_output"
 if [ -n "$result_file" ]; then
   "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file" "$manual_evidence_file"

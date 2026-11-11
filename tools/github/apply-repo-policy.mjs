@@ -121,8 +121,9 @@ token. It is read from the environment only and is never stored or logged.
 Do not put the token in an argument.
 
 A repository in pages.https_enforced_exempt is reported as exempt (reason)
-and Enforce HTTPS is not written for it. A repository with no Pages site is
-left unchanged. The v7.9.0 pin has no exemption list.`;
+and Enforce HTTPS is not written for it. The list must be non-empty and
+pages.https_enforced must be true. A repository with no Pages site is left
+unchanged. The v7.10.0 pin exempts website.`;
 }
 
 export function parseArgs(argv) {

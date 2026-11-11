@@ -2,12 +2,10 @@
 /**
  * Enforce HTTPS (pages.https_enforced) for the strict audit and for apply.
  *
- * The pinned collaboration-guidelines v7.9.0 policy sets pages.https_enforced
- * and does not yet include pages.https_enforced_exempt. A later repin can add
- * that list; website is the expected entry because it is served through
- * Cloudflare, where GitHub has no certificate:
+ * collaboration-guidelines v7.10.0 sets pages.https_enforced and exempts
+ * website, which is served through Cloudflare:
  * [{ "repo": "website", "reason": "HTTPS terminated at Cloudflare" }].
- * Until that repin, website is not exempt.
+ * The exemption list must be non-empty, and only when https_enforced is true.
  */
 const PAGE_KEYS = new Set(['build_type', 'https_enforced', 'https_enforced_exempt']);
 
@@ -30,6 +28,10 @@ export function validatePages(pages) {
   if (!Object.hasOwn(pages, 'https_enforced_exempt')) return;
   const entries = pages.https_enforced_exempt;
   if (!Array.isArray(entries)) throw new Error('policy.pages.https_enforced_exempt must be an array.');
+  if (entries.length === 0) throw new Error('policy.pages.https_enforced_exempt must not be empty.');
+  if (pages.https_enforced !== true) {
+    throw new Error('policy.pages.https_enforced_exempt requires pages.https_enforced to be true.');
+  }
   const seen = new Set();
   entries.forEach((entry, index) => {
     const at = `policy.pages.https_enforced_exempt[${index}]`;
@@ -83,6 +85,12 @@ function httpsLine(state, decision, observed) {
  */
 export async function annotateAudit(text, policy, readSite) {
   const lines = String(text).split('\n');
+  const already = new Set();
+  let seen;
+  for (const line of lines) {
+    if (!line.startsWith(' ') && /^[^/\s]+\/[^/\s]+$/.test(line)) seen = line.split('/')[1];
+    else if (seen && line.startsWith('  pages.https_enforced:')) already.add(seen);
+  }
   const output = [];
   let repository;
   for (const line of lines) {
@@ -91,7 +99,7 @@ export async function annotateAudit(text, policy, readSite) {
       repository = line.split('/')[1];
       continue;
     }
-    if (!repository || !line.startsWith('  pages: ')) continue;
+    if (!repository || already.has(repository) || !line.startsWith('  pages: ')) continue;
     const state = line.trim().slice('pages: '.length).split(' ')[0];
     const decision = pagesHttpsEnforced(policy, repository);
     let observed;

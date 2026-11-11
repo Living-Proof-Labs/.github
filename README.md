@@ -114,13 +114,15 @@ the repository already has a Pages site, a difference becomes
 (`https_enforced` and, when it also differs, `build_type`). The custom domain
 is not sent.
 
-The pinned policy blob `2e268a4208f5c55d85f4b3ecb7e21ef9a1e56927`
-(collaboration-guidelines `v7.9.0`, commit
-`abd193684ab2baad7abaa1a843d802dc2353faf5`) sets `pages.build_type` to
-`workflow` and `pages.https_enforced` to `true`. `--apply` writes Enforce
-HTTPS when an existing Pages site differs. If GitHub rejects that write, the
-report names the repository, the Pages setting, and GitHub's error message,
-then continues with the remaining repositories and exits non-zero.
+The pinned policy blob `b5f31a288ae719c0f9e632f5ec359f33839f0850`
+(collaboration-guidelines `v7.10.0`, commit
+`122db54d0763dc39f81133ec06e35dab2b24d41b`) sets `pages.build_type` to
+`workflow` and `pages.https_enforced` to `true`. It exempts `website`
+(`HTTPS terminated at Cloudflare`), so `--apply` does not send Enforce HTTPS
+for that repository. Other existing Pages sites are updated when Enforce HTTPS
+differs. If GitHub rejects a write, the report names the repository, the Pages
+setting, and GitHub's error message, then continues with the remaining
+repositories and exits non-zero.
 
 ### Token permissions
 

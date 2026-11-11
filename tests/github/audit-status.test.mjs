@@ -10,7 +10,7 @@ import { classify } from '../../tools/github/audit-status.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
 const tool = path.join(root, 'tools/github/audit-status.mjs');
 
-/** v7.9.0 audit output: one block per repository, then the summary line it prints. */
+/** v7.10.0 audit output: one block per repository, then the summary line it prints. */
 function audit(repositories) {
   let total = 0;
   const blocks = repositories.map(({ name, pages, settings = [], immutable = 'enabled' }) => {

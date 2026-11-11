@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { classify } from '../../tools/github/audit-status.mjs';
 import { annotateAudit, pagesHttpsEnforced, validatePages } from '../../tools/github/pages-https.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -42,6 +43,27 @@ test('a Pages site is compared, a missing site is tolerated, and an exemption is
   assert.equal(annotated.includes('ghs_should_not_leak'), false);
   assert.equal(pagesHttpsEnforced(policy, 'website').report, 'exempt (HTTPS terminated at Cloudflare)');
   assert.equal(pagesHttpsEnforced({ pages: { https_enforced: true } }, 'website').enforce, true);
+});
+
+test('nine Pages sites do not count website as Enforce HTTPS drift', async () => {
+  const others = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
+  const blocks = ['website', ...others].map((name) => `Living-Proof-Labs/${name}\n  pages: matches`);
+  const calls = [];
+  const annotated = await annotateAudit(audit(blocks), policy, async (repository) => {
+    calls.push(repository);
+    return { httpsEnforced: false };
+  });
+  assert.deepEqual(calls.sort(), others.sort());
+  assert.match(annotated, /Living-Proof-Labs\/website\n {2}pages: matches\n {2}pages\.https_enforced: exempt \(HTTPS terminated at Cloudflare\)/);
+  assert.equal(annotated.includes('website\n  pages: matches\n  pages.https_enforced: false'), false);
+  const state = classify(annotated);
+  assert.equal(state.httpsDrift, 8);
+  assert.equal(state.enforced, 8);
+  const again = await annotateAudit(annotated, policy, async () => {
+    throw new Error('a reported Enforce HTTPS line must not be read again');
+  });
+  assert.equal(again, annotated);
+  assert.equal(classify(again).enforced, 8);
 });
 
 test('the audit command does not call GitHub for a repository with no Pages site', () => {

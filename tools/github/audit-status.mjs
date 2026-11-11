@@ -3,7 +3,7 @@
 /**
  * Classify a repository-settings audit and choose the wrapper's exit status.
  *
- * The pinned tool (collaboration-guidelines v7.9.0) counts every repository whose Pages
+ * The pinned tool (collaboration-guidelines v7.10.0) counts every repository whose Pages
  * state is not `matches` as one difference, including repositories that have no Pages
  * site (`missing`) and ones whose Pages state the audit token cannot read
  * (`inaccessible`). Neither is drift this organization enforces: most repositories
@@ -12,9 +12,8 @@
  * (`drifted`) and every other difference still count.
  *
  * pages.https_enforced is compared for a repository that has a Pages site.
- * A missing site is not Enforce HTTPS drift. pages.https_enforced_exempt in
- * the pinned policy, when present, is not drift either. v7.9.0 does not ship
- * that list; a later repin adds it.
+ * A missing site is not Enforce HTTPS drift. v7.10.0 exempts website in
+ * pages.https_enforced_exempt, and that repository is not drift either.
  *
  * Usage: audit-status.mjs AUDIT_OUTPUT [--fail-on-drift]
  * Exit: 0 compliant (or not strict), 2 drift, 3 incomplete (immutable state unknown),
