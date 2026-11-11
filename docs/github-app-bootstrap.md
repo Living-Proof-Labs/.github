@@ -95,3 +95,15 @@ remain optional infrastructure-as-code references. They are not required for
 the manual setup above. The manifest path is useful only when an owner already
 has the necessary App-registration access and wants to reproduce the same
 configuration programmatically.
+
+`repository-settings-audit.manifest.json` and
+`repository-settings-apply.manifest.json` describe the settings credential
+above. They request Administration and Metadata only. Registering them is
+separate from the bot Apps.
+
+`rivet.manifest.json`, `cody.manifest.json`, and `vera.manifest.json` are
+private Apps, one per bot, for the same organization
+manifest flow (`task github:apps:form:help`). Webhooks stay off. Only the
+Rivet manifest requests Administration write and Pages write. Minting a bot
+installation token is described in the repository README under
+[Bot GitHub Apps](../README.md#bot-github-apps).

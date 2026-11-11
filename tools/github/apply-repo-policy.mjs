@@ -23,6 +23,20 @@ import { fileURLToPath } from 'node:url';
 const USER_AGENT = 'living-proof-labs-apply-repo-policy';
 const API_VERSION = '2022-11-28';
 const PAGE_KEYS = new Set(['build_type', 'https_enforced']);
+// GitHub leaves these fields out of GET /repos unless the token has Administration: read.
+const ADMINISTRATION_READ_FIELDS = new Set([
+  'allow_auto_merge',
+  'allow_merge_commit',
+  'allow_rebase_merge',
+  'allow_squash_merge',
+  'allow_update_branch',
+  'delete_branch_on_merge',
+  'merge_commit_message',
+  'merge_commit_title',
+  'squash_merge_commit_message',
+  'squash_merge_commit_title',
+  'use_squash_pr_title_as_default'
+]);
 const POLICY_KEYS = new Set([
   'schema_version',
   'repository',
@@ -340,6 +354,11 @@ export function updateRulesetPayload(existing, desired) {
   };
 }
 
+function absentRepositoryField(key) {
+  const permission = ADMINISTRATION_READ_FIELDS.has(key) ? 'missing Administration: read; ' : '';
+  return `field is absent from the repository response; ${permission}not written`;
+}
+
 function rulesetIdentity(value) {
   const id = String(value ?? '');
   return /^[0-9]+$/.test(id) ? id : undefined;
@@ -361,7 +380,7 @@ export function planRepository(policy, observed, repository) {
   for (const [key, desired] of Object.entries(policy.repository)) {
     const setting = `repository.${key}`;
     if (!Object.hasOwn(observed.repository, key)) {
-      failures.push({ setting, message: 'field is absent from the repository response; not written' });
+      failures.push({ setting, message: absentRepositoryField(key) });
       continue;
     }
     if (!sameValue(observed.repository[key], desired)) {
@@ -541,7 +560,7 @@ export async function listOrgRepositories(api, org) {
     if (!Array.isArray(batch)) throw new Error(`GET /orgs/${org}/repos did not return a repository list.`);
     for (const repository of batch) {
       if (!isRepositoryName(repository?.name)) throw new Error('Organization repository list included an invalid name.');
-      repositories.push({ name: repository.name });
+      repositories.push({ name: repository.name, archived: repository.archived === true });
     }
     if (batch.length < 100) return repositories;
   }
@@ -638,6 +657,17 @@ export async function run({ policy, org, repo, dryRun, api }) {
   }
   const repositories = [];
   for (const item of listed) {
+    if (item.archived) {
+      repositories.push({
+        name: item.name,
+        archived: true,
+        lines: [],
+        skipped: [],
+        failures: [],
+        writeFailures: 0
+      });
+      continue;
+    }
     const observed = await observe(api, org, item.name, policy);
     const planned = planRepository(policy, observed, { owner: org, name: item.name });
     let writeFailures = 0;
@@ -676,6 +706,10 @@ export function renderReport(report, { dryRun, org, policySource }) {
   lines.push('');
   for (const repository of report.repositories) {
     lines.push(`${org}/${repository.name}`);
+    if (repository.archived) {
+      lines.push('  skipped (archived)');
+      continue;
+    }
     if (repository.lines.length === 0 && repository.skipped.length === 0 && repository.failures.length === 0) {
       lines.push('  no changes');
     }

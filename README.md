@@ -95,12 +95,16 @@ not `owner/name`).
 
 A failure to read or write one setting is reported on that repository and the
 command continues with the others. The process exits non-zero if any
-repository failed. Settings in `manual_or_unavailable_settings` are named and
-skipped; they have no API.
+repository failed. When GitHub omits a merge setting from the repository
+object, the error names the missing permission, `Administration: read`.
+Settings in `manual_or_unavailable_settings` are named and skipped; they have
+no API.
 
 The command does not create a GitHub Pages site. A repository with no site is
 skipped for Pages. A 404 from a repository whose `has_pages` is not `false` is
-a permission failure, not an absent site.
+a permission failure, not an absent site. An archived repository is reported
+as `skipped (archived)` in both dry-run and apply, and it is left unread and
+unwritten.
 
 ### Enforce HTTPS
 
@@ -134,10 +138,11 @@ repositories the installation can access:
 | Organization repository list | `GET /orgs/{org}/repos` | Metadata: Read (GitHub Apps receive this automatically). Private repositories still require the installation to include them. |
 | `manual_or_unavailable_settings` | not called | none; these stay manual |
 
-Metadata read alone cannot change settings. The App manifests already in this
-repository request Administration and Metadata only, so they cannot enforce
-HTTPS until the App that mints `GH_TOKEN` also has Pages: Read and write.
-This command does not install an App or mint a token.
+Metadata read alone cannot change settings. The repository-settings manifests
+request Administration and Metadata only. Rivet's manifest also requests
+Pages: Read and write, which this command needs for `pages.build_type` and
+`pages.https_enforced`. `GH_TOKEN=$(scripts/app-token rivet)` mints that
+installation token.
 
 ## Repository directory
 
@@ -193,3 +198,55 @@ the App key to pull-request, fork, or local shell-profile code. The
 [GitHub App guide](docs/github-app-bootstrap.md) covers the selected-repository
 installation and the `repository-audit` / `repository-administration`
 environment split.
+
+## Bot GitHub Apps
+
+Living Proof Labs uses one private GitHub App for each bot. The manifests
+live with the repository-settings manifests in
+[`config/github/apps/`](config/github/apps/):
+
+| Bot | Manifest | Role |
+| --- | --- | --- |
+| Rivet | [`rivet.manifest.json`](config/github/apps/rivet.manifest.json) | Head of Engineering and Delivery |
+| Cody | [`cody.manifest.json`](config/github/apps/cody.manifest.json) | Software engineer |
+| Vera | [`vera.manifest.json`](config/github/apps/vera.manifest.json) | Verification |
+
+Register an App with the organization manifest flow already supported here
+(`task github:apps:form:help`, then the callback and exchange helpers).
+Webhooks are off. Only Rivet's manifest requests Administration write and
+Pages write, which `scripts/apply-repo-policy` needs when it writes repository
+settings and GitHub Pages. Rivet also writes pull requests and issues, and
+can re-run workflows. Cody writes issues and workflow files, and reads
+continuous integration. Vera reads code and continuous integration, writes
+pull-request reviews, and writes issues. The repository-settings audit and apply manifests
+stay Administration and Metadata only. They are the trusted-main workflow
+credential, separate from these bots.
+
+### Mint an installation token
+
+`scripts/app-token <bot>` reads the App id and the RSA private key from the
+environment, signs a short-lived JSON Web Token, finds the App installation
+on Living-Proof-Labs, and exchanges it for an installation token. The token
+is the only text on standard output.
+
+```bash
+GH_TOKEN=$(scripts/app-token rivet) scripts/apply-repo-policy --dry-run
+```
+
+| Bot | App id | Private key | Installation id (optional) |
+| --- | --- | --- | --- |
+| rivet | `RIVET_GITHUB_APP_ID` | `RIVET_GITHUB_APP_PRIVATE_KEY` | `RIVET_GITHUB_APP_INSTALLATION_ID` |
+| cody | `CODY_GITHUB_APP_ID` | `CODY_GITHUB_APP_PRIVATE_KEY` | `CODY_GITHUB_APP_INSTALLATION_ID` |
+| vera | `VERA_GITHUB_APP_ID` | `VERA_GITHUB_APP_PRIVATE_KEY` | `VERA_GITHUB_APP_INSTALLATION_ID` |
+
+Put the PEM text in the private-key variable. A file path is rejected. A
+value stored with literal `\n` sequences is accepted. When the installation
+id is unset, the command looks up
+`GET /orgs/Living-Proof-Labs/installation`. `GITHUB_APP_ORG` selects a
+different organization login. Errors go to standard error and omit the key,
+the signed JSON Web Token, and the installation token. Both secrets stay in
+memory. `task github:app-token:help` prints the same usage text.
+
+Creating each App from its manifest, installing it on the organization, and
+storing the private key are owner steps. This public repository holds no
+secrets.
