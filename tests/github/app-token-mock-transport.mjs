@@ -3,6 +3,7 @@
 import { EventEmitter } from 'node:events';
 import http from 'node:http';
 import https from 'node:https';
+import { CLASSIC_INSTALLATION_TOKEN, statelessInstallationToken } from './installation-token.mjs';
 
 function fakeRequest(options, callback) {
   const headers = options.headers ?? {};
@@ -19,10 +20,13 @@ function fakeRequest(options, callback) {
     const unauthorized = process.env.APP_TOKEN_MOCK === 'unauthorized';
     const tokenExchange = resource.includes('/access_tokens');
     const status = headerOk ? (unauthorized && tokenExchange ? 401 : (tokenExchange ? 201 : 200)) : 500;
+    const issued = process.env.APP_TOKEN_MOCK === 'stateless'
+      ? statelessInstallationToken().token
+      : CLASSIC_INSTALLATION_TOKEN;
     const payload = tokenExchange
       ? (unauthorized
-        ? JSON.stringify({ message: 'bad', token: 'ghs_should_not_leak', pem: 'BEGIN PRIVATE KEY' })
-        : JSON.stringify({ token: 'ghs_fromserver', expires_at: '2030-01-01T00:00:00Z', private_key: 'BEGIN PRIVATE KEY' }))
+        ? JSON.stringify({ message: `bad ${statelessInstallationToken().token}`, token: 'ghs_should_not_leak', pem: 'BEGIN PRIVATE KEY' })
+        : JSON.stringify({ token: issued, expires_at: '2030-01-01T00:00:00Z', private_key: 'BEGIN PRIVATE KEY' }))
       : JSON.stringify({ id: 77, account: { login: 'Living-Proof-Labs' } });
     queueMicrotask(() => {
       const response = new EventEmitter();

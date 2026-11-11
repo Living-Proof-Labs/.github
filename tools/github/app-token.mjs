@@ -9,10 +9,14 @@ import http from 'node:http';
 import https from 'node:https';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { redactSecrets } from './redact-secrets.mjs';
 
 const API_VERSION = '2026-03-10';
 const USER_AGENT = 'living-proof-labs-app-token';
-const TOKEN_PATTERN = /^[A-Za-z0-9_]+$/;
+// Opaque installation token. Classic tokens are ghs_ plus 36 letters or digits.
+// Stateless tokens are ghs_<app id>_<JWT> and also contain dots and dashes.
+// The minimum length is 36 characters after the prefix; the length is not fixed.
+const TOKEN_PATTERN = /^ghs_[A-Za-z0-9._-]{36,}$/;
 const MAX_KEY_LENGTH = 16 * 1024;
 const MAX_RESPONSE_BYTES = 1_000_000;
 
@@ -291,7 +295,7 @@ export async function main(argv = process.argv.slice(2), env = process.env, io =
     return 0;
   } catch (error) {
     const message = error instanceof AppTokenError ? error.message : 'Could not mint an installation token.';
-    stderr.write(`${message}\n`);
+    stderr.write(`${redactSecrets(message)}\n`);
     return 1;
   }
 }

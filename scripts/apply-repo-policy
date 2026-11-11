@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
+# This wrapper does not print the token. Redaction of stateless ghs_ tokens,
+# JSON Web Tokens, and classic GitHub tokens happens in apply-repo-policy.mjs
+# before it writes standard output or standard error.
 set -euo pipefail
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 exec bash "$root/tools/with-node.sh" node "$root/tools/github/apply-repo-policy.mjs" "$@"

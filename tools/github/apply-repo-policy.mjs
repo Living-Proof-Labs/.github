@@ -19,6 +19,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { redactSecrets } from './redact-secrets.mjs';
 
 const USER_AGENT = 'living-proof-labs-apply-repo-policy';
 const API_VERSION = '2022-11-28';
@@ -164,8 +165,9 @@ export function requireToken(env) {
 }
 
 function sanitize(text, token) {
-  let cleaned = String(text ?? '');
-  if (typeof token === 'string' && token.length > 0) cleaned = cleaned.replaceAll(token, '[redacted]');
+  // Redact before the length limit. A stateless token is longer than the limit,
+  // and cutting it first would print the unredacted prefix.
+  let cleaned = redactSecrets(text, token);
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
   return cleaned.slice(0, 180) || 'request failed';
 }
@@ -789,7 +791,7 @@ export async function main(argv, dependencies = {}) {
     validatePolicy(policy);
     const api = createGitHubClient({ token, fetchImpl, allowWrites: options.apply === true });
     const report = await run({ policy, org: options.org, repo: options.repo, dryRun: options.dryRun, api });
-    io.stdout.write(renderReport(report, { dryRun: options.dryRun, org: options.org, policySource }));
+    io.stdout.write(redactSecrets(renderReport(report, { dryRun: options.dryRun, org: options.org, policySource }), tokenForErrors));
     return report.failures > 0 ? 1 : 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'failed';
