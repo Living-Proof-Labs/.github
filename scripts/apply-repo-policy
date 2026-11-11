@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+set -euo pipefail
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec bash "$root/tools/with-node.sh" node "$root/tools/github/apply-repo-policy.mjs" "$@"

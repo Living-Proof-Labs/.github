@@ -43,6 +43,10 @@ tasks:
     desc: Write JUnit evidence and fail on every drift or unverified setting
     cmds:
       - bash tools/github/repository-settings.sh --fail-on-drift --junit artifacts/repository-settings.xml
+  github:policy:apply:
+    desc: Preview or apply the pinned repository policy. Pass -- --dry-run or -- --apply
+    cmds:
+      - bash scripts/apply-repo-policy {{.CLI_ARGS}}
   github:apps:check:
     desc: Validate the versioned GitHub App manifests without contacting GitHub
     cmds:

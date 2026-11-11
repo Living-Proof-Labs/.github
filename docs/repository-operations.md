@@ -60,6 +60,23 @@ An apply run uses `repository-administration`, requires its environment review,
 and finishes with strict all-repository verification plus a 14-day JUnit
 test-result artifact. It never runs from pull-request or fork code.
 
+## Apply the pinned policy with a token
+
+[`scripts/apply-repo-policy`](../scripts/apply-repo-policy) compares the policy
+pinned in
+[`config/github/repository-policy.json`](../config/github/repository-policy.json)
+with every repository from `GET /orgs/Living-Proof-Labs/repos`. `--dry-run`
+prints `current -> desired` and does not write. `--apply` writes only settings
+that differ. The credential is `GH_TOKEN` in the environment: a personal
+access token or a GitHub App installation token. The command lists
+repositories with the organization endpoint and does not call `/user`.
+
+Token permissions, the Pages Enforce HTTPS field, and examples are in the
+[repository README](../README.md#apply-repository-policy). The workflow above
+remains the environment-gated apply path. The pinned policy does not yet set
+`pages.https_enforced`; the command applies that boolean only after
+collaboration-guidelines adds it and this repository repins the policy blob.
+
 ## Automation behavior
 
 Pull requests run an informational, secret-free report. Trusted `main`, manual
