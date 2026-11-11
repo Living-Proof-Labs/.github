@@ -11,6 +11,11 @@
  * the strict count and reported separately. A Pages site that exists with another source
  * (`drifted`) and every other difference still count.
  *
+ * pages.https_enforced is compared for a repository that has a Pages site.
+ * A missing site is not Enforce HTTPS drift. pages.https_enforced_exempt in
+ * the pinned policy, when present, is not drift either. v7.9.0 does not ship
+ * that list; a later repin adds it.
+ *
  * Usage: audit-status.mjs AUDIT_OUTPUT [--fail-on-drift]
  * Exit: 0 compliant (or not strict), 2 drift, 3 incomplete (immutable state unknown),
  * 4 unrecognizable summary.
@@ -22,11 +27,13 @@ export function classify(text) {
   const summary = text.match(/^(\d+) difference\(s\) found; \d+ error\(s\)\.$/m);
   const lines = text.split('\n');
   const pagesNotEnforced = lines.filter((line) => /^ {2}pages: (missing|inaccessible)\b/.test(line)).length;
+  const httpsDrift = lines.filter((line) => /^ {2}pages\.https_enforced: (?:true|false) -> (?:true|false)$/.test(line)).length;
   return {
     recognized: Boolean(summary),
     differences: summary ? Number(summary[1]) : undefined,
     pagesNotEnforced,
-    enforced: summary ? Number(summary[1]) - pagesNotEnforced : undefined,
+    httpsDrift,
+    enforced: summary ? Number(summary[1]) - pagesNotEnforced + httpsDrift : undefined,
     immutableUnknown: lines.some((line) => line.startsWith('  immutable releases: unknown'))
   };
 }

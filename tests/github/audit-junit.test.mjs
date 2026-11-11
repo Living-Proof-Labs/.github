@@ -61,6 +61,40 @@ test('separates dated manual evidence from API-enforced checks', () => {
   assert.match(xml, /2026-10-30T05:50:00Z/);
 });
 
+test('junit compares Enforce HTTPS, passes a repository with no Pages site, and records an exemption', () => {
+  const xml = createJUnit({
+    policy: {
+      pages: {
+        https_enforced: true,
+        https_enforced_exempt: [{ repo: 'website', reason: 'HTTPS terminated at Cloudflare' }]
+      }
+    },
+    audit: [
+      'Living-Proof-Labs/website',
+      '  pages: matches',
+      '  pages.https_enforced: exempt (HTTPS terminated at Cloudflare)',
+      '  immutable releases: enabled',
+      '  main ruleset: matches',
+      'Living-Proof-Labs/plain',
+      '  pages: missing',
+      '  pages.https_enforced: no Pages site',
+      '  immutable releases: enabled',
+      '  main ruleset: matches',
+      'Living-Proof-Labs/docs',
+      '  pages: matches',
+      '  pages.https_enforced: false -> true',
+      '  immutable releases: enabled',
+      '  main ruleset: matches'
+    ].join('\n')
+  });
+  assert.match(xml, /website :: pages\.https_enforced/);
+  assert.match(xml, /exempt \(HTTPS terminated at Cloudflare\)/);
+  assert.match(xml, /plain :: pages\.https_enforced"\/>/);
+  assert.match(xml, /docs :: pages\.https_enforced/);
+  assert.match(xml, /actual false -> true; expected true/);
+  assert.equal((xml.match(/<failure /g) || []).length, 1);
+});
+
 test('reports a contradictory dated manual observation as a manual-correction warning', () => {
   const xml = createJUnit({
     policy: { manual_or_unavailable_settings: { auto_close_linked_issues: true } },

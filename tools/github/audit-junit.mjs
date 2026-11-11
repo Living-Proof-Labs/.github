@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { pagesHttpsEnforced } from './pages-https.mjs';
 
 const [policyFile, auditFile, outputFile, manualEvidenceFile] = process.argv.slice(2);
 const policy = JSON.parse(readFileSync(policyFile, 'utf8'));
@@ -19,7 +20,11 @@ let repository;
 for (const line of lines) {
   if (line.startsWith('Living-Proof-Labs/')) {
     repository = line.trim();
-    entries.set(repository, { differences: new Map(), immutable: 'unknown', ruleset: 'unknown' });
+    entries.set(repository, { differences: new Map(), immutable: 'unknown', ruleset: 'unknown', pages: 'unknown', https: undefined });
+  } else if (repository && line.startsWith('  pages.https_enforced: ')) {
+    entries.get(repository).https = line.trim().slice('pages.https_enforced: '.length);
+  } else if (repository && line.startsWith('  pages: ')) {
+    entries.get(repository).pages = line.trim().slice('pages: '.length).split(' ')[0];
   } else if (repository && line.startsWith('  ') && line.includes(': ') && line.includes(' -> ')) {
     const [field, actual] = line.trim().split(': ', 2);
     entries.get(repository).differences.set(field, actual);
@@ -56,6 +61,21 @@ for (const [repo, state] of entries) {
     if (actual === undefined) cases.push(`<testcase name="${escape(name)}"/>`);
     else if (actual === 'undefined') cases.push(`<testcase name="${escape(name)}"><error message="GraphQL field unavailable">expected ${escape(JSON.stringify(expected))}</error></testcase>`);
     else cases.push(`<testcase name="${escape(name)}"><failure message="setting drift">actual ${escape(actual)}; expected ${escape(JSON.stringify(expected))}</failure></testcase>`);
+  }
+  const https = pagesHttpsEnforced(policy, repo.split('/').pop());
+  const httpsName = `${repo} :: pages.https_enforced`;
+  if (https.report) {
+    cases.push(`<testcase name="${escape(httpsName)}"><system-out>${escape(https.report)}; not Enforce HTTPS drift</system-out></testcase>`);
+  } else if (https.enforce) {
+    if (/^(?:true|false) -> (?:true|false)$/.test(state.https ?? '')) {
+      cases.push(`<testcase name="${escape(httpsName)}"><failure message="setting drift">actual ${escape(state.https)}; expected ${escape(JSON.stringify(https.desired))}</failure></testcase>`);
+    } else if (state.pages === 'missing' || state.https === 'no Pages site') {
+      cases.push(`<testcase name="${escape(httpsName)}"/>`);
+    } else if (state.https === 'matches') {
+      cases.push(`<testcase name="${escape(httpsName)}"/>`);
+    } else {
+      cases.push(`<testcase name="${escape(httpsName)}"><error message="unverified Enforce HTTPS">Pages site was not readable, so pages.https_enforced was not compared</error></testcase>`);
+    }
   }
   for (const [field, expected] of Object.entries(policy.manual_or_unavailable_settings ?? {})) {
     const name = `${repo} :: manual ${field}`;

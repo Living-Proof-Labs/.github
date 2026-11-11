@@ -54,6 +54,29 @@ test('strict audit stays red on real repository-settings drift alongside Pages e
   assert.match(result.stdout, /drift detected \(1 difference\(s\); 18 Pages state\(s\) missing/);
 });
 
+test('strict audit fails when a Pages site does not enforce HTTPS and ignores a missing site', () => {
+  const drifted = audit([{ name: 'docs', pages: 'matches' }]).replace(
+    '  pages: matches',
+    '  pages: matches\n  pages.https_enforced: false -> true'
+  );
+  const driftedResult = strict(drifted);
+  assert.equal(driftedResult.status, 2, driftedResult.stdout);
+  assert.match(driftedResult.stdout, /drift detected \(1 difference\(s\)/);
+  const absent = audit([{ name: 'plain', pages: 'missing' }]).replace(
+    '  pages: missing',
+    '  pages: missing\n  pages.https_enforced: no Pages site'
+  );
+  const absentResult = strict(absent);
+  assert.equal(absentResult.status, 0, absentResult.stdout);
+  assert.match(absentResult.stdout, /compliant/);
+  const exempt = audit([{ name: 'website', pages: 'matches' }]).replace(
+    '  pages: matches',
+    '  pages: matches\n  pages.https_enforced: exempt (HTTPS terminated at Cloudflare)'
+  );
+  const exemptResult = strict(exempt);
+  assert.equal(exemptResult.status, 0, exemptResult.stdout);
+});
+
 test('strict audit stays red when a Pages site exists with another source', () => {
   const result = strict(audit([...noPages, { name: 'legacy', pages: 'drifted (source legacy -> workflow)' }]));
   assert.equal(result.status, 2, result.stdout);

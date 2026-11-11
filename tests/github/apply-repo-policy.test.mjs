@@ -373,6 +373,29 @@ test('repositories without a Pages site are not given one', () => {
   assert.match(planned.skipped[0], /no site/);
 });
 
+test('an exemption skips Enforce HTTPS for that repository and still writes the others', () => {
+  const policy = withHttps(pinned());
+  policy.pages.https_enforced_exempt = [{ repo: 'website', reason: 'HTTPS terminated at Cloudflare' }];
+  validatePolicy(policy);
+  const website = observedMatching(policy);
+  website.pages.site.https_enforced = false;
+  const exempted = planRepository(policy, website, target('website'));
+  assert.equal(exempted.writes.some((write) => write.body && Object.hasOwn(write.body, 'https_enforced')), false);
+  assert.match(exempted.skipped.join('\n'), /pages\.https_enforced: exempt \(HTTPS terminated at Cloudflare\)/);
+  const alpha = observedMatching(policy);
+  alpha.pages.site.https_enforced = false;
+  const enforced = planRepository(policy, alpha, target('alpha'));
+  assert.deepEqual(enforced.writes.find((write) => String(write.path).endsWith('/pages')).body, { https_enforced: true });
+  assert.throws(() => validatePolicy({
+    ...policy,
+    pages: { ...policy.pages, https_enforced_exempt: [{ repo: 'Living-Proof-Labs/website', reason: 'no' }] }
+  }), /repository name/);
+  assert.throws(() => validatePolicy({
+    ...policy,
+    pages: { ...policy.pages, https_enforced_exempt: [{ repo: 'website' }] }
+  }), /reason/);
+});
+
 test('an unreadable main-ruleset bypass list is not written', () => {
   const policy = pinned();
   const observed = observedMatching(policy);

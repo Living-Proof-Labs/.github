@@ -1,0 +1,109 @@
+// SPDX-License-Identifier: Apache-2.0
+/**
+ * Enforce HTTPS (pages.https_enforced) for the strict audit and for apply.
+ *
+ * The pinned collaboration-guidelines v7.9.0 policy sets pages.https_enforced
+ * and does not yet include pages.https_enforced_exempt. A later repin can add
+ * that list; website is the expected entry because it is served through
+ * Cloudflare, where GitHub has no certificate:
+ * [{ "repo": "website", "reason": "HTTPS terminated at Cloudflare" }].
+ * Until that repin, website is not exempt.
+ */
+const PAGE_KEYS = new Set(['build_type', 'https_enforced', 'https_enforced_exempt']);
+
+function isRepositoryName(name) {
+  return typeof name === 'string' && (name === '.github' || /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name));
+}
+
+export function validatePages(pages) {
+  if (pages === undefined) return;
+  if (!pages || typeof pages !== 'object' || Array.isArray(pages)) throw new Error('policy.pages must be an object.');
+  for (const key of Object.keys(pages)) {
+    if (!PAGE_KEYS.has(key)) throw new Error(`policy.pages.${key} is not supported; refusing to ignore it.`);
+  }
+  if (pages.build_type !== undefined && pages.build_type !== 'legacy' && pages.build_type !== 'workflow') {
+    throw new Error('policy.pages.build_type must be legacy or workflow.');
+  }
+  if (Object.hasOwn(pages, 'https_enforced') && typeof pages.https_enforced !== 'boolean') {
+    throw new Error('policy.pages.https_enforced must be a boolean.');
+  }
+  if (!Object.hasOwn(pages, 'https_enforced_exempt')) return;
+  const entries = pages.https_enforced_exempt;
+  if (!Array.isArray(entries)) throw new Error('policy.pages.https_enforced_exempt must be an array.');
+  const seen = new Set();
+  entries.forEach((entry, index) => {
+    const at = `policy.pages.https_enforced_exempt[${index}]`;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error(`${at} must be an object with repo and reason.`);
+    }
+    for (const key of Object.keys(entry)) {
+      if (key !== 'repo' && key !== 'reason') throw new Error(`${at}.${key} is not supported.`);
+    }
+    if (!isRepositoryName(entry.repo)) throw new Error(`${at}.repo must be a non-empty repository name.`);
+    if (typeof entry.reason !== 'string' || entry.reason.trim() === '') {
+      throw new Error(`${at}.reason must be a non-empty string.`);
+    }
+    if (seen.has(entry.repo)) throw new Error(`${at}.repo duplicates ${entry.repo}.`);
+    seen.add(entry.repo);
+  });
+}
+
+/**
+ * How pages.https_enforced applies to one repository.
+ * An exempt repository is not drift and must not be written.
+ * Otherwise the boolean is enforced only when the policy sets it.
+ * A repository with no Pages site is not decided here; callers tolerate that.
+ */
+export function pagesHttpsEnforced(policy, repositoryName) {
+  const pages = policy?.pages;
+  const entries = Array.isArray(pages?.https_enforced_exempt) ? pages.https_enforced_exempt : [];
+  const exemption = entries.find((entry) => entry?.repo === repositoryName);
+  if (exemption) return { enforce: false, reason: exemption.reason, report: `exempt (${exemption.reason})` };
+  if (pages && Object.hasOwn(pages, 'https_enforced') && typeof pages.https_enforced === 'boolean') {
+    return { enforce: true, desired: pages.https_enforced };
+  }
+  return { enforce: false };
+}
+
+function httpsLine(state, decision, observed) {
+  if (decision.report) return `  pages.https_enforced: ${decision.report}`;
+  if (!decision.enforce) return undefined;
+  if (state === 'missing') return '  pages.https_enforced: no Pages site';
+  if (state !== 'matches' && state !== 'drifted') return '  pages.https_enforced: unverified';
+  if (!observed || observed.unverified || typeof observed.httpsEnforced !== 'boolean') {
+    return '  pages.https_enforced: unverified';
+  }
+  if (observed.httpsEnforced === decision.desired) return '  pages.https_enforced: matches';
+  return `  pages.https_enforced: ${observed.httpsEnforced} -> ${decision.desired}`;
+}
+
+/**
+ * Insert one pages.https_enforced line under each audited repository.
+ * readSite is called only for a repository that has a Pages site and is not exempt.
+ */
+export async function annotateAudit(text, policy, readSite) {
+  const lines = String(text).split('\n');
+  const output = [];
+  let repository;
+  for (const line of lines) {
+    output.push(line);
+    if (!line.startsWith(' ') && /^[^/\s]+\/[^/\s]+$/.test(line)) {
+      repository = line.split('/')[1];
+      continue;
+    }
+    if (!repository || !line.startsWith('  pages: ')) continue;
+    const state = line.trim().slice('pages: '.length).split(' ')[0];
+    const decision = pagesHttpsEnforced(policy, repository);
+    let observed;
+    if (decision.enforce && (state === 'matches' || state === 'drifted')) {
+      try {
+        observed = await readSite(repository);
+      } catch {
+        observed = { unverified: true };
+      }
+    }
+    const annotation = httpsLine(state, decision, observed);
+    if (annotation) output.push(annotation);
+  }
+  return output.join('\n');
+}

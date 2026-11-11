@@ -40,6 +40,14 @@ it in policy tooling or another repository.
 | Unverified | The setting cannot be read or has no current observation | Obtain the required read access or record a fresh manual observation |
 | Error | The audit encountered an unexpected application programming interface (API) or execution error | Diagnose before treating the setting as compliant |
 
+The strict audit compares `pages.https_enforced` on a repository that already
+has a Pages site. A repository with no Pages site is not an Enforce HTTPS
+failure. When the pinned policy contains `pages.https_enforced_exempt`, each
+`{ "repo", "reason" }` entry is reported as `exempt (reason)` and is not
+drift. collaboration-guidelines v7.9.0 does not include that list. `website`
+is served through Cloudflare, and a later repin is what adds its exemption.
+Until then the audit still compares `website` when its Pages site is readable.
+
 UI-only evidence lives in
 [`config/github/manual-settings-evidence.json`](../config/github/manual-settings-evidence.json).
 It is dated evidence, not a current API measurement.

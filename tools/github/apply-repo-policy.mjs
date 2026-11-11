@@ -12,17 +12,18 @@
  * file. --dry-run prints current -> desired and performs no write calls.
  * --apply writes only the fields that differ.
  *
- * pages.https_enforced is applied when the policy sets that boolean. This
- * command does not invent Enforce HTTPS, and it does not create Pages sites.
+ * pages.https_enforced is applied when the policy sets that boolean, except for
+ * a repository in pages.https_enforced_exempt. This command does not invent
+ * Enforce HTTPS, and it does not create Pages sites.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pagesHttpsEnforced, validatePages } from './pages-https.mjs';
 
 const USER_AGENT = 'living-proof-labs-apply-repo-policy';
 const API_VERSION = '2022-11-28';
-const PAGE_KEYS = new Set(['build_type', 'https_enforced']);
 // GitHub leaves these fields out of GET /repos unless the token has Administration: read.
 const ADMINISTRATION_READ_FIELDS = new Set([
   'allow_auto_merge',
@@ -117,7 +118,11 @@ and rejected unless its git blob SHA matches the pin.
 
 GH_TOKEN is a classic PAT, a fine-grained PAT, or a GitHub App installation
 token. It is read from the environment only and is never stored or logged.
-Do not put the token in an argument.`;
+Do not put the token in an argument.
+
+A repository in pages.https_enforced_exempt is reported as exempt (reason)
+and Enforce HTTPS is not written for it. A repository with no Pages site is
+left unchanged. The v7.9.0 pin has no exemption list.`;
 }
 
 export function parseArgs(argv) {
@@ -235,18 +240,7 @@ export function validatePolicy(policy) {
   if (!policy.repository || typeof policy.repository !== 'object' || Array.isArray(policy.repository)) {
     throw new Error('policy.repository must be an object.');
   }
-  if (policy.pages !== undefined) {
-    if (!policy.pages || typeof policy.pages !== 'object' || Array.isArray(policy.pages)) throw new Error('policy.pages must be an object.');
-    for (const key of Object.keys(policy.pages)) {
-      if (!PAGE_KEYS.has(key)) throw new Error(`policy.pages.${key} is not supported; refusing to ignore it.`);
-    }
-    if (policy.pages.build_type !== undefined && policy.pages.build_type !== 'legacy' && policy.pages.build_type !== 'workflow') {
-      throw new Error('policy.pages.build_type must be legacy or workflow.');
-    }
-    if (Object.hasOwn(policy.pages, 'https_enforced') && typeof policy.pages.https_enforced !== 'boolean') {
-      throw new Error('policy.pages.https_enforced must be a boolean.');
-    }
-  }
+  if (policy.pages !== undefined) validatePages(policy.pages);
   if (policy.graphql_repository !== undefined) {
     const graphql = policy.graphql_repository;
     if (!graphql || typeof graphql !== 'object' || Array.isArray(graphql)) throw new Error('policy.graphql_repository must be an object.');
@@ -450,12 +444,15 @@ function planPages(desiredPages, observedPages, repository, lines, writes, skipp
       body.build_type = desiredPages.build_type;
     }
   }
-  if (Object.hasOwn(desiredPages, 'https_enforced')) {
+  const https = pagesHttpsEnforced({ pages: desiredPages }, repository.name);
+  if (https.report) {
+    skipped.push(`pages.https_enforced: ${https.report}`);
+  } else if (https.enforce) {
     if (!Object.hasOwn(observedPages.site, 'https_enforced')) {
       failures.push({ setting: 'pages.https_enforced', message: 'field is absent from the Pages response; not written' });
-    } else if (observedPages.site.https_enforced !== desiredPages.https_enforced) {
-      lines.push({ setting: 'pages.https_enforced', current: observedPages.site.https_enforced, desired: desiredPages.https_enforced });
-      body.https_enforced = desiredPages.https_enforced;
+    } else if (observedPages.site.https_enforced !== https.desired) {
+      lines.push({ setting: 'pages.https_enforced', current: observedPages.site.https_enforced, desired: https.desired });
+      body.https_enforced = https.desired;
     }
   }
   if (Object.keys(body).length > 0) {
