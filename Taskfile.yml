@@ -59,3 +59,7 @@ tasks:
     desc: Show the opt-in GitHub App manifest conversion command
     cmds:
       - bash tools/with-node.sh node tools/github/exchange-app-manifest-code.mjs --help
+  github:app-token:help:
+    desc: Show how to mint a bot GitHub App installation token
+    cmds:
+      - bash tools/with-node.sh node tools/github/app-token.mjs --help

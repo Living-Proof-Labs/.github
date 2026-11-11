@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Print a bot GitHub App installation token. The key stays in the environment.
+set -euo pipefail
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+node=$(find "$root/.tools" -maxdepth 3 -type f -path '*/bin/node' -print -quit 2>/dev/null || true)
+if [ -n "$node" ]; then
+  PATH="$(dirname -- "$node"):$PATH"
+  export PATH
+fi
+exec node "$root/tools/github/app-token.mjs" "$@"

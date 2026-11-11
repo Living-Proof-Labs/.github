@@ -1,0 +1,16 @@
+{
+  "name": "Living Proof Labs Cody",
+  "description": "Software engineer for Living Proof Labs. Opens branches and pull requests, comments on pull requests, and reads continuous integration.",
+  "url": "https://github.com/Living-Proof-Labs/.github",
+  "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
+  "public": false,
+  "default_permissions": {
+    "actions": "read",
+    "checks": "read",
+    "contents": "write",
+    "metadata": "read",
+    "pull_requests": "write",
+    "statuses": "read"
+  },
+  "default_events": []
+}
