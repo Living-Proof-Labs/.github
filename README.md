@@ -27,11 +27,118 @@ organization-specific operating choices.
 | Validate this checkout | `bash tools/task.sh verify` | Checks inventory and tests |
 | Inspect settings drift | `task github:settings:report` | Read-only report; does not fail for existing drift |
 | Enforce settings policy | `task github:settings:check` | Read-only audit that fails for drift or unverified state |
+| Preview the pinned policy | `scripts/apply-repo-policy --dry-run` | Prints current -> desired for every org repository; no writes |
+| Apply the pinned policy | `scripts/apply-repo-policy --apply` | Writes only settings that differ; requires `GH_TOKEN` |
 
 If Task is not installed, run `bash tools/setup.sh` once, then use
 `bash tools/task.sh <task>`. The local setup uses no `sudo`, does not modify
 shell profiles, and keeps tools in this checkout. Codespaces uses the same
 interface through `.devcontainer/devcontainer.json`.
+
+## Apply repository policy
+
+`scripts/apply-repo-policy` compares the collaboration-guidelines repository
+policy with every repository returned by `GET /orgs/Living-Proof-Labs/repos`
+and can write the settings that differ. `task github:policy:apply -- --dry-run`
+is the same command. It is separate from the reviewed GitHub App workflow in
+the [repository operations guide](docs/repository-operations.md): this command
+uses only the `GH_TOKEN` you export in the shell.
+
+### Prerequisites
+
+Run `bash tools/setup.sh` once so the wrapper can find the pinned Node. Export
+`GH_TOKEN` to a classic personal access token, a fine-grained personal access
+token, or a GitHub App installation token. The command reads that variable and
+does not accept the token as an argument. It never writes, caches, logs, or
+echoes the token, and it does not send the token when it downloads the policy.
+A later helper may print an installation token; this command only consumes
+`GH_TOKEN`.
+
+The token must be able to see the organization's repositories. An installation
+token only lists repositories the App installation can access. Discovery is
+`GET /orgs/{org}/repos?type=all` (followed by `GET /repos/{owner}/{repo}` and
+the settings endpoints below). The command does not call `/user` or
+`/user/repos`, so an installation token and a PAT both work. An empty list is
+a failure, not a clean run.
+
+### Where the policy comes from
+
+By default the command reads the pin in
+[`config/github/repository-policy.json`](config/github/repository-policy.json):
+the `commit` and `policy_blob_sha` of `config/github/repository-policy.json` in
+collaboration-guidelines. It downloads that commit over HTTPS and refuses to
+continue unless the git blob SHA matches. The tag is recorded in the pin and
+is not the fetch ref, because a moved tag would change the policy without a
+review in this repository. That is the same commit-and-blob pin the settings
+audit already uses.
+
+`--policy FILE` reads a local JSON file and does not check a blob SHA. Use it
+to review a policy revision before this repository's pin moves. A normal apply
+uses the pin.
+
+### Preview and apply
+
+```bash
+export GH_TOKEN  # already set in the environment; do not commit or echo it
+scripts/apply-repo-policy --dry-run
+scripts/apply-repo-policy --apply
+```
+
+`--dry-run` prints each difference as `setting: current -> desired`, then
+`outcome: not written (dry-run)`. It sends no REST write and no GraphQL
+mutation. It does send read requests, including a GraphQL `query` for
+`hasSponsorshipsEnabled`, because that value is not on the REST repository
+object. `--apply` writes only the differing settings, then a second run reports
+no changes when the reads match the policy. Choose exactly one of the two
+flags. `--org` and `--repo` limit the organization list (`--repo` is a name,
+not `owner/name`).
+
+A failure to read or write one setting is reported on that repository and the
+command continues with the others. The process exits non-zero if any
+repository failed. Settings in `manual_or_unavailable_settings` are named and
+skipped; they have no API.
+
+The command does not create a GitHub Pages site. A repository with no site is
+skipped for Pages. A 404 from a repository whose `has_pages` is not `false` is
+a permission failure, not an absent site.
+
+### Enforce HTTPS
+
+`pages.https_enforced` (boolean) is Enforce HTTPS. When the policy sets it and
+the repository already has a Pages site, a difference becomes
+`PUT /repos/{owner}/{repo}/pages` with only the Pages fields that differ
+(`https_enforced` and, when it also differs, `build_type`). The custom domain
+is not sent.
+
+The pinned policy blob `018783d2796110656c91f68424aa0e4ce2379662`
+(collaboration-guidelines `v7.3.0`, commit
+`d6d004ab30ac15a537fa26ef066a09d35cd75138`, which is still the file on `main`)
+sets `pages.build_type` to `workflow` and does **not** set
+`pages.https_enforced`. Until collaboration-guidelines adds that boolean and
+this repository repins `commit` and `policy_blob_sha`, a dry-run says so and
+`--apply` does not change Enforce HTTPS. The command will not invent the
+value.
+
+### Token permissions
+
+Classic personal access tokens need the `repo` scope. Fine-grained tokens and
+GitHub App installation tokens need repository permissions on the
+repositories the installation can access:
+
+| Setting | API | Fine-grained PAT / GitHub App |
+| --- | --- | --- |
+| `repository.*` (wiki, issues, merge, and the other REST fields) | `PATCH /repos/{owner}/{repo}` | Administration: Read and write |
+| `graphql.hasSponsorshipsEnabled` | GraphQL `updateRepository` | Administration: Read and write |
+| `immutable_releases` | `PUT` or `DELETE /repos/{owner}/{repo}/immutable-releases` | Administration: Read and write |
+| `main_ruleset` | `/repos/{owner}/{repo}/rulesets` | Administration: Read and write. If bypass actors are unreadable, the ruleset is not written. |
+| `pages.build_type`, `pages.https_enforced` | `GET` and `PUT /repos/{owner}/{repo}/pages` | Pages: Read and write, and Administration: Read and write. Pages writes are an additional permission on top of Administration. |
+| Organization repository list | `GET /orgs/{org}/repos` | Metadata: Read (GitHub Apps receive this automatically). Private repositories still require the installation to include them. |
+| `manual_or_unavailable_settings` | not called | none; these stay manual |
+
+Metadata read alone cannot change settings. The App manifests already in this
+repository request Administration and Metadata only, so they cannot enforce
+HTTPS until the App that mints `GH_TOKEN` also has Pages: Read and write.
+This command does not install an App or mint a token.
 
 ## Repository directory
 
