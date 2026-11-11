@@ -18,14 +18,14 @@ const MAX_RESPONSE_BYTES = 1_000_000;
 
 export const DEFAULT_ORG = 'Living-Proof-Labs';
 export const DEFAULT_API_BASE = 'https://api.github.com';
-export const BOTS = ['rivet', 'cody', 'vera', 'keel'];
+export const BOTS = ['rivet', 'cody', 'vera'];
 
 export const usage = `Usage: scripts/app-token <bot>
 
 Print a GitHub App installation token for one Living Proof Labs bot.
 The token is the only text on standard output. Errors go to standard error.
 
-bot: rivet, cody, vera, or keel
+bot: rivet, cody, or vera
 
 Environment variables, with <BOT> as the bot name in uppercase:
   <BOT>_GITHUB_APP_ID                 numeric App id
@@ -54,13 +54,13 @@ export function envNames(bot) {
 }
 
 export function normalizeBot(value) {
-  if (typeof value !== 'string') throw new AppTokenError('Expected bot rivet, cody, vera, or keel.');
+  if (typeof value !== 'string') throw new AppTokenError('Expected bot rivet, cody, or vera.');
   const bot = value.trim().toLowerCase();
   if (BOTS.includes(bot)) return bot;
   if (/^[a-z0-9-]{1,32}$/.test(bot)) {
-    throw new AppTokenError(`Unknown bot "${bot}". Expected rivet, cody, vera, or keel.`);
+    throw new AppTokenError(`Unknown bot "${bot}". Expected rivet, cody, or vera.`);
   }
-  throw new AppTokenError('Expected bot rivet, cody, vera, or keel. Example: scripts/app-token rivet');
+  throw new AppTokenError('Expected bot rivet, cody, or vera. Example: scripts/app-token rivet');
 }
 
 function requireDigits(value, label, noun) {

@@ -211,15 +211,15 @@ live with the repository-settings manifests in
 | Rivet | [`rivet.manifest.json`](config/github/apps/rivet.manifest.json) | Head of Engineering and Delivery |
 | Cody | [`cody.manifest.json`](config/github/apps/cody.manifest.json) | Software engineer |
 | Vera | [`vera.manifest.json`](config/github/apps/vera.manifest.json) | Verification |
-| Keel | [`keel.manifest.json`](config/github/apps/keel.manifest.json) | Strategy |
 
 Register an App with the organization manifest flow already supported here
 (`task github:apps:form:help`, then the callback and exchange helpers).
 Webhooks are off. Only Rivet's manifest requests Administration write and
 Pages write, which `scripts/apply-repo-policy` needs when it writes repository
 settings and GitHub Pages. Rivet also writes pull requests and issues, and
-reads continuous integration so a merge can wait on it. Cody and Vera write
-issues. The repository-settings audit and apply manifests
+can re-run workflows. Cody writes issues and workflow files, and reads
+continuous integration. Vera reads code and continuous integration, writes
+pull-request reviews, and writes issues. The repository-settings audit and apply manifests
 stay Administration and Metadata only. They are the trusted-main workflow
 credential, separate from these bots.
 
@@ -239,7 +239,6 @@ GH_TOKEN=$(scripts/app-token rivet) scripts/apply-repo-policy --dry-run
 | rivet | `RIVET_GITHUB_APP_ID` | `RIVET_GITHUB_APP_PRIVATE_KEY` | `RIVET_GITHUB_APP_INSTALLATION_ID` |
 | cody | `CODY_GITHUB_APP_ID` | `CODY_GITHUB_APP_PRIVATE_KEY` | `CODY_GITHUB_APP_INSTALLATION_ID` |
 | vera | `VERA_GITHUB_APP_ID` | `VERA_GITHUB_APP_PRIVATE_KEY` | `VERA_GITHUB_APP_INSTALLATION_ID` |
-| keel | `KEEL_GITHUB_APP_ID` | `KEEL_GITHUB_APP_PRIVATE_KEY` | `KEEL_GITHUB_APP_INSTALLATION_ID` |
 
 Put the PEM text in the private-key variable. A file path is rejected. A
 value stored with literal `\n` sequences is accepted. When the installation

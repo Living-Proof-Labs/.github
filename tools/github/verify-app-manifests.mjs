@@ -19,15 +19,14 @@ export const BOT_MANIFESTS = {
     file: 'config/github/apps/rivet.manifest.json',
     name: 'Living Proof Labs Rivet',
     permissions: {
-      actions: 'read',
+      actions: 'write',
       administration: 'write',
       checks: 'read',
       contents: 'write',
       issues: 'write',
       metadata: 'read',
       pages: 'write',
-      pull_requests: 'write',
-      statuses: 'read'
+      pull_requests: 'write'
     }
   },
   cody: {
@@ -40,30 +39,19 @@ export const BOT_MANIFESTS = {
       issues: 'write',
       metadata: 'read',
       pull_requests: 'write',
-      statuses: 'read'
+      workflows: 'write'
     }
   },
   vera: {
     file: 'config/github/apps/vera.manifest.json',
     name: 'Living Proof Labs Vera',
     permissions: {
-      actions: 'write',
+      actions: 'read',
       checks: 'read',
       contents: 'read',
       issues: 'write',
       metadata: 'read',
-      pull_requests: 'write',
-      statuses: 'read'
-    }
-  },
-  keel: {
-    file: 'config/github/apps/keel.manifest.json',
-    name: 'Living Proof Labs Keel',
-    permissions: {
-      contents: 'read',
-      issues: 'write',
-      metadata: 'read',
-      pull_requests: 'read'
+      pull_requests: 'write'
     }
   }
 };

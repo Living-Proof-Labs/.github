@@ -101,8 +101,8 @@ configuration programmatically.
 above. They request Administration and Metadata only. Registering them is
 separate from the bot Apps.
 
-`rivet.manifest.json`, `cody.manifest.json`, `vera.manifest.json`, and
-`keel.manifest.json` are private Apps, one per bot, for the same organization
+`rivet.manifest.json`, `cody.manifest.json`, and `vera.manifest.json` are
+private Apps, one per bot, for the same organization
 manifest flow (`task github:apps:form:help`). Webhooks stay off. Only the
 Rivet manifest requests Administration write and Pages write. Minting a bot
 installation token is described in the repository README under

@@ -74,23 +74,27 @@ test('versioned manifests match the least-privilege bot sets', () => {
     assert.equal(manifest.public, false);
     assert.equal(Object.hasOwn(manifest, 'hook_attributes'), false);
   }
-  for (const bot of ['cody', 'vera', 'keel']) {
+  for (const bot of ['cody', 'vera']) {
     const permissions = BOT_MANIFESTS[bot].permissions;
     assert.equal(Object.hasOwn(permissions, 'administration'), false);
     assert.equal(Object.hasOwn(permissions, 'pages'), false);
+    assert.equal(Object.hasOwn(permissions, 'statuses'), false);
   }
   const rivet = BOT_MANIFESTS.rivet.permissions;
   assert.equal(rivet.administration, 'write');
-  assert.equal(rivet.contents, 'write');
   assert.equal(rivet.pages, 'write');
-  assert.equal(rivet.metadata, 'read');
+  assert.equal(rivet.contents, 'write');
   assert.equal(rivet.pull_requests, 'write');
   assert.equal(rivet.issues, 'write');
-  assert.equal(rivet.actions, 'read');
+  assert.equal(rivet.actions, 'write');
   assert.equal(rivet.checks, 'read');
-  assert.equal(rivet.statuses, 'read');
-  assert.equal(BOT_MANIFESTS.cody.permissions.issues, 'write');
-  assert.equal(BOT_MANIFESTS.vera.permissions.issues, 'write');
+  assert.equal(rivet.metadata, 'read');
+  assert.equal(Object.hasOwn(rivet, 'statuses'), false);
+  assert.equal(BOT_MANIFESTS.cody.permissions.workflows, 'write');
+  assert.equal(BOT_MANIFESTS.cody.permissions.actions, 'read');
+  assert.equal(BOT_MANIFESTS.vera.permissions.actions, 'read');
+  assert.equal(BOT_MANIFESTS.vera.permissions.contents, 'read');
+  assert.equal(Object.hasOwn(BOT_MANIFESTS, 'keel'), false);
   assert.throws(() => validateBotManifest('cody', {
     ...JSON.parse(readFileSync(path.join(root, BOT_MANIFESTS.cody.file), 'utf8')),
     default_permissions: { ...BOT_MANIFESTS.cody.permissions, administration: 'read' }
@@ -250,7 +254,7 @@ test('missing configuration and unknown bots fail before a request', async () =>
   assert.equal(leaked.err().includes('BEGIN'), false);
   assert.equal(await main(['nope'], rivetEnv(), capture()), 1);
   assert.throws(() => loadBotConfig('rivet', rivetEnv({ GITHUB_APP_ORG: '../evil' })), /organization/);
-  assert.throws(() => loadBotConfig('keel', { KEEL_GITHUB_APP_ID: 'nope', KEEL_GITHUB_APP_PRIVATE_KEY: privateKey }), /numeric/);
+  assert.throws(() => loadBotConfig('keel', { KEEL_GITHUB_APP_ID: '1', KEEL_GITHUB_APP_PRIVATE_KEY: privateKey }), /Unknown bot "keel"/);
 });
 
 test('help names the environment variables and the example command', async () => {
@@ -258,6 +262,7 @@ test('help names the environment variables and the example command', async () =>
   assert.equal(await main(['--help'], {}, io), 0);
   assert.match(io.out(), /<BOT>_GITHUB_APP_PRIVATE_KEY/);
   assert.match(io.out(), /GH_TOKEN=\$\(scripts\/app-token rivet\)/);
+  assert.equal(io.out().toLowerCase().includes('keel'), false);
   assert.equal(io.err(), '');
   const empty = capture();
   assert.equal(await main([], rivetEnv(), empty), 1);
