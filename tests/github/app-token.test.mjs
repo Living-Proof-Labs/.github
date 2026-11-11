@@ -19,6 +19,7 @@ import {
   signAppJwt
 } from '../../tools/github/app-token.mjs';
 import { BOT_MANIFESTS, validateAllFromDisk, validateBotManifest } from '../../tools/github/verify-app-manifests.mjs';
+import { CLASSIC_INSTALLATION_TOKEN, statelessInstallationToken } from './installation-token.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
@@ -163,11 +164,13 @@ test('installation lookup then token exchange uses one JWT and returns only the 
       return {
         ok: true,
         status: 201,
-        body: { token: 'ghs_exampletoken', expires_at: '2030-01-01T00:00:00Z', pem: privateKey }
+        body: { token: CLASSIC_INSTALLATION_TOKEN, expires_at: '2030-01-01T00:00:00Z', pem: privateKey }
       };
     }
   });
-  assert.equal(token, 'ghs_exampletoken');
+  assert.equal(token, CLASSIC_INSTALLATION_TOKEN);
+  assert.equal(token.includes('.'), false);
+  assert.equal(token.length, 40);
   assert.deepEqual(calls.map((call) => [call.method, call.path]), [
     ['GET', '/orgs/Living-Proof-Labs/installation'],
     ['POST', '/app/installations/99/access_tokens']
@@ -188,11 +191,68 @@ test('an installation id skips the organization lookup', async () => {
     org: DEFAULT_ORG,
     request: async (spec) => {
       calls.push(spec.method);
-      return { ok: true, status: 201, body: { token: 'ghs_direct' } };
+      return { ok: true, status: 201, body: { token: CLASSIC_INSTALLATION_TOKEN } };
     }
   });
-  assert.equal(token, 'ghs_direct');
+  assert.equal(token, CLASSIC_INSTALLATION_TOKEN);
   assert.deepEqual(calls, ['POST']);
+});
+
+test('a stateless installation token is accepted and is not a fixed length', async () => {
+  const fixture = statelessInstallationToken();
+  assert.ok(fixture.token.length > 40);
+  assert.equal(fixture.token.split('.').length, 3);
+  assert.match(fixture.token, /^ghs_9876543210_[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+  const token = await mintInstallationToken({
+    appId: '12345',
+    privateKey: normalizePrivateKey(privateKey, 'RIVET_GITHUB_APP_PRIVATE_KEY'),
+    installationId: '77',
+    org: DEFAULT_ORG,
+    request: async () => ({ ok: true, status: 201, body: { token: fixture.token } })
+  });
+  assert.equal(token, fixture.token);
+
+  const io = capture();
+  const code = await main(['rivet'], rivetEnv(), {
+    ...io,
+    request: async (spec) => (spec.method === 'GET'
+      ? { ok: true, status: 200, body: { id: 3, account: { login: DEFAULT_ORG } } }
+      : { ok: true, status: 201, body: { token: fixture.token } })
+  });
+  assert.equal(code, 0);
+  assert.equal(io.out(), `${fixture.token}\n`);
+  assert.equal(io.err(), '');
+
+  const failed = capture();
+  const jwt = `${fixture.header}.${fixture.payload}.${fixture.signature}`;
+  const failure = await main(['rivet'], rivetEnv(), {
+    ...failed,
+    request: async () => {
+      throw new AppTokenError(`upstream ${fixture.token} bearer ${jwt}`);
+    }
+  });
+  assert.equal(failure, 1);
+  assert.equal(failed.out(), '');
+  const printed = failed.err();
+  assert.equal(printed.includes(fixture.header), false);
+  assert.equal(printed.includes(fixture.payload), false);
+  assert.equal(printed.includes(fixture.signature), false);
+  assert.equal(printed.includes(fixture.appId), false);
+  assert.equal(printed.includes(fixture.token.slice(4)), false);
+  assert.match(printed, /\[redacted\]/);
+});
+
+test('tokens that are empty, short, or not installation tokens are rejected', async () => {
+  const key = normalizePrivateKey(privateKey, 'RIVET_GITHUB_APP_PRIVATE_KEY');
+  for (const token of ['', 'ghs_', `ghs_${'A'.repeat(35)}`, `ghp_${'A'.repeat(36)}`, `ghs_${'A'.repeat(36)}\n`]) {
+    await assert.rejects(() => mintInstallationToken({
+      appId: '12345',
+      privateKey: key,
+      installationId: '5',
+      org: DEFAULT_ORG,
+      request: async () => ({ ok: true, status: 201, body: { token } })
+    }), /usable token/);
+  }
 });
 
 test('lookup and exchange failures omit response bodies and secrets', async () => {
@@ -201,10 +261,18 @@ test('lookup and exchange failures omit response bodies and secrets', async () =
     appId: '12345',
     privateKey: key,
     org: DEFAULT_ORG,
-    request: async () => ({ ok: false, status: 404, body: { message: 'missing', token: 'ghs_leak', pem: privateKey } })
+    request: async () => ({
+      ok: false,
+      status: 404,
+      body: { message: `missing ${statelessInstallationToken().token}`, token: 'ghs_leak', pem: privateKey }
+    })
   }), (error) => {
+    const fixture = statelessInstallationToken();
     assert.match(error.message, /HTTP 404/);
     assert.equal(error.message.includes('ghs_leak'), false);
+    assert.equal(error.message.includes(fixture.header), false);
+    assert.equal(error.message.includes(fixture.payload), false);
+    assert.equal(error.message.includes(fixture.signature), false);
     assert.equal(error.message.includes(SENTINEL), false);
     assert.equal(error.message.includes('BEGIN'), false);
     return true;
@@ -225,10 +293,10 @@ test('stdout contains only the token and a failed run prints nothing there', asy
     ...io,
     request: async (spec) => (spec.method === 'GET'
       ? { ok: true, status: 200, body: { id: 3, account: { login: DEFAULT_ORG } } }
-      : { ok: true, status: 201, body: { token: 'ghs_stdoutonly', pem: privateKey } })
+      : { ok: true, status: 201, body: { token: CLASSIC_INSTALLATION_TOKEN, pem: privateKey } })
   });
   assert.equal(code, 0);
-  assert.equal(io.out(), 'ghs_stdoutonly\n');
+  assert.equal(io.out(), `${CLASSIC_INSTALLATION_TOKEN}\n`);
   assert.equal(io.err(), '');
   assert.equal(io.out().includes('BEGIN'), false);
 
@@ -284,7 +352,7 @@ test('the command process prints only the token and writes no files', (t) => {
     }
   });
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, 'ghs_fromserver\n');
+  assert.equal(result.stdout, `${CLASSIC_INSTALLATION_TOKEN}\n`);
   assert.equal(result.stderr, '');
   assert.equal(`${result.stdout}${result.stderr}`.includes('BEGIN RSA PRIVATE KEY'), false);
   assert.equal(readdirSync(directory).length, 0);
@@ -328,8 +396,35 @@ test('a failed command leaks neither the key file nor the error body', (t) => {
   assert.equal(exchanged.status, 1);
   assert.equal(exchanged.stdout, '');
   assert.match(exchanged.stderr, /HTTP 401/);
+  const leaked = statelessInstallationToken();
   assert.equal(exchanged.stderr.includes('ghs_should_not_leak'), false);
+  assert.equal(exchanged.stderr.includes(leaked.header), false);
+  assert.equal(exchanged.stderr.includes(leaked.payload), false);
+  assert.equal(exchanged.stderr.includes(leaked.signature), false);
+  assert.equal(exchanged.stderr.includes(leaked.appId), false);
   assert.equal(exchanged.stderr.includes('BEGIN PRIVATE KEY'), false);
+});
+
+test('the command process prints a stateless installation token and nothing else', (t) => {
+  const directory = tempDirectory(t, 'app-token-stateless-');
+  const fixture = statelessInstallationToken();
+  const result = spawnSync('bash', [path.join(root, 'scripts/app-token'), 'rivet'], {
+    cwd: directory,
+    encoding: 'utf8',
+    env: {
+      PATH: process.env.PATH,
+      HOME: directory,
+      TMPDIR: directory,
+      NODE_OPTIONS: `--import ${path.join(root, 'tests/github/app-token-mock-transport.mjs')}`,
+      APP_TOKEN_MOCK: 'stateless',
+      RIVET_GITHUB_APP_ID: '4242',
+      RIVET_GITHUB_APP_PRIVATE_KEY: privateKey
+    }
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, `${fixture.token}\n`);
+  assert.equal(result.stderr, '');
+  assert.equal(readdirSync(directory).length, 0);
 });
 
 test('token helper source does not read or write files', () => {

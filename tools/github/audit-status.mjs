@@ -17,6 +17,7 @@
  */
 import { readFileSync } from 'node:fs';
 import process from 'node:process';
+import { redactSecrets } from './redact-secrets.mjs';
 
 export function classify(text) {
   const summary = text.match(/^(\d+) difference\(s\) found; \d+ error\(s\)\.$/m);
@@ -50,7 +51,8 @@ export function decide(text, failOnDrift) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [file, flag] = process.argv.slice(2);
-  const result = decide(readFileSync(file, 'utf8'), flag === '--fail-on-drift');
-  (result.stream === 'stderr' ? console.error : console.log)(result.message);
+  const result = decide(redactSecrets(readFileSync(file, 'utf8')), flag === '--fail-on-drift');
+  const message = redactSecrets(result.message);
+  (result.stream === 'stderr' ? console.error : console.log)(message);
   process.exit(result.status);
 }
