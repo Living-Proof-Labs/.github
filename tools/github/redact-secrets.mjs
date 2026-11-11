@@ -37,5 +37,7 @@ export function redactSecrets(text, knownSecrets = []) {
 
 const invoked = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : '';
 if (invoked && import.meta.url === invoked) {
-  process.stdout.write(redactSecrets(readFileSync(0, 'utf8')));
+  const token = process.env.GH_TOKEN;
+  const known = typeof token === 'string' && token.length > 0 ? [token] : [];
+  process.stdout.write(redactSecrets(readFileSync(0, 'utf8'), known));
 }

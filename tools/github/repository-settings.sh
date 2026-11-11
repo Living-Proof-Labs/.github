@@ -55,6 +55,7 @@ tool_status=$?
 set -e
 # Redact before the log and the JUnit artifact. A legacy [A-Za-z0-9_] mask
 # stops at the first dot in a stateless ghs_ token and leaves the JWT.
+# GH_TOKEN is inherited and replaced exactly, as well as by the token patterns.
 "${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_output" | tee "$audit_output"
 "${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_error" >&2
 rm -f "$raw_output" "$raw_error"
