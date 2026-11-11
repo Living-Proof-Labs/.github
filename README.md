@@ -95,8 +95,10 @@ not `owner/name`).
 
 A failure to read or write one setting is reported on that repository and the
 command continues with the others. The process exits non-zero if any
-repository failed. Settings in `manual_or_unavailable_settings` are named and
-skipped; they have no API.
+repository failed. When GitHub omits a merge setting from the repository
+object, the error names the missing permission, `Administration: read`.
+Settings in `manual_or_unavailable_settings` are named and skipped; they have
+no API.
 
 The command does not create a GitHub Pages site. A repository with no site is
 skipped for Pages. A 404 from a repository whose `has_pages` is not `false` is
@@ -135,10 +137,11 @@ repositories the installation can access:
 | Organization repository list | `GET /orgs/{org}/repos` | Metadata: Read (GitHub Apps receive this automatically). Private repositories still require the installation to include them. |
 | `manual_or_unavailable_settings` | not called | none; these stay manual |
 
-Metadata read alone cannot change settings. The App manifests already in this
-repository request Administration and Metadata only, so they cannot enforce
-HTTPS until the App that mints `GH_TOKEN` also has Pages: Read and write.
-This command does not install an App or mint a token.
+Metadata read alone cannot change settings. The repository-settings manifests
+request Administration and Metadata only. Rivet's manifest also requests
+Pages: Read and write, which this command needs for `pages.build_type` and
+`pages.https_enforced`. `GH_TOKEN=$(scripts/app-token rivet)` mints that
+installation token.
 
 ## Repository directory
 

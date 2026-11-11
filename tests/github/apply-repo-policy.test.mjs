@@ -299,14 +299,19 @@ test('repository settings patch only the fields that differ', () => {
   }]);
 });
 
-test('an unreadable repository field is not written', () => {
+test('an unreadable repository field names the missing Administration: read permission', () => {
   const policy = pinned();
   const observed = observedMatching(policy);
   delete observed.repository.delete_branch_on_merge;
   const planned = planRepository(policy, observed, target());
   assert.deepEqual(planned.writes, []);
   assert.equal(planned.failures[0].setting, 'repository.delete_branch_on_merge');
+  assert.match(planned.failures[0].message, /missing Administration: read/);
   assert.match(planned.failures[0].message, /not written/);
+  delete observed.repository.has_wiki;
+  const wiki = planRepository(policy, observed, target()).failures.find((failure) => failure.setting === 'repository.has_wiki');
+  assert.match(wiki.message, /not written/);
+  assert.equal(wiki.message.includes('Administration: read'), false);
 });
 
 test('Enforce HTTPS is applied only when the policy sets it on an existing site', () => {
