@@ -73,8 +73,8 @@
       "summary": "Shared observable vocabulary, observation binding format and evaluator contract; hosted manual not yet published"
     },
     {
-      "repository": "livingproof-evaluator-bdd",
-      "title": "BDD evaluator",
+      "repository": "livingproof-evaluator-scenario",
+      "title": "Scenario evaluator",
       "summary": "Generic Gherkin step vocabulary and runner over observation bindings; hosted manual not yet published"
     },
     {

@@ -11,7 +11,7 @@
     "livingproof-capability-report",
     "livingproof-common",
     "livingproof-evaluator",
-    "livingproof-evaluator-bdd",
+    "livingproof-evaluator-scenario",
     "livingproof-sim-gazebo",
     "livingproof-sim-mujoco",
     "livingproof-unitree-g1",
