@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -34,8 +34,14 @@ function withHttps(policy) {
   return { ...policy, pages: { ...policy.pages, https_enforced: true } };
 }
 
-function writePolicy(policy) {
-  const file = path.join(mkdtempSync(path.join(tmpdir(), 'apply-repo-policy-')), 'policy.json');
+function tempDirectory(t, prefix) {
+  const directory = mkdtempSync(path.join(tmpdir(), prefix));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  return directory;
+}
+
+function writePolicy(t, policy) {
+  const file = path.join(tempDirectory(t, 'apply-repo-policy-'), 'policy.json');
   writeFileSync(file, JSON.stringify(policy));
   return file;
 }
@@ -375,10 +381,10 @@ test('a ruleset update keeps rules the policy does not manage', () => {
   assert.equal(planned.writes[0].body.enforcement, 'active');
 });
 
-test('unsupported policy pages fields fail before a request', async () => {
+test('unsupported policy pages fields fail before a request', async (t) => {
   const io = capture();
   let called = false;
-  const file = writePolicy({ ...pinned(), pages: { ...pinned().pages, public: true } });
+  const file = writePolicy(t, { ...pinned(), pages: { ...pinned().pages, public: true } });
   const code = await main(['--dry-run', '--policy', file, '--org', 'ExampleOrg'], {
     env: { GH_TOKEN: TOKEN },
     io,
@@ -404,9 +410,9 @@ test('missing GH_TOKEN fails before any request and does not echo a value', asyn
   assert.doesNotMatch(io.out() + io.err(), /test-token-value/);
 });
 
-test('a mismatched pinned blob is refused before the GitHub API', async () => {
+test('a mismatched pinned blob is refused before the GitHub API', async (t) => {
   const io = capture();
-  const pinPath = path.join(mkdtempSync(path.join(tmpdir(), 'policy-pin-')), 'repository-policy.json');
+  const pinPath = path.join(tempDirectory(t, 'policy-pin-'), 'repository-policy.json');
   const pin = JSON.parse(readFileSync(path.join(root, 'config/github/repository-policy.json'), 'utf8'));
   pin.policy_blob_sha = 'c'.repeat(40);
   writeFileSync(pinPath, JSON.stringify(pin));
@@ -426,7 +432,7 @@ test('a mismatched pinned blob is refused before the GitHub API', async () => {
   assert.doesNotMatch(io.out() + io.err(), /test-token-value/);
 });
 
-test('dry-run makes no write API calls', async () => {
+test('dry-run makes no write API calls', async (t) => {
   const policy = withHttps(pinned());
   const state = {
     policy,
@@ -444,7 +450,7 @@ test('dry-run makes no write API calls', async () => {
   };
   const { fetchImpl, calls } = orgFetch(state);
   const io = capture();
-  const code = await main(['--dry-run', '--policy', writePolicy(policy), '--org', 'ExampleOrg'], {
+  const code = await main(['--dry-run', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg'], {
     env: { GH_TOKEN: TOKEN },
     io,
     fetchImpl
@@ -465,7 +471,7 @@ test('dry-run makes no write API calls', async () => {
   assert.doesNotMatch(`${io.out()}${io.err()}`, /test-token-value/);
 });
 
-test('a permission failure is reported per repository and dry-run still does not write', async () => {
+test('a permission failure is reported per repository and dry-run still does not write', async (t) => {
   const policy = pinned();
   const state = {
     policy,
@@ -477,7 +483,7 @@ test('a permission failure is reported per repository and dry-run still does not
   };
   const { fetchImpl, calls } = orgFetch(state);
   const io = capture();
-  const code = await main(['--dry-run', '--policy', writePolicy(policy), '--org', 'ExampleOrg'], {
+  const code = await main(['--dry-run', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg'], {
     env: { GH_TOKEN: TOKEN },
     io,
     fetchImpl
@@ -490,7 +496,7 @@ test('a permission failure is reported per repository and dry-run still does not
   assert.doesNotMatch(`${io.out()}${io.err()}`, /test-token-value/);
 });
 
-test('apply writes only drifted settings, and a second run writes nothing', async () => {
+test('apply writes only drifted settings, and a second run writes nothing', async (t) => {
   const policy = pinned();
   const state = {
     policy,
@@ -503,7 +509,7 @@ test('apply writes only drifted settings, and a second run writes nothing', asyn
   };
   const { fetchImpl, calls } = orgFetch(state);
   const io = capture();
-  const args = ['--apply', '--policy', writePolicy(policy), '--org', 'ExampleOrg', '--repo', 'alpha'];
+  const args = ['--apply', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg', '--repo', 'alpha'];
   const first = await main(args, { env: { GH_TOKEN: TOKEN }, io, fetchImpl });
   assert.equal(first, 0, io.err());
   const writes = calls.filter(isWriteCall);
@@ -523,7 +529,7 @@ test('apply writes only drifted settings, and a second run writes nothing', asyn
   assert.match(secondIo.out(), /0 change\(s\); 0 error\(s\)\./);
 });
 
-test('apply sends Enforce HTTPS without the custom domain or unchanged Pages fields', async () => {
+test('apply sends Enforce HTTPS without the custom domain or unchanged Pages fields', async (t) => {
   const policy = withHttps(pinned());
   const state = {
     policy,
@@ -536,7 +542,7 @@ test('apply sends Enforce HTTPS without the custom domain or unchanged Pages fie
   };
   const { fetchImpl, calls } = orgFetch(state);
   const io = capture();
-  const code = await main(['--apply', '--policy', writePolicy(policy), '--org', 'ExampleOrg'], {
+  const code = await main(['--apply', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg'], {
     env: { GH_TOKEN: TOKEN },
     io,
     fetchImpl
@@ -550,7 +556,7 @@ test('apply sends Enforce HTTPS without the custom domain or unchanged Pages fie
   assert.match(io.out(), /pages\.https_enforced: false -> true/);
 });
 
-test('Pages 404 on a repository that reports a site is a permission failure and creates nothing', async () => {
+test('Pages 404 on a repository that reports a site is a permission failure and creates nothing', async (t) => {
   const policy = withHttps(pinned());
   const state = {
     policy,
@@ -559,7 +565,7 @@ test('Pages 404 on a repository that reports a site is a permission failure and 
   };
   const { fetchImpl, calls } = orgFetch(state);
   const io = capture();
-  const code = await main(['--apply', '--policy', writePolicy(policy), '--org', 'ExampleOrg'], {
+  const code = await main(['--apply', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg'], {
     env: { GH_TOKEN: TOKEN },
     io,
     fetchImpl
@@ -571,7 +577,7 @@ test('Pages 404 on a repository that reports a site is a permission failure and 
   assert.doesNotMatch(`${io.out()}${io.err()}`, /test-token-value/);
 });
 
-test('archived repositories are skipped in dry-run and apply', async () => {
+test('archived repositories are skipped in dry-run and apply', async (t) => {
   const policy = pinned();
   const state = {
     policy,
@@ -582,7 +588,7 @@ test('archived repositories are skipped in dry-run and apply', async () => {
     }
   };
   const { fetchImpl, calls } = orgFetch(state);
-  const policyFile = writePolicy(policy);
+  const policyFile = writePolicy(t, policy);
   for (const mode of ['--dry-run', '--apply']) {
     calls.length = 0;
     const io = capture();
