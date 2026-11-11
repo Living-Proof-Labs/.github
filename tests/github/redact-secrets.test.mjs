@@ -75,3 +75,17 @@ test('the redactor command and the settings audit wrapper redact a stateless tok
   assert.match(readFileSync(path.join(root, 'tools/github/audit-junit.mjs'), 'utf8'), /redactSecrets/);
   assert.match(readFileSync(path.join(root, 'tools/github/audit-status.mjs'), 'utf8'), /redactSecrets/);
 });
+
+test('the settings redactor replaces the exact GH_TOKEN value', () => {
+  const opaque = 'opaque-not-a-github-token';
+  const result = spawnSync(process.execPath, [path.join(root, 'tools/github/redact-secrets.mjs')], {
+    input: `ERROR ${opaque} and ${fixture.token}\n`,
+    encoding: 'utf8',
+    env: { PATH: process.env.PATH, GH_TOKEN: opaque }
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.includes(opaque), false);
+  assert.equal(result.stdout.includes(fixture.payload), false);
+  assert.equal(result.stdout.includes(fixture.signature), false);
+  assert.match(result.stdout, /\[redacted\]/);
+});

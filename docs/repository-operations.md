@@ -40,6 +40,14 @@ it in policy tooling or another repository.
 | Unverified | The setting cannot be read or has no current observation | Obtain the required read access or record a fresh manual observation |
 | Error | The audit encountered an unexpected application programming interface (API) or execution error | Diagnose before treating the setting as compliant |
 
+The strict audit compares `pages.https_enforced` on a repository that already
+has a Pages site. A repository with no Pages site is not an Enforce HTTPS
+failure. The pinned collaboration-guidelines v7.10.0 policy lists `website`
+in `pages.https_enforced_exempt` with reason `HTTPS terminated at Cloudflare`.
+That repository is reported as `exempt (HTTPS terminated at Cloudflare)` and
+is not drift. The exemption list must be non-empty, and it is accepted only
+when `pages.https_enforced` is true.
+
 UI-only evidence lives in
 [`config/github/manual-settings-evidence.json`](../config/github/manual-settings-evidence.json).
 It is dated evidence, not a current API measurement.
@@ -73,10 +81,11 @@ repositories with the organization endpoint and does not call `/user`.
 
 Token permissions, the Pages Enforce HTTPS field, and examples are in the
 [repository README](../README.md#apply-repository-policy). The workflow above
-remains the environment-gated apply path. The pinned v7.9.0 policy sets
-`pages.https_enforced`, and the command applies that boolean on repositories
-that already have a Pages site. A Pages write that GitHub rejects is reported
-for that repository; the command continues with the others.
+remains the environment-gated apply path. The pinned v7.10.0 policy sets
+`pages.https_enforced` and exempts `website`. The command applies that boolean
+on other repositories that already have a Pages site, and it does not send
+Enforce HTTPS for an exempt repository. A Pages write that GitHub rejects is
+reported for that repository; the command continues with the others.
 
 ## Automation behavior
 

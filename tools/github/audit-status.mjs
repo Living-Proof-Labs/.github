@@ -3,13 +3,17 @@
 /**
  * Classify a repository-settings audit and choose the wrapper's exit status.
  *
- * The pinned tool (collaboration-guidelines v7.9.0) counts every repository whose Pages
+ * The pinned tool (collaboration-guidelines v7.10.0) counts every repository whose Pages
  * state is not `matches` as one difference, including repositories that have no Pages
  * site (`missing`) and ones whose Pages state the audit token cannot read
  * (`inaccessible`). Neither is drift this organization enforces: most repositories
  * publish no site, and the audit App is not granted Pages read. Both are subtracted from
  * the strict count and reported separately. A Pages site that exists with another source
  * (`drifted`) and every other difference still count.
+ *
+ * pages.https_enforced is compared for a repository that has a Pages site.
+ * A missing site is not Enforce HTTPS drift. v7.10.0 exempts website in
+ * pages.https_enforced_exempt, and that repository is not drift either.
  *
  * Usage: audit-status.mjs AUDIT_OUTPUT [--fail-on-drift]
  * Exit: 0 compliant (or not strict), 2 drift, 3 incomplete (immutable state unknown),
@@ -23,11 +27,13 @@ export function classify(text) {
   const summary = text.match(/^(\d+) difference\(s\) found; \d+ error\(s\)\.$/m);
   const lines = text.split('\n');
   const pagesNotEnforced = lines.filter((line) => /^ {2}pages: (missing|inaccessible)\b/.test(line)).length;
+  const httpsDrift = lines.filter((line) => /^ {2}pages\.https_enforced: (?:true|false) -> (?:true|false)$/.test(line)).length;
   return {
     recognized: Boolean(summary),
     differences: summary ? Number(summary[1]) : undefined,
     pagesNotEnforced,
-    enforced: summary ? Number(summary[1]) - pagesNotEnforced : undefined,
+    httpsDrift,
+    enforced: summary ? Number(summary[1]) - pagesNotEnforced + httpsDrift : undefined,
     immutableUnknown: lines.some((line) => line.startsWith('  immutable releases: unknown'))
   };
 }

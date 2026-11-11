@@ -1,9 +1,9 @@
 {
   "repository": "Living-Proof-Labs/collaboration-guidelines",
-  "tag": "v7.9.0",
-  "commit": "abd193684ab2baad7abaa1a843d802dc2353faf5",
+  "tag": "v7.10.0",
+  "commit": "122db54d0763dc39f81133ec06e35dab2b24d41b",
   "tool_path": "tools/github/repository-settings.mjs",
-  "tool_blob_sha": "fcbd05593ca55ce8c7de9c32c91b1fc5caf60dfd",
+  "tool_blob_sha": "f5105da2a2cc2e767762bc10909e67262cea3144",
   "policy_path": "config/github/repository-policy.json",
-  "policy_blob_sha": "2e268a4208f5c55d85f4b3ecb7e21ef9a1e56927"
+  "policy_blob_sha": "b5f31a288ae719c0f9e632f5ec359f33839f0850"
 }

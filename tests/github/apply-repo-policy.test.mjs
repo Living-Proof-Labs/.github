@@ -209,10 +209,10 @@ test('git blob SHA matches git hash-object for the pinned policy fixture', () =>
 
 test('pinned policy download uses the commit, checks the blob, and sends no token', async () => {
   const pin = JSON.parse(readFileSync(path.join(root, 'config/github/repository-policy.json'), 'utf8'));
-  assert.equal(pin.tag, 'v7.9.0');
-  assert.equal(pin.commit, 'abd193684ab2baad7abaa1a843d802dc2353faf5');
-  assert.equal(pin.policy_blob_sha, '2e268a4208f5c55d85f4b3ecb7e21ef9a1e56927');
-  assert.equal(pin.tool_blob_sha, 'fcbd05593ca55ce8c7de9c32c91b1fc5caf60dfd');
+  assert.equal(pin.tag, 'v7.10.0');
+  assert.equal(pin.commit, '122db54d0763dc39f81133ec06e35dab2b24d41b');
+  assert.equal(pin.policy_blob_sha, 'b5f31a288ae719c0f9e632f5ec359f33839f0850');
+  assert.equal(pin.tool_blob_sha, 'f5105da2a2cc2e767762bc10909e67262cea3144');
   let seen;
   const policy = await fetchPinnedPolicy(pin, async (url, init) => {
     seen = { url, authorization: init.headers?.Authorization };
@@ -222,9 +222,12 @@ test('pinned policy download uses the commit, checks the blob, and sends no toke
   });
   assert.equal(seen.authorization, undefined);
   assert.equal(seen.url, `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.policy_path}`);
-  assert.doesNotMatch(seen.url, /\/v7\.9\.0\//);
+  assert.doesNotMatch(seen.url, /\/v7\.10\.0\//);
   assert.equal(policy.pages.build_type, 'workflow');
   assert.equal(policy.pages.https_enforced, true);
+  assert.deepEqual(policy.pages.https_enforced_exempt, [
+    { repo: 'website', reason: 'HTTPS terminated at Cloudflare' }
+  ]);
   validatePolicy(policy);
   const toolUrl = `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.tool_path}`;
   const toolResponse = await fetch(toolUrl);
@@ -413,6 +416,65 @@ test('repositories without a Pages site are not given one', () => {
   const planned = planRepository(policy, observed, target());
   assert.equal(planned.writes.some((write) => String(write.path).endsWith('/pages')), false);
   assert.match(planned.skipped[0], /no site/);
+});
+
+test('an exemption skips Enforce HTTPS for that repository and still writes the others', () => {
+  const policy = withHttps(pinned());
+  policy.pages.https_enforced_exempt = [{ repo: 'website', reason: 'HTTPS terminated at Cloudflare' }];
+  validatePolicy(policy);
+  const website = observedMatching(policy);
+  website.pages.site.https_enforced = false;
+  const exempted = planRepository(policy, website, target('website'));
+  assert.equal(exempted.writes.some((write) => write.body && Object.hasOwn(write.body, 'https_enforced')), false);
+  assert.match(exempted.skipped.join('\n'), /pages\.https_enforced: exempt \(HTTPS terminated at Cloudflare\)/);
+  const alpha = observedMatching(policy);
+  alpha.pages.site.https_enforced = false;
+  const enforced = planRepository(policy, alpha, target('alpha'));
+  assert.deepEqual(enforced.writes.find((write) => String(write.path).endsWith('/pages')).body, { https_enforced: true });
+  assert.throws(() => validatePolicy({
+    ...policy,
+    pages: { ...policy.pages, https_enforced_exempt: [{ repo: 'Living-Proof-Labs/website', reason: 'no' }] }
+  }), /repository name/);
+  assert.throws(() => validatePolicy({
+    ...policy,
+    pages: { ...policy.pages, https_enforced_exempt: [{ repo: 'website' }] }
+  }), /reason/);
+  assert.throws(() => validatePolicy({
+    ...policy,
+    pages: { ...policy.pages, https_enforced_exempt: [] }
+  }), /must not be empty/);
+  assert.throws(() => validatePolicy({
+    ...policy,
+    pages: { ...policy.pages, https_enforced: false }
+  }), /requires pages\.https_enforced to be true/);
+});
+
+test('nine Pages repositories: website is exempt and the other eight get Enforce HTTPS', async (t) => {
+  const policy = withHttps(pinned());
+  policy.pages.https_enforced_exempt = [{ repo: 'website', reason: 'HTTPS terminated at Cloudflare' }];
+  const others = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta'];
+  const names = ['website', ...others];
+  const repos = {};
+  for (const name of names) {
+    repos[name] = baseRepo(policy, name, {
+      pages: { build_type: 'workflow', https_enforced: false, cname: 'keep.example' }
+    });
+  }
+  const { fetchImpl, calls } = orgFetch({ policy, names, repos });
+  const io = capture();
+  const code = await main(['--apply', '--policy', writePolicy(t, policy), '--org', 'ExampleOrg'], {
+    env: { GH_TOKEN: TOKEN },
+    io,
+    fetchImpl
+  });
+  assert.equal(code, 0, io.err());
+  const pageWrites = calls.filter((call) => call.method === 'PUT' && call.url.pathname.endsWith('/pages'));
+  assert.deepEqual(pageWrites.map((call) => call.url.pathname.split('/')[3]).sort(), others.sort());
+  for (const call of pageWrites) assert.deepEqual(JSON.parse(call.body), { https_enforced: true });
+  assert.equal(pageWrites.some((call) => call.url.pathname.includes('/website/')), false);
+  const website = io.out().match(/ExampleOrg\/website\n([\s\S]*?)\nExampleOrg\//)[1];
+  assert.match(website, /exempt \(HTTPS terminated at Cloudflare\)/);
+  assert.doesNotMatch(website, /https_enforced: false -> true/);
 });
 
 test('an unreadable main-ruleset bypass list is not written', () => {
