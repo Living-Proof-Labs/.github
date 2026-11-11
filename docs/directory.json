@@ -68,6 +68,16 @@
       "summary": "Runs trials, keeps evidence and grades it"
     },
     {
+      "repository": "livingproof-evaluator",
+      "title": "Evaluator contract",
+      "summary": "Shared observable vocabulary, observation binding format and evaluator contract; hosted manual not yet published"
+    },
+    {
+      "repository": "livingproof-evaluator-scenario",
+      "title": "Scenario evaluator",
+      "summary": "Generic Gherkin step vocabulary and runner over observation bindings; hosted manual not yet published"
+    },
+    {
       "repository": "livingproof-capability-report",
       "title": "Capability report",
       "summary": "Renders the verifier's stored grades"
