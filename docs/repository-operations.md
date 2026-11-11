@@ -73,9 +73,10 @@ repositories with the organization endpoint and does not call `/user`.
 
 Token permissions, the Pages Enforce HTTPS field, and examples are in the
 [repository README](../README.md#apply-repository-policy). The workflow above
-remains the environment-gated apply path. The pinned policy does not yet set
-`pages.https_enforced`; the command applies that boolean only after
-collaboration-guidelines adds it and this repository repins the policy blob.
+remains the environment-gated apply path. The pinned v7.9.0 policy sets
+`pages.https_enforced`, and the command applies that boolean on repositories
+that already have a Pages site. A Pages write that GitHub rejects is reported
+for that repository; the command continues with the others.
 
 ## Automation behavior
 
