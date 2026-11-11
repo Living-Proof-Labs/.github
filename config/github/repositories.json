@@ -10,6 +10,8 @@
     "livingproof-booster-t1",
     "livingproof-capability-report",
     "livingproof-common",
+    "livingproof-evaluator",
+    "livingproof-evaluator-bdd",
     "livingproof-sim-gazebo",
     "livingproof-sim-mujoco",
     "livingproof-unitree-g1",
