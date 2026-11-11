@@ -217,7 +217,9 @@ Register an App with the organization manifest flow already supported here
 (`task github:apps:form:help`, then the callback and exchange helpers).
 Webhooks are off. Only Rivet's manifest requests Administration write and
 Pages write, which `scripts/apply-repo-policy` needs when it writes repository
-settings and GitHub Pages. The repository-settings audit and apply manifests
+settings and GitHub Pages. Rivet also writes pull requests and issues, and
+reads continuous integration so a merge can wait on it. Cody and Vera write
+issues. The repository-settings audit and apply manifests
 stay Administration and Metadata only. They are the trusted-main workflow
 credential, separate from these bots.
 

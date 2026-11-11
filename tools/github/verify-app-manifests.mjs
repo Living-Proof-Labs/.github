@@ -19,10 +19,15 @@ export const BOT_MANIFESTS = {
     file: 'config/github/apps/rivet.manifest.json',
     name: 'Living Proof Labs Rivet',
     permissions: {
+      actions: 'read',
       administration: 'write',
+      checks: 'read',
       contents: 'write',
+      issues: 'write',
       metadata: 'read',
-      pages: 'write'
+      pages: 'write',
+      pull_requests: 'write',
+      statuses: 'read'
     }
   },
   cody: {
@@ -32,6 +37,7 @@ export const BOT_MANIFESTS = {
       actions: 'read',
       checks: 'read',
       contents: 'write',
+      issues: 'write',
       metadata: 'read',
       pull_requests: 'write',
       statuses: 'read'
@@ -44,6 +50,7 @@ export const BOT_MANIFESTS = {
       actions: 'write',
       checks: 'read',
       contents: 'read',
+      issues: 'write',
       metadata: 'read',
       pull_requests: 'write',
       statuses: 'read'

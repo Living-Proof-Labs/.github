@@ -79,8 +79,18 @@ test('versioned manifests match the least-privilege bot sets', () => {
     assert.equal(Object.hasOwn(permissions, 'administration'), false);
     assert.equal(Object.hasOwn(permissions, 'pages'), false);
   }
-  assert.equal(BOT_MANIFESTS.rivet.permissions.administration, 'write');
-  assert.equal(BOT_MANIFESTS.rivet.permissions.pages, 'write');
+  const rivet = BOT_MANIFESTS.rivet.permissions;
+  assert.equal(rivet.administration, 'write');
+  assert.equal(rivet.contents, 'write');
+  assert.equal(rivet.pages, 'write');
+  assert.equal(rivet.metadata, 'read');
+  assert.equal(rivet.pull_requests, 'write');
+  assert.equal(rivet.issues, 'write');
+  assert.equal(rivet.actions, 'read');
+  assert.equal(rivet.checks, 'read');
+  assert.equal(rivet.statuses, 'read');
+  assert.equal(BOT_MANIFESTS.cody.permissions.issues, 'write');
+  assert.equal(BOT_MANIFESTS.vera.permissions.issues, 'write');
   assert.throws(() => validateBotManifest('cody', {
     ...JSON.parse(readFileSync(path.join(root, BOT_MANIFESTS.cody.file), 'utf8')),
     default_permissions: { ...BOT_MANIFESTS.cody.permissions, administration: 'read' }

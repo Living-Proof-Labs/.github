@@ -1,6 +1,6 @@
 {
   "name": "Living Proof Labs Vera",
-  "description": "Verification for Living Proof Labs. Reads code and continuous integration, comments and reviews pull requests, and can re-run workflows.",
+  "description": "Verification for Living Proof Labs. Reads code and continuous integration, comments and reviews pull requests, re-runs workflows, and files issues for verification failures.",
   "url": "https://github.com/Living-Proof-Labs/.github",
   "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
   "public": false,
@@ -8,6 +8,7 @@
     "actions": "write",
     "checks": "read",
     "contents": "read",
+    "issues": "write",
     "metadata": "read",
     "pull_requests": "write",
     "statuses": "read"
