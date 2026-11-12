@@ -73,6 +73,11 @@
       "summary": "Shared observable vocabulary, observation binding format and evaluator contract; hosted manual not yet published"
     },
     {
+      "repository": "livingproof-evaluator-run",
+      "title": "Run evaluator",
+      "summary": "Planned evaluation of run infrastructure and evidence suitability; implementation and hosted manual not yet published"
+    },
+    {
       "repository": "livingproof-evaluator-scenario",
       "title": "Scenario evaluator",
       "summary": "Generic Gherkin step vocabulary and runner over observation bindings; hosted manual not yet published"
