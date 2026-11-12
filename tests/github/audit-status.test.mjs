@@ -41,7 +41,7 @@ const unreadable = Array.from({ length: 10 }, (_, index) => ({
 }));
 const published = [{ name: 'docs', pages: 'matches' }];
 
-test('strict audit is green when the only differences are repositories without Pages or with unreadable Pages', () => {
+test('strict audit is green when the only differences are missing or inaccessible Pages sources', () => {
   const text = audit([...published, ...noPages, ...unreadable]);
   assert.match(text, /^17 difference\(s\) found/m); // what the pinned audit tool would fail on
   const result = strict(text);
@@ -76,6 +76,45 @@ test('strict audit fails when a Pages site does not enforce HTTPS and ignores a 
   );
   const exemptResult = strict(exempt);
   assert.equal(exemptResult.status, 0, exemptResult.stdout);
+});
+
+test('unreadable Enforce HTTPS is incomplete; a missing site and an exemption are not drift; true passes and false drifts', () => {
+  const sample = (pages, https) => audit([{ name: 'docs', pages }]).replace(
+    `  pages: ${pages}`,
+    `  pages: ${pages}\n  pages.https_enforced: ${https}`
+  );
+  const expectStatus = (label, text, status, message) => {
+    const result = strict(text);
+    assert.equal(result.status, status, `${label}: ${result.stdout}${result.stderr}`);
+    assert.match(result.stdout, message, label);
+    return result;
+  };
+  const unverified = sample('matches', 'unverified');
+  expectStatus('unreadable', unverified, 3, /incomplete \(0 difference\(s\); 1 pages\.https_enforced value\(s\) unknown, not counted as drift\)/);
+  assert.equal(classify(unverified).httpsDrift, 0);
+  assert.equal(classify(unverified).httpsUnverified, 1);
+  assert.doesNotMatch(strict(unverified).stdout, /compliant|drift detected/);
+  const file = path.join(mkdtempSync(path.join(tmpdir(), 'audit-status-')), 'audit.txt');
+  writeFileSync(file, unverified);
+  const report = spawnSync(process.execPath, [tool, file], { encoding: 'utf8' });
+  assert.equal(report.status, 0, report.stdout);
+  assert.match(report.stdout, /incomplete \(0 difference\(s\); 1 pages\.https_enforced value\(s\) unknown, not counted as drift\)/);
+  assert.doesNotMatch(report.stdout, /compliant/);
+  expectStatus('no Pages site', sample('missing', 'no Pages site'), 0, /compliant/);
+  assert.doesNotMatch(strict(sample('missing', 'no Pages site')).stdout, /unknown|drift detected/);
+  expectStatus('exempt', sample('matches', 'exempt (HTTPS terminated at Cloudflare)'), 0, /^Audit status: compliant\.$/m);
+  expectStatus('enforced true', sample('matches', 'matches'), 0, /^Audit status: compliant\.$/m);
+  const drifted = sample('matches', 'false -> true');
+  expectStatus('enforced false', drifted, 2, /drift detected \(1 difference\(s\)\)/);
+  assert.equal(classify(drifted).httpsDrift, 1);
+  assert.equal(classify(drifted).httpsUnverified, 0);
+  const mixed = `${sample('matches', 'false -> true').replace(/\n\n0 difference[\s\S]*$/, '')}\nLiving-Proof-Labs/other\n  repository settings: match\n  sponsorship settings: match\n  immutable releases: enabled\n  main ruleset: matches\n  pages: matches\n  pages.https_enforced: unverified\n\n0 difference(s) found; 0 error(s).\n`;
+  const mixedStrict = expectStatus('unreadable with drift', mixed, 3, /incomplete \(1 difference\(s\); 1 pages\.https_enforced value\(s\) unknown, not counted as drift\)/);
+  assert.doesNotMatch(mixedStrict.stdout, /drift detected|compliant/);
+  writeFileSync(file, mixed);
+  const mixedReport = spawnSync(process.execPath, [tool, file], { encoding: 'utf8' });
+  assert.equal(mixedReport.status, 0, mixedReport.stdout);
+  assert.equal(mixedReport.stdout, mixedStrict.stdout);
 });
 
 test('strict audit stays red when a Pages site exists with another source', () => {

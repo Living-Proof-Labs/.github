@@ -46,7 +46,13 @@ failure. The pinned collaboration-guidelines v7.10.0 policy lists `website`
 in `pages.https_enforced_exempt` with reason `HTTPS terminated at Cloudflare`.
 That repository is reported as `exempt (HTTPS terminated at Cloudflare)` and
 is not drift. The exemption list must be non-empty, and it is accepted only
-when `pages.https_enforced` is true.
+when `pages.https_enforced` is true. When a non-exempt site exists and
+`pages.https_enforced` cannot be read, strict mode is incomplete (exit 3):
+the summary names the unknown value, and the audit is not compliant. The
+unknown value is not counted as drift. Confirmed drift still counts; if
+unknown evidence and drift are both present, the exit stays incomplete and
+the summary keeps the difference count. Report mode prints that same
+incomplete summary and exits 0.
 
 UI-only evidence lives in
 [`config/github/manual-settings-evidence.json`](../config/github/manual-settings-evidence.json).

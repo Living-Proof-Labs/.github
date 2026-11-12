@@ -62,7 +62,7 @@ test('separates dated manual evidence from API-enforced checks', () => {
   assert.match(xml, /2026-10-30T05:50:00Z/);
 });
 
-test('junit compares Enforce HTTPS, passes a repository with no Pages site, and records an exemption', () => {
+test('junit separates Enforce HTTPS drift from an unreadable value, a match, a missing site, and an exemption', () => {
   const xml = createJUnit({
     policy: {
       pages: {
@@ -85,6 +85,16 @@ test('junit compares Enforce HTTPS, passes a repository with no Pages site, and 
       '  pages: matches',
       '  pages.https_enforced: false -> true',
       '  immutable releases: enabled',
+      '  main ruleset: matches',
+      'Living-Proof-Labs/live',
+      '  pages: matches',
+      '  pages.https_enforced: matches',
+      '  immutable releases: enabled',
+      '  main ruleset: matches',
+      'Living-Proof-Labs/blocked',
+      '  pages: matches',
+      '  pages.https_enforced: unverified',
+      '  immutable releases: enabled',
       '  main ruleset: matches'
     ].join('\n')
   });
@@ -93,7 +103,10 @@ test('junit compares Enforce HTTPS, passes a repository with no Pages site, and 
   assert.match(xml, /plain :: pages\.https_enforced"\/>/);
   assert.match(xml, /docs :: pages\.https_enforced/);
   assert.match(xml, /actual false -> true; expected true/);
+  assert.match(xml, /live :: pages\.https_enforced"\/>/);
+  assert.match(xml, /blocked :: pages\.https_enforced"><error message="unverified Enforce HTTPS">/);
   assert.equal((xml.match(/<failure /g) || []).length, 1);
+  assert.equal((xml.match(/<error /g) || []).length, 1);
 });
 
 test('reports a contradictory dated manual observation as a manual-correction warning', () => {

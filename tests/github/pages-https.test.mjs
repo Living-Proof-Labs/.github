@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { classify } from '../../tools/github/audit-status.mjs';
-import { annotateAudit, pagesHttpsEnforced, validatePages } from '../../tools/github/pages-https.mjs';
+import { classify, decide } from '../../tools/github/audit-status.mjs';
+import { annotateAudit, pagesHttpsEnforced, readHttpsEnforced, validatePages } from '../../tools/github/pages-https.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const policy = {
@@ -64,6 +64,87 @@ test('nine Pages sites do not count website as Enforce HTTPS drift', async () =>
   });
   assert.equal(again, annotated);
   assert.equal(classify(again).enforced, 8);
+});
+
+test('HTTP 403, a failed fetch, and a non-boolean field are unverified on an otherwise compliant audit', async () => {
+  const token = 'ghs_should_not_leak';
+  const compliant = [
+    'Living-Proof-Labs/docs',
+    '  repository settings: match',
+    '  sponsorship settings: match',
+    '  immutable releases: enabled',
+    '  main ruleset: matches',
+    '  pages: matches',
+    '',
+    '0 difference(s) found; 0 error(s).',
+    ''
+  ].join('\n');
+  const reads = {
+    forbidden: { ok: false, status: 403, async json() { return { message: 'SECRET_BODY_should_not_leak' }; } },
+    failed: () => { throw new Error(`network ${token}`); },
+    missing: { ok: true, status: 200, async json() { return { build_type: 'workflow' }; } },
+    nonboolean: { ok: true, status: 200, async json() { return { https_enforced: 'true' }; } },
+    enforcedTrue: { ok: true, status: 200, async json() { return { https_enforced: true }; } },
+    enforcedFalse: { ok: true, status: 200, async json() { return { https_enforced: false }; } }
+  };
+  const expected = {
+    forbidden: [/pages\.https_enforced: unverified/, 3, /unknown, not counted as drift/],
+    failed: [/pages\.https_enforced: unverified/, 3, /unknown, not counted as drift/],
+    missing: [/pages\.https_enforced: unverified/, 3, /unknown, not counted as drift/],
+    nonboolean: [/pages\.https_enforced: unverified/, 3, /unknown, not counted as drift/],
+    enforcedTrue: [/pages\.https_enforced: matches/, 0, /^Audit status: compliant\.$/],
+    enforcedFalse: [/pages\.https_enforced: false -> true/, 2, /drift detected \(1 difference\(s\)\)\.$/]
+  };
+  for (const [mode, response] of Object.entries(reads)) {
+    const calls = [];
+    const observed = await readHttpsEnforced('docs', {
+      token,
+      owner: 'Living-Proof-Labs',
+      fetchImpl: async (url, init) => {
+        calls.push({ url, authorization: init?.headers?.Authorization });
+        const result = typeof response === 'function' ? response() : response;
+        return result;
+      }
+    });
+    const annotated = await annotateAudit(compliant, policy, async () => observed);
+    const decision = decide(annotated, true);
+    const [line, status, message] = expected[mode];
+    assert.deepEqual(calls, [{
+      url: 'https://api.github.com/repos/Living-Proof-Labs/docs/pages',
+      authorization: `Bearer ${token}`
+    }], mode);
+    assert.match(annotated, line, mode);
+    assert.equal(decision.status, status, `${mode}: ${decision.message}`);
+    assert.match(decision.message, message, mode);
+    assert.equal(`${annotated}${decision.message}`.includes(token), false, mode);
+    assert.equal(`${annotated}${decision.message}`.includes('SECRET_BODY_should_not_leak'), false, mode);
+    if (status === 3) {
+      assert.equal(classify(annotated).httpsDrift, 0, mode);
+      assert.equal(classify(annotated).enforced, 0, mode);
+      const report = decide(annotated, false);
+      assert.equal(report.status, 0, mode);
+      assert.equal(report.message, decision.message, mode);
+    }
+  }
+  const untouched = [];
+  const absent = await annotateAudit(
+    'Living-Proof-Labs/plain\n  pages: missing\n\n1 difference(s) found; 0 error(s).\n',
+    policy,
+    async (repository) => { untouched.push(repository); return { httpsEnforced: false }; }
+  );
+  const exempted = await annotateAudit(
+    'Living-Proof-Labs/website\n  pages: matches\n\n0 difference(s) found; 0 error(s).\n',
+    policy,
+    async (repository) => { untouched.push(repository); return { httpsEnforced: false }; }
+  );
+  assert.deepEqual(untouched, []);
+  assert.match(absent, /pages\.https_enforced: no Pages site/);
+  assert.match(exempted, /pages\.https_enforced: exempt \(HTTPS terminated at Cloudflare\)/);
+  assert.equal(decide(absent, true).status, 0);
+  assert.match(decide(absent, true).message, /compliant/);
+  assert.doesNotMatch(decide(absent, true).message, /unknown/);
+  assert.equal(decide(exempted, true).status, 0);
+  assert.match(decide(exempted, true).message, /^Audit status: compliant\.$/);
 });
 
 test('the audit command does not call GitHub for a repository with no Pages site', () => {
