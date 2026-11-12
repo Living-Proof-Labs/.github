@@ -11,6 +11,7 @@
     "livingproof-capability-report",
     "livingproof-common",
     "livingproof-evaluator",
+    "livingproof-evaluator-run",
     "livingproof-evaluator-scenario",
     "livingproof-sim-gazebo",
     "livingproof-sim-mujoco",
