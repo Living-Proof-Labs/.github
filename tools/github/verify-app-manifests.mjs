@@ -95,10 +95,8 @@ export function validateBotManifest(bot, manifest) {
     throw new Error(`Manifest for ${bot} must request only its least-privilege permissions.`);
   }
   if (Object.hasOwn(manifest.default_permissions, 'administration')) throw new Error('Engineering Apps must not request Administration.');
-  if (bot !== 'rivet') {
-    if (Object.hasOwn(manifest.default_permissions, 'administration') || Object.hasOwn(manifest.default_permissions, 'pages')) {
-      throw new Error('Administration and Pages belong only on the Rivet manifest.');
-    }
+  if (bot !== 'rivet' && Object.hasOwn(manifest.default_permissions, 'pages')) {
+    throw new Error('Pages belongs only on the Rivet manifest.');
   }
   return manifest;
 }
