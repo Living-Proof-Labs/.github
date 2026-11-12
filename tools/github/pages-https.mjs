@@ -67,6 +67,37 @@ export function pagesHttpsEnforced(policy, repositoryName) {
   return { enforce: false };
 }
 
+/**
+ * Read pages.https_enforced for a repository whose Pages site the audit already
+ * saw. No token, a failed request, a non-OK response, or a non-boolean
+ * https_enforced is unverified. The token is not included in the result.
+ * A missing site is not decided here.
+ */
+export async function readHttpsEnforced(repository, { token = '', owner, fetchImpl = globalThis.fetch } = {}) {
+  if (token === '') return { unverified: true };
+  let response;
+  try {
+    response = await fetchImpl(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/pages`, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'User-Agent': 'living-proof-labs-repository-settings',
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+  } catch {
+    return { unverified: true };
+  }
+  if (!response?.ok) return { unverified: true };
+  try {
+    const body = await response.json();
+    if (typeof body?.https_enforced !== 'boolean') return { unverified: true };
+    return { httpsEnforced: body.https_enforced };
+  } catch {
+    return { unverified: true };
+  }
+}
+
 function httpsLine(state, decision, observed) {
   if (decision.report) return `  pages.https_enforced: ${decision.report}`;
   if (!decision.enforce) return undefined;
