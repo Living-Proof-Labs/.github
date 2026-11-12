@@ -157,7 +157,7 @@ not a claim of delivered provider integrations, autonomous fixes or partnerships
 | **Policy** | Explicit, versioned rules that turn supported assessments and evidence checks into a grade. Missing evidence must not silently pass. |
 | **Report and grade** | The understandable record of decisions and their supporting context. The grade is an outcome within that report; rendering a saved report does not regrade it. |
 
-The released [portable bundle schema](https://github.com/Living-Proof-Labs/livingproof-capability-report/blob/v1.6.0/src/livingproof_capability_report/bundle.schema.json)
+The released [portable bundle schema](https://github.com/Living-Proof-Labs/livingproof-capability-report/blob/v3.4.0/src/livingproof_capability_report/bundle.schema.json)
 provides the technical detail. A manifest can contain multiple results, so a
 bundle need not represent a single robot execution. Keep its referenced evidence
 files with it; different specification and software contexts remain separate in
@@ -187,21 +187,21 @@ produces insufficient evidence. Today's demonstration uses deterministic checks,
 scripted mock agent assessments, and recorded human assessments. No simulator,
 robot, model call, or live human review is involved.
 
-**Download a complete example** from [capability verifier v1.3.0](https://github.com/Living-Proof-Labs/capability-verifier/releases/tag/v1.3.0):
+**Download a complete example** from [capability verifier v1.16.3](https://github.com/Living-Proof-Labs/capability-verifier/releases/tag/v1.16.3):
 
-- [Baseline pass](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/capability-verifier-v1.3.0-baseline-22ce11f3-4bbe-5ee8-b0cf-a357ad5e41a8-amd64-40284818922-1.zip): 120 milliseconds meets the 500-millisecond limit.
-- [Stricter requirement](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/capability-verifier-v1.3.0-strict-8099ea9d-76e0-577f-bdda-1609583bcbce-amd64-40284818922-1.zip): 300 milliseconds exceeds the 250-millisecond limit.
-- [Required behavior fails](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/capability-verifier-v1.3.0-negative-191b6fd4-68bc-5f57-b485-6a8bb02379e0-amd64-40284818922-1.zip): motion is not inhibited; favorable assessments cannot hide the failure.
-- [Missing measurement](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/capability-verifier-v1.3.0-missing-measurement-61961d98-eace-51eb-8983-7b252aa89bf7-amd64-40284818922-1.zip): absent elapsed time leaves insufficient evidence.
-- [Compatibility comparison](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/capability-verifier-v1.3.0-compatibility-matrix-762ce2a2-703e-53de-9598-ff79388e0053-amd64-40284818922-1.zip): four requirement/executor combinations show passes, a failure, and an unsupported pairing.
+- [Baseline pass](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/capability-verifier-v1.16.3-baseline-9c83a567-9471-5c0d-ba5b-9c8c906e215d-amd64-43152187237-1.zip): 120 milliseconds meets the 500-millisecond limit.
+- [Stricter requirement](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/capability-verifier-v1.16.3-strict-956003ea-bd3a-5cc6-8ec2-f3f737c6529d-amd64-43152187237-1.zip): 300 milliseconds exceeds the 250-millisecond limit.
+- [Required behavior fails](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/capability-verifier-v1.16.3-negative-48fdd88e-53e4-5e3b-9b14-3669697534c5-amd64-43152187237-1.zip): motion is not inhibited; favorable assessments cannot hide the failure.
+- [Missing measurement](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/capability-verifier-v1.16.3-missing-measurement-efc21e00-60ee-5b9e-99f5-849b0bedf73b-amd64-43152187237-1.zip): absent elapsed time leaves insufficient evidence.
+- [Compatibility comparison](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/capability-verifier-v1.16.3-compatibility-matrix-69e85b63-3a39-5a89-adca-b0b4a25d0c44-amd64-43152187237-1.zip): four requirement/executor combinations show passes, a failure, and an unsupported pairing.
 
 Unzip any example into its own folder and open `report.html`. Each archive keeps
 its manifest, evidence, reports, provenance, checksums, and regeneration instructions
 together. These are portable data bundles; the architecture in a filename records
 where it was built, not a restriction on where you can read it.
 
-The [download catalog](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/CATALOG.md)
-maps the examples, and [published checksums](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0/BUNDLE-SHA256SUMS)
+The [download catalog](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/CATALOG.md)
+maps the examples, and [published checksums](https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3/BUNDLE-SHA256SUMS)
 let you check download integrity. Reports preserve their recorded specification
 versions and keep different contexts separate; there is no combined grade.
 
