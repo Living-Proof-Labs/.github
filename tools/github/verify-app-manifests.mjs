@@ -13,21 +13,12 @@ export const SETTINGS_MANIFESTS = [
   ['config/github/apps/repository-settings-apply.manifest.json', 'write']
 ];
 
-// Least privilege for each bot. Only Rivet may request Administration or Pages.
+// Rivet permissions come from the reviewed access definition, not a second grant list.
 export const BOT_MANIFESTS = {
   rivet: {
     file: 'config/github/apps/rivet.manifest.json',
-    name: 'Living Proof Labs Rivet',
-    permissions: {
-      actions: 'write',
-      administration: 'write',
-      checks: 'read',
-      contents: 'write',
-      issues: 'write',
-      metadata: 'read',
-      pages: 'write',
-      pull_requests: 'write'
-    }
+    name: 'Rivet Agent - Living Proof Labs',
+    permissions: JSON.parse(readFileSync(new URL('../../config/github/app-access.json', import.meta.url), 'utf8')).apps.find(app => app.agent === 'rivet').permissions
   },
   cody: {
     file: 'config/github/apps/cody.manifest.json',
@@ -103,6 +94,7 @@ export function validateBotManifest(bot, manifest) {
   if (!samePermissions(manifest.default_permissions, spec.permissions)) {
     throw new Error(`Manifest for ${bot} must request only its least-privilege permissions.`);
   }
+  if (Object.hasOwn(manifest.default_permissions, 'administration')) throw new Error('Engineering Apps must not request Administration.');
   if (bot !== 'rivet') {
     if (Object.hasOwn(manifest.default_permissions, 'administration') || Object.hasOwn(manifest.default_permissions, 'pages')) {
       throw new Error('Administration and Pages belong only on the Rivet manifest.');

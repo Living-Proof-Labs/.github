@@ -1,18 +1,20 @@
 {
-  "name": "Living Proof Labs Rivet",
-  "description": "Head of Engineering and Delivery for Living Proof Labs. Merges pull requests, comments on them, files issues, re-runs workflows, reads check results, publishes releases, and applies organization repository policy.",
+  "name": "Rivet Agent - Living Proof Labs",
+  "description": "Engineering delivery for Living Proof Labs. Repository settings administration belongs to the dedicated settings App.",
   "url": "https://github.com/Living-Proof-Labs/.github",
   "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
   "public": false,
   "default_permissions": {
     "actions": "write",
-    "administration": "write",
     "checks": "read",
     "contents": "write",
     "issues": "write",
     "metadata": "read",
     "pages": "write",
-    "pull_requests": "write"
+    "pull_requests": "write",
+    "statuses": "read",
+    "deployments": "read",
+    "workflows": "write"
   },
   "default_events": []
 }
