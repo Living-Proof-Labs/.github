@@ -21,7 +21,8 @@ this guide from the repository root so `scripts/app-token`,
 agents that have GitHub Apps. It records each role and App manifest path.
 The manifests do not record a numeric App id, the
 GitHub App slug GitHub assigns at registration, or a git commit identity, so
-those fields are null in the directory.
+those fields remain null until registration is verified. Keel's verified App id
+and slug are recorded; its git commit identity remains unset.
 
 The settings-audit credential stays separate. It uses
 `REPO_ADMIN_APP_CLIENT_ID` and `REPO_ADMIN_APP_PRIVATE_KEY` on the
@@ -126,9 +127,16 @@ Name: `Living Proof Labs Keel` (22 characters).
 
 Contents write supports source branches for pull requests. Keel does not
 request administration, Pages, workflow changes, or organization permissions.
-Install only on explicitly selected repositories. Registration and installation
-are separate from merging this configuration; null identity fields do not
-claim that a live App exists. Keep credentials outside this repository.
+Install only on explicitly selected repositories. Keep credentials outside
+this repository.
+
+Keel was registered on 2026-11-12 as
+[`living-proof-labs-keel`](https://github.com/apps/living-proof-labs-keel),
+App id `5722183`, using the browser form and the permissions above.
+The manifest callback is a bootstrap exchange endpoint, not an OAuth redirect;
+manual registration leaves OAuth redirects empty and user authorization off.
+Key generation and installation remain pending until a secure Keel credential
+store is available. No private key was generated during registration.
 
 GitHub App names are unique across GitHub and are limited to 34 characters.
 The bot names above are inside that limit. Keep the manifest name on the
