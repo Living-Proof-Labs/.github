@@ -17,7 +17,8 @@
  * Enforce HTTPS, and it does not create Pages sites.
  */
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { validateInventory } from './verify-inventory.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pagesHttpsEnforced, validatePages } from './pages-https.mjs';
@@ -110,7 +111,12 @@ Living-Proof-Labs. Pass --repo to limit that list to one name.
 --dry-run  Print each difference as current -> desired. No write API calls.
 --apply    Write only settings whose current value differs from the policy.
 --policy   Use a local policy JSON file instead of the pinned blob.
---org      Organization login. Default: Living-Proof-Labs.
+--org      Organization login. Default: Living-Proof-Labs; must match inventory.
+--inventory FILE  Use only these registered repositories, never organization discovery.
+--https-only  Isolate HTTPS changes; missing or unreadable sites fail without creation.
+--junit FILE  Write per-repository verification evidence (HTTPS mode).
+--plan-output FILE  Save the read-only HTTPS preview for owner review.
+--expected-plan FILE  Refuse all writes if the HTTPS plan changed since preview.
 --repo     Repository name (not owner/name) that the organization list must include.
 
 Without --policy, the pin in config/github/repository-policy.json selects a
@@ -134,7 +140,12 @@ export function parseArgs(argv) {
     help: false,
     policyPath: undefined,
     org: 'Living-Proof-Labs',
-    repo: undefined
+    repo: undefined,
+    httpsOnly: false,
+    inventoryPath: undefined,
+    junitPath: undefined,
+    planOutput: undefined,
+    expectedPlan: undefined
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -150,9 +161,19 @@ export function parseArgs(argv) {
     else if (argument === '--policy') options.policyPath = take('--policy');
     else if (argument === '--org') options.org = take('--org');
     else if (argument === '--repo') options.repo = take('--repo');
+    else if (argument === '--https-only') options.httpsOnly = true;
+    else if (argument === '--inventory') options.inventoryPath = take('--inventory');
+    else if (argument === '--junit') options.junitPath = take('--junit');
+    else if (argument === '--plan-output') options.planOutput = take('--plan-output');
+    else if (argument === '--expected-plan') options.expectedPlan = take('--expected-plan');
     else throw new UsageError(`Unknown option: ${argument}`);
   }
   if (options.help) return options;
+  if (options.inventoryPath && !options.httpsOnly) throw new UsageError('--inventory requires --https-only.');
+  if ((options.planOutput || options.expectedPlan) && !options.httpsOnly) throw new UsageError('Plan files require --https-only.');
+  if (options.expectedPlan && !options.apply) throw new UsageError('--expected-plan requires --apply.');
+  if (options.junitPath && !options.httpsOnly) throw new UsageError('--junit requires --https-only.');
+  if (options.httpsOnly && !options.inventoryPath) throw new UsageError('--https-only requires --inventory.');
   if (options.dryRun === options.apply) throw new UsageError('Choose exactly one of --dry-run or --apply.');
   if (!isAccountName(options.org)) throw new UsageError('--org must be a GitHub organization login.');
   if (options.repo !== undefined && !isRepositoryName(options.repo)) {
@@ -451,8 +472,8 @@ function planPages(desiredPages, observedPages, repository, lines, writes, skipp
   if (https.report) {
     skipped.push(`pages.https_enforced: ${https.report}`);
   } else if (https.enforce) {
-    if (!Object.hasOwn(observedPages.site, 'https_enforced')) {
-      failures.push({ setting: 'pages.https_enforced', message: 'field is absent from the Pages response; not written' });
+    if (typeof observedPages.site.https_enforced !== 'boolean') {
+      failures.push({ setting: 'pages.https_enforced', message: 'field is absent or non-boolean in the Pages response; not written' });
     } else if (observedPages.site.https_enforced !== https.desired) {
       lines.push({ setting: 'pages.https_enforced', current: observedPages.site.https_enforced, desired: https.desired });
       body.https_enforced = https.desired;
@@ -647,8 +668,15 @@ async function observe(api, org, name, policy) {
   return observed;
 }
 
-export async function run({ policy, org, repo, dryRun, api }) {
-  let listed = await listOrgRepositories(api, org);
+export async function run({ policy, org, repo, dryRun, api, inventory, httpsOnly = false, expectedPlan }) {
+  if (inventory && !httpsOnly) throw new Error('--inventory requires HTTPS-only mode.');
+  if (inventory) {
+    validateInventory(inventory);
+    if (inventory.owner !== org) throw new Error('Inventory owner differs from --org.');
+  }
+  if (httpsOnly && !inventory) throw new Error('HTTPS-only mode requires the canonical inventory.');
+  let listed = inventory ? inventory.repositories.map(name => ({ name })) : await listOrgRepositories(api, org);
+  if (httpsOnly) return runHttps({ policy, org, repo, dryRun, api, listed, expectedPlan });
   if (repo) {
     listed = listed.filter((item) => item.name === repo);
     if (listed.length === 0) throw new Error(`GET /orgs/${org}/repos did not include ${repo}.`);
@@ -695,10 +723,66 @@ export async function run({ policy, org, repo, dryRun, api }) {
   return { notices: policyNotices(policy), manual: manualSettingNames(policy), repositories, failures };
 }
 
+/** Isolated Pages HTTPS application; reuses the existing Pages diff planner. */
+export async function runHttps({ policy, org, repo, dryRun, api, listed, expectedPlan }) {
+  if (repo && !listed.some(item => item.name === repo)) throw new Error(`${repo} is not in the canonical inventory.`);
+  if (repo) listed = listed.filter(item => item.name === repo);
+  const repositories = [];
+  for (const { name } of listed) {
+    const item = { name, lines: [], skipped: [], failures: [], writeFailures: 0 };
+    repositories.push(item);
+    const decision = pagesHttpsEnforced(policy, name);
+    if (decision.report) { item.skipped.push(decision.report); continue; }
+    if (!decision.enforce) { item.failures.push({ setting: 'pages.https_enforced', message: 'pinned policy has no HTTPS value' }); continue; }
+    const repository = await readResource(api, `/repos/${org}/${name}`);
+    if (repository.error) { item.failures.push({ setting: 'repository', message: repository.error }); continue; }
+    if (repository.value?.archived === true) { item.skipped.push('archived; no writes'); continue; }
+    const before = await readPages(api, org, name, repository.value);
+    if (before.site === null) { item.failures.push({ setting: 'pages', message: 'missing site; HTTPS-only mode never creates a site' }); continue; }
+    const writes = [];
+    planPages({ https_enforced: decision.desired }, before, { owner: org, name }, item.lines, writes, item.skipped, item.failures);
+    item.writes = writes;
+  }
+  const plan = structuredClone({ owner: org, repositories: repositories.map(({ name, lines, skipped, failures, writes = [] }) => ({ name, lines, skipped, failures, writes })) });
+  if (expectedPlan !== undefined && JSON.stringify(plan) !== JSON.stringify(expectedPlan)) throw new Error('HTTPS plan changed since preview; no writes performed. Review a fresh preview.');
+  for (const item of repositories) {
+    const writes = item.writes ?? [];
+    const name = item.name;
+    const decision = pagesHttpsEnforced(policy, name);
+    if (dryRun) continue;
+    for (const write of writes) {
+      try { await api.write(write.method, write.path, write.body); }
+      catch (error) {
+        item.writeFailures++;
+        const message = error instanceof GitHubApiError && error.status === 422 && /certificate|https/i.test(error.detail)
+          ? `certificate not ready or HTTPS unavailable: ${describeFailure(error)}` : describeFailure(error);
+        item.failures.push({ setting: 'pages.https_enforced', message });
+      }
+    }
+    if (writes.length && !item.writeFailures) {
+      const after = await readPages(api, org, name, { has_pages: true });
+      if (after.error || after.site?.https_enforced !== decision.desired) {
+        item.failures.push({ setting: 'pages.https_enforced', message: `read-back failed: ${after.error ?? 'desired boolean not observed'}` });
+      }
+    }
+  }
+  return { plan, dryRun, inventory: true, notices: [], manual: [], repositories, failures: repositories.reduce((n, item) => n + item.failures.length, 0) };
+}
+
+export function renderHttpsJunit(report, org) {
+  const xml = value => String(value).replace(/[<>&"']/g, char => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));
+  const cases = report.repositories.map(item => {
+    const failure = item.failures.map(f => `${f.setting}: ${f.message}`).join('; ');
+    const skipped = [...item.skipped, ...(report.dryRun && item.lines.length ? ['preview only: changes not applied or verified'] : [])];
+    return `  <testcase classname="pages.https_enforced" name="${xml(org + '/' + item.name)}">${failure ? `<failure message="${xml(failure)}"/>` : skipped.length ? `<skipped message="${xml(skipped.join('; '))}"/>` : ''}</testcase>`;
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="Pages HTTPS" tests="${cases.length}" failures="${report.repositories.filter(i => i.failures.length).length}" skipped="${report.repositories.filter(i => !i.failures.length && (i.skipped.length || (report.dryRun && i.lines.length))).length}">\n${cases.join('\n')}\n</testsuite>\n`;
+}
+
 export function renderReport(report, { dryRun, org, policySource }) {
   const lines = [
     `mode: ${dryRun ? 'dry-run (no writes)' : 'apply'}`,
-    `repositories: GET /orgs/${org}/repos?type=all`,
+    `repositories: ${report.inventory ? 'canonical inventory' : `GET /orgs/${org}/repos?type=all`}`,
     `policy: ${policySource}`
   ];
   for (const notice of report.notices) lines.push(`notice: ${notice}`);
@@ -719,7 +803,7 @@ export function renderReport(report, { dryRun, org, policySource }) {
     for (const skip of repository.skipped) lines.push(`  skipped: ${skip}`);
     for (const failure of repository.failures) lines.push(`  ERROR ${failure.setting}: ${failure.message}`);
     if (repository.lines.length > 0) {
-      const outcome = dryRun ? 'not written (dry-run)' : (repository.writeFailures > 0 ? 'not fully written' : 'written');
+      const outcome = dryRun ? 'not written (dry-run)' : report.inventory && report.plan ? (repository.failures.length > 0 ? 'not verified' : 'written and verified') : (repository.writeFailures > 0 ? 'not fully written' : 'written');
       lines.push(`  outcome: ${outcome}`);
     }
   }
@@ -788,7 +872,17 @@ export async function main(argv, dependencies = {}) {
     }
     validatePolicy(policy);
     const api = createGitHubClient({ token, fetchImpl, allowWrites: options.apply === true });
-    const report = await run({ policy, org: options.org, repo: options.repo, dryRun: options.dryRun, api });
+    const inventory = options.inventoryPath ? JSON.parse(readFileSync(options.inventoryPath, 'utf8')) : undefined;
+    const report = await run({ policy, org: options.org, repo: options.repo, dryRun: options.dryRun, api, inventory, httpsOnly: options.httpsOnly, expectedPlan: options.expectedPlan ? JSON.parse(readFileSync(options.expectedPlan, 'utf8')) : undefined });
+    if (options.planOutput) {
+      mkdirSync(path.dirname(options.planOutput), { recursive: true });
+      writeFileSync(options.planOutput, JSON.stringify(report.plan, null, 2) + '\n');
+    }
+    if (options.junitPath) {
+      if (!options.httpsOnly) throw new UsageError('--junit requires --https-only.');
+      mkdirSync(path.dirname(options.junitPath), { recursive: true });
+      writeFileSync(options.junitPath, redactSecrets(renderHttpsJunit(report, options.org), tokenForErrors));
+    }
     io.stdout.write(redactSecrets(renderReport(report, { dryRun: options.dryRun, org: options.org, policySource }), tokenForErrors));
     return report.failures > 0 ? 1 : 0;
   } catch (error) {

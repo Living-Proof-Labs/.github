@@ -40,11 +40,19 @@ test('daily strict audit is unattended while apply remains reviewer-gated', () =
 });
 
 test('settings apply previews first and scopes privileged changes to explicit inputs', () => {
-  assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --repo/);
+  assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --junit/);
+  assert.match(workflow, /--https-only --inventory config\/github\/repositories\.json/);
+  assert.match(workflow, /--plan-output artifacts\/https-plan\.json/);
+  assert.match(workflow, /--expected-plan artifacts\/preview\/https-plan\.json/);
+  assert.match(workflow, /needs: preview/);
+  assert.match(workflow, /permission-pages: read/);
+  assert.match(workflow, /permission-pages: write/);
+  assert.match(workflow, /ref: \$\{\{ github\.sha \}\}/);
+  assert.match(workflow, /if \[ "\$PAGES" = true \]; then arguments\+=\(--apply-pages\)/);
   assert.match(workflow, /include_release_immutability/);
-  assert.match(workflow, /if \[ '\$\{\{ inputs\.apply_main_ruleset \}\}' = true \]/);
-  assert.match(workflow, /if \[ '\$\{\{ inputs\.include_release_immutability \}\}' = true \]/);
+  assert.match(workflow, /if \[ "\$RULESET" = true \]/);
+  assert.match(workflow, /if \[ "\$IMMUTABILITY" = true \]/);
   assert.doesNotMatch(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
   assert.match(workflow, /--apply-immutable-releases-when-unknown/);
-  assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\) && inputs\.apply/);
+  assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\)/);
 });

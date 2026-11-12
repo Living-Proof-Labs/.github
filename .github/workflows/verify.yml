@@ -120,6 +120,7 @@ jobs:
           private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           permission-administration: write
+          permission-pages: read
       - run: task setup
       - run: task github:settings:test
         env:
