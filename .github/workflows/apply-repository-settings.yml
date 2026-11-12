@@ -22,7 +22,7 @@ on:
         default: false
         type: boolean
       apply_pages:
-        description: Ordinary mode only — include Pages setup with full ordinary settings reconciliation
+        description: Ordinary mode only — include Pages setup and HTTPS with full ordinary settings reconciliation
         required: true
         default: false
         type: boolean
@@ -165,11 +165,7 @@ jobs:
           if [ "$MODE" = https-only ]; then
             bash scripts/apply-repo-policy --apply --https-only --inventory config/github/repositories.json "${arguments[@]}" --expected-plan artifacts/preview/https-plan.json --junit artifacts/https-apply.xml | tee artifacts/apply.txt
           else
-            arguments+=(--apply)
-            if [ "$PAGES" = true ]; then arguments+=(--apply-pages); fi
-            if [ "$RULESET" = true ]; then arguments+=(--apply-main-ruleset); fi
-            if [ "$IMMUTABILITY" = true ]; then arguments+=(--apply-immutable-releases-when-unknown); fi
-            bash tools/github/repository-settings.sh "${arguments[@]}" | tee artifacts/apply.txt
+            bash tools/with-node.sh node tools/github/ordinary-settings.mjs | tee artifacts/apply.txt
           fi
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
