@@ -151,6 +151,9 @@ installation token.
 [`config/github/repositories.json`](config/github/repositories.json) is the
 sole inventory of Living Proof Labs repositories. Register a project there by
 pull request, then run the validation command above.
+[`config/github/agents.json`](config/github/agents.json) is the directory of
+agents that have GitHub Apps. It names Rivet, Cody, and Vera, with each role,
+GitHub identity, and App manifest path. An agent without an App is not listed.
 
 Useful references:
 
@@ -158,6 +161,8 @@ Useful references:
 - [Manual UI-setting evidence](config/github/manual-settings-evidence.json)
 - [Repository operations guide](docs/repository-operations.md)
 - [Manual GitHub App setup](docs/github-app-bootstrap.md)
+- [Bot GitHub Apps owner guide](docs/GITHUB-APPS.md)
+- [Agent directory](config/github/agents.json)
 
 ## Organization documentation
 
@@ -165,7 +170,9 @@ This repository is the single authored source for the organization overview,
 vision, architecture and directory published at
 [docs.livingprooflabs.com](https://docs.livingprooflabs.com/).
 [`docs/site.json`](docs/site.json) lists the published pages, their navigation
-order and redirects; [`docs/directory.json`](docs/directory.json) describes the
+order and redirects, including the
+[Bot GitHub Apps owner guide](docs/GITHUB-APPS.md).
+[`docs/directory.json`](docs/directory.json) describes the
 manual and project tables and may name only repositories in the inventory above.
 The [root site repository](https://github.com/Living-Proof-Labs/living-proof-labs.github.io)
 is the publisher: it builds one pinned commit of this repository and owns the
@@ -205,7 +212,11 @@ environment split.
 
 Living Proof Labs uses one private GitHub App for each bot. The manifests
 live with the repository-settings manifests in
-[`config/github/apps/`](config/github/apps/):
+[`config/github/apps/`](config/github/apps/). The
+[owner guide](docs/GITHUB-APPS.md) is the procedure for registering each App,
+installing it, and storing the private key. The
+[agent directory](config/github/agents.json) lists the agents that have
+GitHub Apps, with each role, identity, and manifest path.
 
 | Bot | Manifest | Role |
 | --- | --- | --- |

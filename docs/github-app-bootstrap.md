@@ -106,4 +106,7 @@ private Apps, one per bot, for the same organization
 manifest flow (`task github:apps:form:help`). Webhooks stay off. Only the
 Rivet manifest requests Administration write and Pages write. Minting a bot
 installation token is described in the repository README under
-[Bot GitHub Apps](../README.md#bot-github-apps).
+[Bot GitHub Apps](../README.md#bot-github-apps). Creating and installing those
+Apps is the [owner guide](GITHUB-APPS.md). The
+[agent directory](../config/github/agents.json) lists the agents that have
+GitHub Apps, with each role and manifest path. It does not list every agent.

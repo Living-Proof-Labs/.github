@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "owner": "Living-Proof-Labs",
+  "identity_note": "This directory lists agents that have a GitHub App manifest in this repository. It is not a list of every agent. App manifests in config/github/apps/ name each App and list permissions. They do not record a numeric App id, the GitHub App slug assigned at registration, or a git commit identity. Those github_identity fields are null until a reviewed change in this repository records them.",
+  "agents": [
+    {
+      "id": "rivet",
+      "role": "Head of Engineering and Delivery",
+      "manifest": "config/github/apps/rivet.manifest.json",
+      "github_identity": {
+        "commit_name": null,
+        "commit_email": null,
+        "app_slug": null,
+        "app_id": null
+      }
+    },
+    {
+      "id": "cody",
+      "role": "Software engineer",
+      "manifest": "config/github/apps/cody.manifest.json",
+      "github_identity": {
+        "commit_name": null,
+        "commit_email": null,
+        "app_slug": null,
+        "app_id": null
+      }
+    },
+    {
+      "id": "vera",
+      "role": "Verification",
+      "manifest": "config/github/apps/vera.manifest.json",
+      "github_identity": {
+        "commit_name": null,
+        "commit_email": null,
+        "app_slug": null,
+        "app_id": null
+      }
+    }
+  ]
+}
