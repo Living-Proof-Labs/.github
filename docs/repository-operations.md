@@ -76,7 +76,8 @@ pinned in
 with every repository from `GET /orgs/Living-Proof-Labs/repos`. `--dry-run`
 prints `current -> desired` and does not write. `--apply` writes only settings
 that differ. The credential is `GH_TOKEN` in the environment: a personal
-access token or a GitHub App installation token. The command lists
+access token or a GitHub App installation token. Rivet's installation token
+comes from the [Bot GitHub Apps owner guide](GITHUB-APPS.md). The command lists
 repositories with the organization endpoint and does not call `/user`.
 
 Token permissions, the Pages Enforce HTTPS field, and examples are in the

@@ -151,6 +151,9 @@ installation token.
 [`config/github/repositories.json`](config/github/repositories.json) is the
 sole inventory of Living Proof Labs repositories. Register a project there by
 pull request, then run the validation command above.
+[`config/github/agents.json`](config/github/agents.json) is the directory of
+organization agents. It names Rivet, Cody, and Vera, with each role, GitHub
+identity, and App manifest path.
 
 Useful references:
 
@@ -158,6 +161,8 @@ Useful references:
 - [Manual UI-setting evidence](config/github/manual-settings-evidence.json)
 - [Repository operations guide](docs/repository-operations.md)
 - [Manual GitHub App setup](docs/github-app-bootstrap.md)
+- [Bot GitHub Apps owner guide](docs/GITHUB-APPS.md)
+- [Agent directory](config/github/agents.json)
 
 ## Organization documentation
 
@@ -205,7 +210,11 @@ environment split.
 
 Living Proof Labs uses one private GitHub App for each bot. The manifests
 live with the repository-settings manifests in
-[`config/github/apps/`](config/github/apps/):
+[`config/github/apps/`](config/github/apps/). The
+[owner guide](docs/GITHUB-APPS.md) is the procedure for registering each App,
+installing it, and storing the private key. The
+[agent directory](config/github/agents.json) is the machine-readable list of
+roles, identities, and manifest paths.
 
 | Bot | Manifest | Role |
 | --- | --- | --- |
