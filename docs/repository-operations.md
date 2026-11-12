@@ -60,19 +60,33 @@ It is dated evidence, not a current API measurement.
 
 ## Apply a reviewed change
 
-Open **Actions → Apply repository settings → Run workflow** on `main`. Select
-one registered repository and leave **Apply** unchecked for the initial
-preview.
+Open **Actions → Apply repository settings → Run workflow** on `main`. Leave
+**Apply** unchecked for an initial read-only preview. HTTPS-only mode supports
+one registered repository or `all`/blank for the canonical inventory. Ordinary
+preview can cover the inventory, but **ordinary apply requires one named
+registered repository** and rejects `all` or blank before requesting a token.
 
 | Input | Effect |
 | --- | --- |
-| `apply` | Writes ordinary pinned settings after the preview |
-| `apply_main_ruleset` | Adds the separately scoped main-ruleset change |
-| `include_release_immutability` | Allows immutability writes when the API state is unknown |
+| `repository` | One registered name; `all`/blank only for HTTPS-only or read-only preview |
+| `mode` | `https-only` changes only HTTPS on existing sites; `ordinary` uses the pinned settings helper |
+| `apply` | Writes after preview and the protected reviewer gate |
+| `apply_pages` | Ordinary mode only: includes Pages creation or Actions source correction with the full ordinary apply |
+| `apply_main_ruleset` | Ordinary mode only: adds the separately scoped main-ruleset change |
+| `include_release_immutability` | Ordinary mode only: allows immutability writes when the API state is unknown |
 
-An apply run uses `repository-administration`, requires its environment review,
-and finishes with strict all-repository verification plus a 14-day JUnit
-test-result artifact. It never runs from pull-request or fork code.
+HTTPS-only apply compares fresh evidence with the saved preview and refuses all
+writes if it changed. Ordinary apply does not provide that plan binding; it is
+therefore restricted to one repository. Review the full ordinary policy change
+set: `apply_pages` is **not a Pages-only switch**, and ordinary apply can also
+change general settings and enable release immutability where it is off.
+
+Preview uses `repository-audit`; apply uses `repository-administration` and
+requires its environment review. Runs are serialized, and neither job executes
+pull-request or fork code. Each apply finishes with strict all-repository
+verification and 14-day artifacts. Pages setup does not deploy content; HTTPS-only
+does not create missing sites. Live App permissions and installation acceptance
+must already support the selected operation.
 
 ## Apply the pinned policy with a token
 
