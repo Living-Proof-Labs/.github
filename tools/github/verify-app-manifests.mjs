@@ -38,6 +38,18 @@ export const BOT_MANIFESTS = {
       workflows: 'write'
     }
   },
+  keel: {
+    file: 'config/github/apps/keel.manifest.json',
+    name: 'Living Proof Labs Keel',
+    permissions: {
+      actions: 'read',
+      checks: 'read',
+      contents: 'write',
+      issues: 'write',
+      metadata: 'read',
+      pull_requests: 'write'
+    }
+  },
   vera: {
     file: 'config/github/apps/vera.manifest.json',
     name: 'Vera Agent - Living Proof Labs',

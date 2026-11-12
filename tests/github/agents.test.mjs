@@ -66,7 +66,8 @@ test('the committed agent directory matches the App manifests in this repository
     rivet: 'Head of Engineering and Delivery',
     cody: 'Software engineer',
     vera: 'Verification',
-    art: 'Style and product guidance'
+    art: 'Style and product guidance',
+    keel: 'Repository review and coordination'
   };
   for (const agent of committed.agents) {
     assert.equal(agent.role, roles[agent.id]);

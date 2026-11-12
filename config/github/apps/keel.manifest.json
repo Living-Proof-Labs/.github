@@ -1,0 +1,16 @@
+{
+  "name": "Living Proof Labs Keel",
+  "description": "Reviews repositories and continuous integration, creates issues and pull requests, and comments on development work for Living Proof Labs.",
+  "url": "https://github.com/Living-Proof-Labs/.github",
+  "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
+  "public": false,
+  "default_permissions": {
+    "actions": "read",
+    "checks": "read",
+    "contents": "write",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+  },
+  "default_events": []
+}
