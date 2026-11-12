@@ -58,8 +58,9 @@ Configure these two environments in `.github`.
    the owner as a required reviewer, and add the same Client ID variable and
    PEM secret. This environment gates only the manually dispatched write path.
 
-The tradeoff is intentional: the audit receives Administration write and Pages
-read because GitHub otherwise cannot reveal all managed ruleset data. The apply
+The tradeoff is intentional: ordinary preview and the strict audit receive
+Administration write and Pages read because GitHub otherwise cannot reveal all
+managed ruleset data. HTTPS-only preview requests Administration read instead. The apply
 job requests Administration write and Pages write. The same App key is present
 in both environments, so the audit environment could mint broader tokens if
 trusted workflow code were changed. Its task is read-only, not its underlying
@@ -71,7 +72,9 @@ installation scope. The write workflow adds an independent reviewer gate.
 
 Then use **Actions → Apply repository settings → Run workflow**, selecting
 `main`. Choose a registered repository, enter `all`, or leave the repository
-field blank for the complete canonical inventory. Registration defines the managed selection;
+field blank for an inventory preview or HTTPS-only operation. Ordinary apply
+requires one named repository; blank or `all` is refused before requesting a token.
+Registration defines the managed selection;
 it does not automatically run an apply when a repository is added.
 
 - **HTTPS-only mode** previews or applies only `pages.https_enforced` on existing,
@@ -85,7 +88,9 @@ it does not automatically run an apply when a repository is added.
 - **Apply** is false by default. Start with a preview and review its artifacts.
   The preview finishes before the reviewer gate. Both jobs use the same source
   revision. HTTPS apply compares fresh observations against the saved preview
-  plan and refuses changed evidence before writing. An apply uses the protected
+  plan and refuses changed evidence before writing. Ordinary apply is limited to
+  one named repository because it does not bind writes to a saved plan.
+  Dispatched runs are serialized. An apply uses the protected
   `repository-administration` environment and needs
   the owner's reviewer approval. Main-ruleset and release-immutability options
   remain separate, deliberate selections; do not select them for HTTPS-only work.
