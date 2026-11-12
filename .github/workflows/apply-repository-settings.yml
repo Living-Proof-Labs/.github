@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       repository:
-        description: Registered repository name; all or blank selects the canonical inventory
+        description: Registered repository; all/blank allowed for HTTPS or preview, ordinary apply requires one name
         required: false
         type: string
       mode:
@@ -22,7 +22,7 @@ on:
         default: false
         type: boolean
       apply_pages:
-        description: Ordinary mode only — create missing Pages sites or correct Actions source
+        description: Ordinary mode only — include Pages setup with full ordinary settings reconciliation
         required: true
         default: false
         type: boolean
@@ -39,6 +39,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: repository-settings
+  cancel-in-progress: false
 
 jobs:
   preview:
@@ -63,8 +67,14 @@ jobs:
             echo 'HTTPS-only mode cannot include Pages setup, rulesets or release immutability.' >&2
             exit 64
           fi
+          if [ "$MODE" = ordinary ] && [ "$APPLY" = true ] && { [ -z "$TARGET_REPOSITORY" ] || [ "$TARGET_REPOSITORY" = all ]; }; then
+            echo 'Ordinary apply requires one named registered repository; all-inventory ordinary apply is not supported.' >&2
+            exit 64
+          fi
         env:
           MODE: ${{ inputs.mode }}
+          APPLY: ${{ inputs.apply }}
+          TARGET_REPOSITORY: ${{ inputs.repository }}
           PAGES: ${{ inputs.apply_pages }}
           RULESET: ${{ inputs.apply_main_ruleset }}
           IMMUTABILITY: ${{ inputs.include_release_immutability }}
@@ -74,7 +84,7 @@ jobs:
           client-id: ${{ vars.REPO_ADMIN_APP_CLIENT_ID }}
           private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          permission-administration: write
+          permission-administration: ${{ inputs.mode == 'https-only' && 'read' || 'write' }}
           permission-pages: read
       - run: task setup
       - name: Preview selected settings without writes
