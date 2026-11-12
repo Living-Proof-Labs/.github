@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { auditAsApp } from './audit-app-self.mjs';
 
 class EvidenceError extends Error {
   constructor(code) { super(code); this.code = code; }
@@ -100,27 +101,33 @@ export async function audit(config, {read,revision,configDigest,now = () => new 
   return {schema_version:1, observed_at:now(), configuration_revision:revision, configuration_sha256:configDigest, mode:'read-only', sources, results, status:results.every(x=>x.status==='compliant')?'compliant':'incomplete-or-drift'};
 }
 
-export const usage = `Usage: node tools/github/audit-app-access.mjs [--check-config | --help]
+export const usage = `Usage: node tools/github/audit-app-access.mjs [--check-config | --as-app <agent> | --help]
 Read-only GitHub App registration and installation permission audit.
 Defaults to config/github/app-access.json. JSON report on stdout; nonzero on drift
 or unavailable evidence. GH_TOKEN (or GITHUB_TOKEN) supplies existing authorized
 read access. No credentials are created and no settings are changed.
 --check-config validates desired state and manifest agreement without network.
-Example: task github:apps:audit > app-access-audit.json`;
+--as-app audits only the named enrolled App using its existing
+<AGENT>_GITHUB_APP_ID and <AGENT>_GITHUB_APP_PRIVATE_KEY (RSA PEM text).
+It signs requests in memory and never prints or mints an installation token.
+Example: task github:apps:audit -- --as-app rivet > rivet-access-audit.json`;
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
     const args=process.argv.slice(2);
     if (args.length===1 && args[0]==='--help') { console.log(usage); }
     else {
-      if(args.length && !(args.length===1 && args[0]==='--check-config')) throw new Error(usage);
+      if(args.length && !(args.length===1 && args[0]==='--check-config') && !(args.length===2 && args[0]==='--as-app')) throw new Error(usage);
       const text=readFileSync('config/github/app-access.json','utf8'); const config=validateAccess(JSON.parse(text));
       for(const app of config.apps) if(comparePermissions(app.permissions,JSON.parse(readFileSync(app.manifest,'utf8')).default_permissions).status!=='compliant') throw new Error('Desired permissions and registration manifest differ.');
       if(args[0]==='--check-config') console.log('App access configuration and manifests agree.');
       else {
         const revision=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
         const dirty=execFileSync('git',['status','--porcelain','--','config/github/app-access.json',...config.apps.map(x=>x.manifest)],{encoding:'utf8'}).trim();
-        const report=await audit(config,{read:endpoint=>githubRead(endpoint,process.env.GH_TOKEN||process.env.GITHUB_TOKEN),revision:dirty?`${revision}-dirty`:revision,configDigest:createHash('sha256').update(text).digest('hex')});
+        const options={revision:dirty?`${revision}-dirty`:revision,configDigest:createHash('sha256').update(text).digest('hex')};
+        const report=args[0]==='--as-app'
+          ? await auditAsApp(config,args[1],options)
+          : await audit(config,{...options,read:endpoint=>githubRead(endpoint,process.env.GH_TOKEN||process.env.GITHUB_TOKEN)});
         console.log(JSON.stringify(report,null,2)); process.exitCode=report.status==='compliant'?0:1;
       }
     }

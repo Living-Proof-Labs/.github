@@ -506,3 +506,57 @@ Sources: [App reads](https://docs.github.com/en/rest/apps/apps),
 [organization installations](https://docs.github.com/en/rest/orgs/orgs#list-app-installations-for-an-organization),
 [installation endpoints](https://docs.github.com/en/rest/apps/installations), and
 [permission changes](https://docs.github.com/en/apps/maintaining-github-apps/modifying-a-github-app-registration#changing-the-permissions-of-a-github-app).
+
+### Audit as the App itself
+
+An engineering installation token cannot read its App's registration. Do not
+add organization Administration to work around that boundary. With the existing
+approved Rivet App id and private key available in its execution environment:
+
+```sh
+task github:apps:audit -- --as-app rivet > rivet-access-audit.json
+```
+
+This explicitly audits **only Rivet**, not every configured App. The output lists
+both audited and excluded agents. `RIVET_GITHUB_APP_ID` must match the reviewed
+configuration; `RIVET_GITHUB_APP_PRIVATE_KEY` is existing RSA private-key text.
+Never put that value in a command argument, report, commit or chat. The command
+reuses the signing helper, signs short-lived requests in memory, and does not
+mint installation tokens, generate keys, create Apps or change access.
+
+The collector reads `GET /app`, `GET /app/installations/{installation_id}` and
+all pages of `GET /app/installations` using App authentication. It checks the
+registered identity before proceeding and compares the direct installation
+with its complete listing. Denied reads, missing identity, inconsistent pages,
+suspension and missing fields fail closed. Accepted installation permissions
+remain separate from requested registration permissions. Selected-repository
+membership is still unverified in this slice, even when the selection mode
+matches. Enroll Cody, Vera, Keel and the settings App only after verified identity
+records and an authoritative selected-repository membership reader are ready.
+
+GitHub documents the [App-authenticated endpoints](https://docs.github.com/en/rest/apps/apps)
+and [request signing](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app).
+A managed environment that replaces the Authorization header cannot run this
+mode successfully. An authentication failure is **unverified**, not permission
+drift or a reason to expand grants. Offline signature/collector tests do not
+prove that a particular environment can authenticate to GitHub. Run the command
+in an already approved environment supporting App authentication and retain its
+sanitized report before claiming live reconciliation.
+
+### Owner checklist: Rivet presentation metadata
+
+Rivet's 12 November 2026 review reported description and homepage differences;
+those are separate from access compliance and are not automatically compared by
+this slice. No website edits are performed by the audit.
+
+1. Open [Rivet's App settings](https://github.com/organizations/Living-Proof-Labs/settings/apps/rivet-agent-living-proof-labs).
+2. Compare the name and description with `config/github/apps/rivet.manifest.json`.
+   The reviewed description is "Engineering delivery for Living Proof Labs.
+   Repository settings administration belongs to the dedicated settings App."
+3. Decide whether the homepage should remain the public Apps documentation or
+   match the manifest's `https://github.com/Living-Proof-Labs/.github`. If the
+   documentation homepage is preferred, review that change in the manifest
+   instead of treating the website value as automatically wrong.
+4. Save only the approved metadata changes. Read back `/app` and compare `name`,
+   `description` and `external_url` with the reviewed manifest. Keep permission
+   and installation approval changes separate; do not delete/recreate the App.
