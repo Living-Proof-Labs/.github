@@ -57,12 +57,12 @@ test('settings apply previews first and scopes privileged changes to explicit in
   assert.match(workflow, /permission-pages: read/);
   assert.match(workflow, /permission-pages: write/);
   assert.match(workflow, /ref: \$\{\{ github\.sha \}\}/);
-  assert.match(workflow, /if \[ "\$PAGES" = true \]; then arguments\+=\(--apply-pages\)/);
+  assert.match(applyJob, /node tools\/github\/ordinary-settings\.mjs/);
   assert.match(workflow, /include_release_immutability/);
-  assert.match(workflow, /if \[ "\$RULESET" = true \]/);
-  assert.match(workflow, /if \[ "\$IMMUTABILITY" = true \]/);
+  assert.match(applyJob, /RULESET: \$\{\{ inputs.apply_main_ruleset \}\}/);
+  assert.match(applyJob, /IMMUTABILITY: \$\{\{ inputs.include_release_immutability \}\}/);
   assert.doesNotMatch(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
-  assert.match(workflow, /--apply-immutable-releases-when-unknown/);
+  assert.match(applyJob, /PAGES: \$\{\{ inputs.apply_pages \}\}/);
   assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\)/);
 });
 

@@ -112,6 +112,19 @@ GitHub documents App registration and installation in its
 [GitHub App guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app)
 and [installation guide](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app).
 
+Pages setup also reconciles HTTPS for that same repository after the pinned
+helper succeeds, using the existing HTTPS controller and policy exemptions.
+A certificate-not-ready or unreadable result fails the operation; it is not
+reported as complete and is not retried indefinitely. Re-run the approved
+single-repository operation when GitHub is ready. Without **Include Pages
+setup**, ordinary mode makes no HTTPS writes. HTTPS-only mode remains unchanged.
+
+The pinned helper prints a pre-write snapshot. Ordinary application therefore
+always finishes with a fresh read-only target audit (also after partial failure),
+retained as `target-settings-readback.xml`. The HTTPS stage has its own
+`pages-setup-https.xml` result. These do not replace the strict all-inventory
+audit; unrelated drift or unknown release immutability can still fail that audit.
+
 ## What remains before applying settings
 
 An installation token from this App can read ruleset bypass actors and perform
