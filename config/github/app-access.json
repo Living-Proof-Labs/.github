@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "owner": "Living-Proof-Labs",
+  "apps": [
+    {
+      "agent": "rivet",
+      "app_id": 5723603,
+      "app_slug": "rivet-agent-living-proof-labs",
+      "installation_id": 181134239,
+      "manifest": "config/github/apps/rivet.manifest.json",
+      "permissions": {
+        "actions": "write",
+        "checks": "read",
+        "contents": "write",
+        "issues": "write",
+        "metadata": "read",
+        "pages": "write",
+        "pull_requests": "write",
+        "statuses": "read",
+        "deployments": "read",
+        "workflows": "write"
+      },
+      "justifications": {
+        "actions": "Run and retry delivery workflows.",
+        "checks": "Inspect verification checks.",
+        "contents": "Reviewable code and release delivery.",
+        "issues": "Coordinate delivery in issues.",
+        "metadata": "Required repository identity access.",
+        "pages": "Retrospective owner-requested grant; settings administration remains separate.",
+        "pull_requests": "Review and deliver pull requests.",
+        "statuses": "Read legacy commit status checks.",
+        "deployments": "Inspect delivery status.",
+        "workflows": "Maintain reviewed workflow files."
+      },
+      "repository_selection": "all",
+      "repositories": [],
+      "scope_reason": "Owner selected all current and future repositories for engineering delivery; this records intent, not proof of accepted live access."
+    }
+  ]
+}

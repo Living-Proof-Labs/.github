@@ -140,11 +140,9 @@ repositories the installation can access:
 | Organization repository list | `GET /orgs/{org}/repos` | Metadata: Read (GitHub Apps receive this automatically). Private repositories still require the installation to include them. |
 | `manual_or_unavailable_settings` | not called | none; these stay manual |
 
-Metadata read alone cannot change settings. The repository-settings manifests
-request Administration and Metadata only. Rivet's manifest also requests
-Pages: Read and write, which this command needs for `pages.build_type` and
-`pages.https_enforced`. `GH_TOKEN=$(scripts/app-token rivet)` mints that
-installation token.
+Metadata read alone cannot change settings. Rivet's engineering App has no
+Administration grant. Use the separately approved repository-settings credential
+for settings changes; do not broaden Rivet to run this command.
 
 ## Repository directory
 
@@ -226,14 +224,14 @@ GitHub Apps, with each role, identity, and manifest path.
 
 Register an App with the organization manifest flow already supported here
 (`task github:apps:form:help`, then the callback and exchange helpers).
-Webhooks are off. Only Rivet's manifest requests Administration write and
-Pages write, which `scripts/apply-repo-policy` needs when it writes repository
-settings and GitHub Pages. Rivet also writes pull requests and issues, and
-can re-run workflows. Cody writes issues and workflow files, and reads
-continuous integration. Vera reads code and continuous integration, writes
-pull-request reviews, and writes issues. The repository-settings audit and apply manifests
-stay Administration and Metadata only. They are the trusted-main workflow
-credential, separate from these bots.
+Webhooks are off. Engineering Apps do not request Administration. Rivet's
+permissions and installation scope are recorded in
+[`app-access.json`](config/github/app-access.json), with reasons for each grant.
+The dedicated repository-settings credential remains separate.
+
+`task github:apps:audit` checks registration and installation permissions without
+changing access. It fails on drift or unavailable evidence. See the
+[access audit and limits](docs/GITHUB-APPS.md#audit-existing-app-access).
 
 ### Mint an installation token
 
@@ -243,7 +241,7 @@ on Living-Proof-Labs, and exchanges it for an installation token. The token
 is the only text on standard output.
 
 ```bash
-GH_TOKEN=$(scripts/app-token rivet) scripts/apply-repo-policy --dry-run
+scripts/app-token rivet >/dev/null && printf 'Rivet authentication OK\n'
 ```
 
 | Bot | App id | Private key | Installation id (optional) |

@@ -30,10 +30,9 @@ the client id. The steps below do not register
 `repository-settings-audit.manifest.json` or
 `repository-settings-apply.manifest.json`.
 
-Rivet's App is the one that mints `GH_TOKEN` for
-[`scripts/apply-repo-policy`](../scripts/apply-repo-policy). The procedure in
-this repository is
-[Apply repository policy](../README.md#apply-repository-policy).
+Rivet's engineering App does not request Administration. Repository-policy
+changes belong to the dedicated settings credential, not the engineering App.
+The [access audit](#audit-existing-app-access) records and checks that boundary.
 
 ## Checkout
 
@@ -64,18 +63,20 @@ explicitly.
 
 Manifest:
 [`config/github/apps/rivet.manifest.json`](../config/github/apps/rivet.manifest.json).
-Name: `Living Proof Labs Rivet` (23 characters).
+Name: `Rivet Agent - Living Proof Labs`.
 
 | Permission | Access |
 | --- | --- |
 | actions | write |
-| administration | write |
 | checks | read |
 | contents | write |
 | issues | write |
 | metadata | read |
 | pages | write |
 | pull_requests | write |
+| statuses | read |
+| deployments | read |
+| workflows | write |
 
 ### Cody
 
@@ -184,7 +185,7 @@ The action is then
 The receiver accepts the callback only when that `state` matches the state
 file. Open `form.html` only after the callback receiver in the next step is
 listening. On GitHub's confirmation page, review the manifest: the name is
-`Living Proof Labs Rivet`, `Living Proof Labs Cody`, or
+`Rivet Agent - Living Proof Labs`, `Living Proof Labs Cody`, or
 `Living Proof Labs Vera`; webhooks are off (`default_events` is empty and the
 manifest sets no webhook). Then submit the form.
 
@@ -275,12 +276,10 @@ Install each App only on Living-Proof-Labs:
 5. Click **Install App**, then **Install** next to Living-Proof-Labs.
 
 GitHub then offers **All repositories** or **Only select repositories**.
-Install Rivet on **All repositories**. `scripts/apply-repo-policy` lists
-`GET /orgs/Living-Proof-Labs/repos?type=all`, and an installation token
-returns only repositories the installation includes. **All repositories**
-is the installation that keeps that list complete, including a repository
-added later. A selected-repository installation can leave one out, and an
-empty list fails the run.
+The reviewed Rivet desired state records **All repositories**, including future
+repositories, from the owner's rollout. This is an access decision, not a
+requirement to run repository-policy administration as Rivet. Do not change
+installation scope merely to make a read succeed.
 
 For Cody and Vera, choose **Only select repositories** and limit each
 installation to the repositories where that bot works.
@@ -342,9 +341,8 @@ variable takes the numeric App id. `<BOT>_GITHUB_APP_PRIVATE_KEY` is the
 PEM text. Paste it, or paste the one-line form that writes each newline as
 the two characters `\n`. Do not print the PEM to set the card.
 
-Rivet's card is what mints `GH_TOKEN` for `scripts/apply-repo-policy`. Leave
-`REPO_ADMIN_APP_CLIENT_ID` and `REPO_ADMIN_APP_PRIVATE_KEY` on the
-settings-audit credential.
+Keep the dedicated repository-settings credential separate from the engineering
+App. Rivet's token cannot apply Administration-protected settings.
 
 `task github:app-token:help` prints the same usage text as
 `scripts/app-token`. The token is the only text on standard output. Errors go
@@ -353,25 +351,14 @@ installation token.
 
 ## First run
 
-Aaron puts Rivet's App id and PEM on Rivet's secret card. Aaron does not
-export that PEM into his own shell. Rivet runs the preview, in an environment
-where the card has supplied the variables, before any `--apply`:
+Verify token creation without printing the token:
 
 ```sh
-GH_TOKEN=$(scripts/app-token rivet) scripts/apply-repo-policy --dry-run
+scripts/app-token rivet >/dev/null && printf 'Rivet authentication OK\n'
 ```
 
-The command substitution places the token in `GH_TOKEN` for the policy
-process. Do not paste the token into git, a pull request, or a chat. The
-dry-run prints differences and performs no writes. Continue to `--apply`
-only after that preview is the change you expect.
-[Apply repository policy](../README.md#apply-repository-policy) is the
-procedure in this repository.
-[Apply the pinned policy with a token](repository-operations.md#apply-the-pinned-policy-with-a-token)
-is the shorter operator summary. Exit codes for the command, including Task's
-201 when `task github:policy:apply` wraps a script failure, stay in the shared
-settings guide at the published tag
-[v7.10.1, Exit status](https://github.com/Living-Proof-Labs/collaboration-guidelines/blob/v7.10.1/.github/SETTINGS.md#exit-status).
+This proves token creation, not live permissions or repository coverage. Run
+the access audit separately with appropriate read authority.
 
 A new installation token is stateless and looks like `ghs_<APPID>_<JWT>`,
 as described in the
@@ -439,3 +426,83 @@ A new token still requires a private key GitHub has not deleted.
 
 To retire a bot, delete the App and clear that bot's secret card. Never post
 a key anywhere.
+
+## Audit existing App access
+
+`config/github/app-access.json` is the reviewed desired state for existing Apps.
+It currently enrolls Rivet only; other manifests are not audited by this command.
+It records registration and installation identifiers, exact permissions with
+justifications, and repository selection. Rivet's entry retrospectively records
+the owner's requested rollout, not independently verified accepted grants.
+The manifest and validator must match it. Keel identity work remains separate.
+
+```sh
+bash tools/task.sh github:apps:check
+bash tools/task.sh github:apps:audit > app-access-audit.json
+```
+
+The first command is offline. The second uses existing `GH_TOKEN` or
+`GITHUB_TOKEN` read access and performs only `GET` requests to api.github.com.
+It never creates a token, registers an App, accepts permissions or applies
+settings. Do not paste credentials into command arguments or reports.
+
+The report compares registration permissions and installation-accepted
+permissions separately. It includes source endpoints, observation time, the
+configuration commit (marked dirty when edited), a configuration digest and exact
+permission differences. A matching registration with differing installation
+permissions is **possibly pending acceptance**, not proof of the cause. A token
+can be intentionally narrower; token permissions are never used as installation
+permission evidence. Suspended, unreadable, missing or malformed installation
+state does not pass. Pagination must complete consistently.
+
+Exit zero means every enrolled App's checked permission maps and scope match.
+Any drift or unverified evidence exits nonzero (Task may wrap this as exit 201).
+This is not a full security audit of webhooks, keys, organizations, runtime
+identity, or effective endpoint authorization. No private key or token appears
+in the output. Keep reports private if future entries describe private scope.
+
+### Read authority and current limits
+
+The collector uses GitHub's documented `GET /apps/{app_slug}` and paginated
+`GET /orgs/{org}/installations`. Private App visibility and organization-owner
+access must be satisfied by the existing credential. The organization endpoint
+requires organization Administration **read** for fine-grained tokens; repository
+Administration is different. Do not broaden an engineering token simply for
+this audit. Unavailable authority produces **unverified**, not a missing App or a
+passing result. Running without a credential is useful only to expose those
+limits, not verify private access.
+
+For `all` selection, the authoritative installation object establishes all
+current and future repositories. For `selected`, this first delivery reports
+membership **unverified** even when selection mode matches: a user's or narrowed
+token's visible repository list is not complete installation evidence. Enrollment
+of selected-scope Apps requires a future authoritative membership reader. No
+selected-scope audit can currently pass. Empty or denied lists are never treated
+as evidence that the installation has no access.
+
+### Reviewed changes and manual reconciliation
+
+1. Propose desired permissions and scope in a pull request, including reasons.
+   Update the matching registration manifest. Review expansions before applying.
+2. Run the audit using approved read access and retain its report against that
+   configuration commit. If evidence is unavailable, resolve visibility first;
+   do not apply guessed changes.
+3. The App owner edits approved registration permissions in GitHub settings.
+   No general documented REST update endpoint for these declarations is used.
+   Do not delete and recreate the App. Manifest conversion creates a new App.
+4. The installation owner accepts added permissions and reviews repository
+   selection. Removed permissions may take effect without an acceptance step.
+   A merged pull request does not perform either website step.
+5. Rerun the audit. Do not call the change reconciled until the relevant fields
+   read back as compliant. Record partial failures, not just successes.
+
+Supported repository-selection APIs exist but are deliberately not an apply path
+in this delivery. They need separately approved authority and complete before/after
+scope. This implementation automates audit and planning only. Website changes
+remain pending owner work, not an automated promise. Pages HTTPS policy is the
+separate repository-settings workflow, not an App lifecycle operation.
+
+Sources: [App reads](https://docs.github.com/en/rest/apps/apps),
+[organization installations](https://docs.github.com/en/rest/orgs/orgs#list-app-installations-for-an-organization),
+[installation endpoints](https://docs.github.com/en/rest/apps/installations), and
+[permission changes](https://docs.github.com/en/apps/maintaining-github-apps/modifying-a-github-app-registration#changing-the-permissions-of-a-github-app).
