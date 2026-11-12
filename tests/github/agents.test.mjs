@@ -93,7 +93,11 @@ test('the owner guide keeps the stateless-token notes and its links resolve here
   assert.doesNotMatch(guide, /\]\(SETTINGS\.md/);
   const readme = readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.match(readme, /\]\(docs\/GITHUB-APPS\.md\)/);
-  assert.match(readme, /\]\(config\/github\/agents\.json\)/);
+  assert.match(readme, /directory of\nagents that have GitHub Apps/);
+  assert.match(readme, /An agent without an App is not listed/);
+  assert.doesNotMatch(readme, /directory of\norganization agents/);
+  assert.match(readFileSync(path.join(root, 'docs/github-app-bootstrap.md'), 'utf8'), /agents that have\nGitHub Apps/);
+  assert.match(guide, /directory of\nagents that have GitHub Apps/);
   for (const source of [guidePath, 'README.md', 'docs/repository-operations.md', 'docs/github-app-bootstrap.md']) {
     const text = source === guidePath ? guide : readFileSync(path.join(root, source), 'utf8');
     for (const { target } of links(text)) {

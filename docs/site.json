@@ -31,6 +31,12 @@
       "path": "contribute.md",
       "title": "Contribute",
       "license": "CC-BY-4.0"
+    },
+    {
+      "source": "docs/GITHUB-APPS.md",
+      "path": "github-apps.md",
+      "title": "Bot GitHub Apps",
+      "license": "CC-BY-4.0"
     }
   ],
   "directory": "docs/directory.json",

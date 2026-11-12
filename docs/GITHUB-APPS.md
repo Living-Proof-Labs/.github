@@ -17,9 +17,9 @@ that commit or a later commit of this repository, and run every command in
 this guide from the repository root so `scripts/app-token`,
 `config/github/apps/`, and `tools/` resolve.
 
-The machine-readable directory of these bots is
-[`config/github/agents.json`](../config/github/agents.json). It records each
-role and App manifest path. The manifests do not record a numeric App id, the
+[`config/github/agents.json`](../config/github/agents.json) is the directory of
+agents that have GitHub Apps. It records each role and App manifest path.
+Keel is not in that directory. The manifests do not record a numeric App id, the
 GitHub App slug GitHub assigns at registration, or a git commit identity, so
 those fields are null in the directory.
 

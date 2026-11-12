@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict';
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -15,6 +15,11 @@ function copy() {
   cpSync(path.join(ROOT, 'docs'), path.join(dir, 'docs'), { recursive: true });
   cpSync(path.join(ROOT, 'config'), path.join(dir, 'config'), { recursive: true });
   cpSync(path.join(ROOT, 'AGENTS.md'), path.join(dir, 'AGENTS.md'));
+  // The published owner guide links the repository root files it tells an owner to run.
+  cpSync(path.join(ROOT, 'README.md'), path.join(dir, 'README.md'));
+  mkdirSync(path.join(dir, 'scripts'));
+  cpSync(path.join(ROOT, 'scripts/app-token'), path.join(dir, 'scripts/app-token'));
+  cpSync(path.join(ROOT, 'scripts/apply-repo-policy'), path.join(dir, 'scripts/apply-repo-policy'));
   return dir;
 }
 const edit = (dir, rel, fn) => writeFileSync(path.join(dir, rel), fn(readFileSync(path.join(dir, rel), 'utf8')));
@@ -22,6 +27,16 @@ const json = (dir, rel, fn) => edit(dir, rel, (t) => JSON.stringify(fn(JSON.pars
 
 test('the organization documentation is valid as committed', () => {
   assert.deepEqual(check(ROOT), []);
+});
+
+test('the bot GitHub Apps owner guide is a published page', () => {
+  const site = JSON.parse(readFileSync(path.join(ROOT, 'docs/site.json'), 'utf8'));
+  const page = site.pages.find((p) => p.source === 'docs/GITHUB-APPS.md');
+  assert.equal(page?.path, 'github-apps.md');
+  assert.equal(page.title, 'Bot GitHub Apps');
+  assert.equal(page.license, 'CC-BY-4.0');
+  assert.equal(site.pages.at(-1).source, 'docs/GITHUB-APPS.md');
+  assert.match(readFileSync(path.join(ROOT, 'docs/GITHUB-APPS.md'), 'utf8'), /SPDX-License-Identifier: CC-BY-4\.0/);
 });
 
 test('architecture is published, in navigation, and reachable from the homepage', () => {
