@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import test from 'node:test';
+import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,6 +11,7 @@ import { readPolicyFile } from '../../tools/github/apply-repo-policy.mjs';
 import { policy, inventory, fixtureApi } from './local-settings-transport.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/settings-migration-plans.json', import.meta.url)));
+describe('Local settings ownership', () => {
 for (const mode of ['compliant', 'drift']) test(`local policy preserves old complete ${mode} plans for every registered repository`, async () => {
   const report = await runInventory({ api: fixtureApi(mode), inventory, policy, revision: 'a'.repeat(40), dryRun: true });
   const digest = createHash('sha256').update(JSON.stringify(report.plan.repositories)).digest('hex');
@@ -35,4 +36,6 @@ test('documented audit and preview CLIs use only local settings sources and mock
   const requests = readFileSync(log, 'utf8');
   assert.doesNotMatch(requests, /raw.githubusercontent|PATCH|PUT|DELETE/);
   assert.match(requests, /GET.*\/repos\/Living-Proof-Labs\//);
+});
+
 });

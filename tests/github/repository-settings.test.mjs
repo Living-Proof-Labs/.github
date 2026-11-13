@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { describe } from 'node:test';
 import { mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -40,6 +40,7 @@ function fakeApi({ repository = { has_wiki: false }, immutable = 'enabled', rule
   return { api, writes };
 }
 
+describe('Migrated repository settings tool', () => {
 test('reports only fields that differ from the declaration', () => {
   assert.deepEqual(differences({ has_wiki: true }, { has_wiki: false }), [
     { field: 'has_wiki', actual: true, desired: false }
@@ -359,4 +360,6 @@ test('pages state treats 404 as missing only when the repository confirms no sit
   assert.equal(pagesStateFrom(notFound, 'repos/x', { has_pages: false }, desired).state, 'missing');
   assert.equal(pagesStateFrom(notFound, 'repos/x', {}, desired).state, 'inaccessible');
   assert.equal(pagesStateFrom(() => { throw new Error('network'); }, 'repos/x', { has_pages: false }, desired).state, 'inaccessible');
+});
+
 });
