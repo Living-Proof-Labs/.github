@@ -81,7 +81,17 @@ Review the JSON plan and per-repository summary before approving
 `repository-administration`. The plan binds source, implementation bytes,
 inventory, policy, identity and writable observations. Global binding changes
 refuse all writes; stale repository evidence blocks that repository, while later
-entries continue. Every write has a fresh state check and readback. Unknown
+entries continue. Every write has a fresh state check and readback. After a successful settings
+write, a readback that exactly repeats the complete known pre-write snapshot
+can be read again after 1, 2 and 4 seconds. Writes are never repeated. Only an
+exact expected whole-settings snapshot allows the settings loop to continue;
+unknown values, read errors or unrelated changes stop it immediately. A mismatch
+that outlasts the read budget remains a failure even if the final audit passes.
+The JSON and JUnit reports retain `settingsReadbacks`: the setting, before and
+expected snapshots, each observed snapshot (or read error), attempt number,
+delay and outcome. Existing credential redaction covers these artifacts and
+standard output. Final strict verification and per-repository isolation remain
+required. Unknown
 immutable state never authorizes enabling it. Rulesets are reconciled without lowering protection: create missing named
 repository rulesets, preserve extra rules, retain higher review counts and
 stricter review flags, intersect merge methods and preserve branch coverage.

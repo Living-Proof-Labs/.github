@@ -24,7 +24,8 @@ function fixture(names = canonical.repositories) {
     ruleset: { id: 1, source_type: 'Repository', source: `${inventory.owner}/${name}`, ...structuredClone(p.main_ruleset) }
   }]));
   const writes = [], reads = [];
-  const f = { inventory, policy: p, revision, states, writes, reads };
+  const f = { inventory, policy: p, revision, states, writes, reads, delays: [] };
+  f.wait = async ms => { f.delays.push(ms); };
   f.api = {
     async get(resource) {
       reads.push(resource); if (f.onRead) await f.onRead(resource);
@@ -120,6 +121,110 @@ test('normal reconciliation repairs general, sponsorship, known immutable, Pages
   const count = f.writes.length; const again = await f.preview(); assert.equal(again.repositories[0].status, 'compliant');
   assert.equal((await f.apply(again.plan)).failures, 0); assert.equal(f.writes.length, count);
 });
+for (const staleReads of [1, 3]) test(`immutable readback converges after ${staleReads} stale snapshots without duplicate writes`, async () => {
+  const f = fixture(['first']); f.states.first.immutable.enabled = false;
+  const plan = (await f.preview()).plan;
+  const get = f.api.get; let reads = 0;
+  f.api.get = async resource => {
+    if (f.writes.length && resource.endsWith('/immutable-releases') && ++reads <= staleReads) return { enabled: false };
+    return get(resource);
+  };
+  const report = await f.apply(plan), evidence = report.repositories[0].settingsReadbacks[0];
+  assert.equal(report.failures, 0); assert.equal(f.writes.length, 1);
+  assert.equal(evidence.outcome, 'converged'); assert.equal(evidence.attempts.length, staleReads + 1);
+  assert.deepEqual(f.delays, [1000, 2000, 4000].slice(0, staleReads));
+  assert.equal(evidence.before.immutableReleases.enabled, false); assert.equal(evidence.expected.immutableReleases.enabled, true);
+  assert.equal(evidence.attempts[0].observed.immutableReleases.enabled, false);
+  assert.equal(evidence.attempts.at(-1).observed.immutableReleases.enabled, true);
+  assert.deepEqual(report.repositories[0].after.settings.lines, []);
+});
+test('converged general readback permits each remaining reviewed setting once', async () => {
+  const f = fixture(['first']); f.states.first.repo.has_wiki = true;
+  f.states.first.sponsorship.hasSponsorshipsEnabled = true; f.states.first.immutable.enabled = false;
+  const plan = (await f.preview()).plan, get = f.api.get; let stale = true;
+  f.api.get = async resource => {
+    const value = await get(resource);
+    if (f.writes.length === 1 && resource.endsWith('/first') && stale) { value.has_wiki = true; stale = false; }
+    return value;
+  };
+  const report = await f.apply(plan);
+  assert.equal(report.failures, 0); assert.equal(f.writes.length, 3);
+  assert.deepEqual(report.repositories[0].settingsReadbacks.map(r => r.outcome), ['converged', 'matched', 'matched']);
+  assert.deepEqual(f.delays, [1000]);
+});
+test('unchanged unknown pre-write state does not qualify for retry', async () => {
+  const f = fixture(['first']); f.states.first.repo.has_wiki = true; f.states.first.immutable = null;
+  f.dropWrites = true;
+  const report = await f.apply((await f.preview()).plan);
+  assert.equal(report.failures, 1); assert.equal(f.writes.length, 1); assert.deepEqual(f.delays, []);
+  assert.equal(report.repositories[0].settingsReadbacks[0].outcome, 'unexpected-state');
+});
+test('persistent mismatch exhausts bounded reads, stops remaining settings and preserves later repositories', async () => {
+  const f = fixture(['first','second']);
+  f.states.first.repo.has_wiki = true; f.states.first.immutable.enabled = false;
+  f.states.second.immutable.enabled = false;
+  const plan = (await f.preview()).plan;
+  const write = f.api.write;
+  f.api.write = async (...args) => { f.dropWrites = args[1].endsWith('/first'); return write(...args); };
+  const report = await f.apply(plan), first = report.repositories[0], evidence = first.settingsReadbacks[0];
+  assert.equal(report.failures, 1); assert.equal(first.status, 'unresolved');
+  assert.equal(evidence.outcome, 'exhausted'); assert.equal(evidence.attempts.length, 4);
+  assert.deepEqual(f.delays, [1000, 2000, 4000]);
+  assert.deepEqual(first.writes, ['repository']); assert.equal(report.repositories[1].status, 'verified');
+  assert.equal(f.writes.length, 2); assert.match(junit(report), /settingsReadbacks/);
+  assert.match(junit(report), /exhausted/); assert.match(junit(report), /<failure/);
+});
+for (const mode of ['unknown immutable', 'missing field', 'unrelated drift', 'read error']) test(`${mode} after write fails immediately with diagnostic evidence`, async () => {
+  const f = fixture(['first']); f.states.first.immutable.enabled = false;
+  const plan = (await f.preview()).plan; const get = f.api.get;
+  f.api.get = async resource => {
+    const result = await get(resource);
+    if (f.writes.length) {
+      if (mode === 'unknown immutable' && resource.endsWith('/immutable-releases')) return {};
+      if (resource.endsWith('/first')) {
+        if (mode === 'missing field') delete result.has_issues;
+        if (mode === 'unrelated drift') result.has_issues = false;
+        if (mode === 'read error') throw new GitHubApiError(403, 'denied', 'GET', resource);
+      }
+    }
+    return result;
+  };
+  const report = await f.apply(plan), evidence = report.repositories[0].settingsReadbacks[0];
+  assert.equal(report.failures, 1); assert.equal(f.writes.length, 1); assert.deepEqual(f.delays, []);
+  assert.equal(evidence.attempts.length, 1);
+  assert.equal(evidence.outcome, mode === 'read error' ? 'read-error' : 'unexpected-state');
+  assert.ok(evidence.attempts[0].observed || evidence.attempts[0].error);
+});
+test('later successful final audit cannot erase exhausted readback failure', async () => {
+  const f = fixture(['first']); f.states.first.immutable.enabled = false;
+  const plan = (await f.preview()).plan; const get = f.api.get; let reads = 0;
+  f.api.get = async resource => f.writes.length && resource.endsWith('/immutable-releases') && ++reads <= 4 ? { enabled: false } : get(resource);
+  const report = await f.apply(plan);
+  assert.equal(report.failures, 1); assert.equal(f.writes.length, 1);
+  assert.deepEqual(report.repositories[0].after.settings.lines, []);
+  assert.equal(report.repositories[0].settingsReadbacks[0].outcome, 'exhausted');
+});
+test('final settings verification still detects regression after convergence', async () => {
+  const f = fixture(['first']); f.states.first.immutable.enabled = false;
+  const plan = (await f.preview()).plan; const get = f.api.get; let reads = 0;
+  f.api.get = async resource => {
+    if (f.writes.length && resource.endsWith('/immutable-releases')) return { enabled: ++reads === 2 };
+    return get(resource);
+  };
+  const report = await f.apply(plan);
+  assert.equal(report.failures, 1); assert.equal(f.writes.length, 1);
+  assert.equal(report.repositories[0].settingsReadbacks[0].outcome, 'converged');
+  assert.ok(report.repositories[0].failures.some(f => f.setting === 'readback'));
+});
+test('uncertain write response is never retried even if state changed', async () => {
+  const f = fixture(['first']); f.states.first.immutable.enabled = false;
+  const write = f.api.write;
+  f.api.write = async (...args) => { await write(...args); throw new Error('connection lost after write'); };
+  const report = await f.apply((await f.preview()).plan);
+  assert.equal(report.failures, 1); assert.equal(f.writes.length, 1); assert.deepEqual(f.delays, []);
+  assert.deepEqual(report.repositories[0].after.settings.lines, []);
+});
+
 test('missing required Pages creates workflow site and enforces HTTPS with final readback', async () => {
   const f = fixture(['unitree-foxglove-sdk']); f.states['unitree-foxglove-sdk'].pages = null; f.states['unitree-foxglove-sdk'].repo.has_pages = false;
   const preview = await f.preview(); assert.equal(preview.repositories[0].status, 'planned'); assert.equal(preview.plan.repositories[0].pages.setup.method, 'POST');
@@ -264,6 +369,24 @@ test('CLI preview and apply retain parseable complete reports with mocked transp
   assert.equal(f.writes.length, 1); assert.equal(JSON.parse(readFileSync(reportFile)).failures, 0);
   assert.equal((readFileSync(xmlFile, 'utf8').match(/<testcase /g) ?? []).length, canonical.repositories.length);
   assert.equal(stdout.includes('test-token-never-live'), false); assert.equal(stderr, '');
+  // A fresh mocked plan, then an unrelated readback change containing credentials.
+  f.states.livingproof.immutable.enabled = false;
+  assert.equal(await main(['--dry-run', '--plan-output', planFile], dependencies), 0);
+  const get = f.api.get, count = f.writes.length;
+  const secret = 'ghs_' + 'a'.repeat(40);
+  f.api.get = async resource => {
+    const value = await get(resource);
+    if (f.writes.length > count && resource.endsWith('/livingproof')) value.default_branch = `test-token-never-live ${secret}`;
+    return value;
+  };
+  stdout = '';
+  assert.equal(await main(['--apply', '--expected-plan', planFile, '--report-output', reportFile, '--junit', xmlFile], dependencies), 1);
+  const retained = JSON.parse(readFileSync(reportFile));
+  assert.equal(retained.repositories.find(r => r.name === 'livingproof').settingsReadbacks[0].outcome, 'unexpected-state');
+  for (const output of [stdout, readFileSync(reportFile, 'utf8'), readFileSync(xmlFile, 'utf8')]) {
+    assert.doesNotMatch(output, /test-token-never-live/); assert.equal(output.includes(secret), false);
+    assert.match(output, /\[redacted\]/); assert.match(output, /settingsReadbacks/);
+  }
 });
 test('CLI invalid scope and missing plan fail before network requests', async () => {
   for (const argv of [['--apply'], ['--dry-run', '--repo', 'first'], ['--dry-run','--apply'], ['--dry-run','--dry-run']]) {
