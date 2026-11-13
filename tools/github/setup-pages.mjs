@@ -85,7 +85,12 @@ async function snapshot(api, base) {
     throw new Error('Repository identity, public visibility, or active state is unverified; no write allowed.');
   }
   let site;
-  try { site = await api.get(`${base}/pages`); }
+  try {
+    site = await api.get(`${base}/pages`);
+    if (!site || typeof site !== 'object' || Array.isArray(site)) {
+      throw new Error('Pages response is not an object; absence is unverified.');
+    }
+  }
   catch (error) {
     // A 404 alone can mean insufficient access. Require independent absence.
     if (!(error instanceof GitHubApiError && error.status === 404 && repo.has_pages === false)) throw error;

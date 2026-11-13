@@ -150,3 +150,13 @@ test('CLI validates mode, plan files, duplicates and unknown or broad scope opti
     ['--org', 'Other'], ['--policy', 'other.json'], ['--apply-pages'], ['--repo']]) assert.throws(() => parseArgs(args));
   assert.equal(parseArgs(['--repo', 'alpha', '--dry-run', '--plan-output', 'preview.json'])['--repo'], 'alpha');
 });
+
+test('successful malformed Pages responses never authorize creation', async () => {
+  for (const body of [null, false, 0, '', [], 'missing']) {
+    const f = fixture(null);
+    const originalGet = f.api.get;
+    f.api.get = resource => resource.endsWith('/pages') ? Promise.resolve(body) : originalGet(resource);
+    await assert.rejects(preview(f), /not an object/);
+    assert.equal(f.state.writes.length, 0);
+  }
+});
