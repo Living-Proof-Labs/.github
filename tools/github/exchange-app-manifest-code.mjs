@@ -39,13 +39,20 @@ export function convert(code, bearer, requestImpl = https.request) {
 
 // Reserve BEFORE sending. Retain both the attempt marker and response even on
 // failure: GitHub may have consumed the code and issued credentials already.
-export async function exchangeOnce(code, output, send) {
+export function syncParentDirectory(file) {
+  const directory = openSync(path.dirname(file), 'r');
+  try { fsyncSync(directory); } finally { closeSync(directory); }
+}
+export async function exchangeOnce(code, output, send, { syncDirectory = syncParentDirectory } = {}) {
   if (!validCode(code)) throw new Error('Invalid code.');
   const marker = openSync(`${output}.attempt`, 'wx', 0o600);
   try { writeFileSync(marker, 'Conversion attempted; never automatically replay. Inspect existing App on uncertainty.\n'); fsyncSync(marker); }
   finally { closeSync(marker); }
+  // File fsync alone does not persist the new directory entry across a crash.
+  // If directory sync is unsupported or fails, stop before sending anything.
+  syncDirectory(`${output}.attempt`);
   const descriptor = openSync(output, 'wx', 0o600);
-  try { writeFileSync(descriptor, await send(code)); fsyncSync(descriptor); }
+  try { syncDirectory(output); writeFileSync(descriptor, await send(code)); fsyncSync(descriptor); }
   finally { closeSync(descriptor); }
 }
 

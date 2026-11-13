@@ -81,3 +81,17 @@ test('session refuses unsafe state before starting callback receiver',async t=>{
  const {dir}=fixture(t);chmodSync(path.join(dir,'state'),0o644);let calls=0;
  await assert.rejects(continueSession(dir,'--receive',{receive:()=>{calls++;}}));assert.equal(calls,0);
 });
+
+test('parent directory entries are synchronized before any conversion POST',async t=>{
+ const {dir}=fixture(t);const output=path.join(dir,'response');const order=[];
+ await exchangeOnce('code',output,async()=>{order.push('send');return '{}';},{syncDirectory:file=>{assert.ok(existsSync(file));order.push(path.basename(file));}});
+ assert.deepEqual(order,['response.attempt','response','send']);
+});
+test('directory sync failure stops before POST and retains the retry guard',async t=>{
+ for(const failAt of [1,2]) {
+  const {dir}=fixture(t);const output=path.join(dir,'response');let calls=0, syncs=0;
+  await assert.rejects(exchangeOnce('code',output,async()=>{calls++;return '{}';},{syncDirectory:()=>{if(++syncs===failAt)throw Error('sync unavailable');}}));
+  assert.equal(calls,0);assert.ok(existsSync(`${output}.attempt`));
+  await assert.rejects(exchangeOnce('code',output,async()=>{calls++;return '{}';}));assert.equal(calls,0);
+ }
+});
