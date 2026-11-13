@@ -18,6 +18,7 @@ export function classify(text) {
     httpsDrift,
     httpsUnverified,
     enforced: summary ? Number(summary[1]) - pagesNotEnforced + httpsDrift : undefined,
+    rulesetUnknown: lines.filter(line => line === '  main ruleset: unknown').length,
     immutableUnknown: lines.some((line) => line.startsWith('  immutable releases: unknown'))
   };
 }
@@ -30,6 +31,7 @@ function incompleteMessage(state) {
   if (state.httpsUnverified) {
     details.push(`${state.httpsUnverified} pages.https_enforced value(s) unknown, not counted as drift`);
   }
+  if (state.rulesetUnknown) details.push(`${state.rulesetUnknown} main ruleset(s) unverified`);
   if (state.immutableUnknown) details.push('immutable release state unknown');
   return `Audit status: incomplete (${details.join('; ')}).`;
 }
@@ -42,7 +44,7 @@ export function decide(text, failOnDrift) {
   const note = state.pagesNotEnforced
     ? `; ${state.pagesNotEnforced} Pages state(s) unreadable, not counted as drift`
     : '';
-  if (state.immutableUnknown || state.httpsUnverified > 0 || state.pagesNotEnforced > 0) {
+  if (state.immutableUnknown || state.rulesetUnknown > 0 || state.httpsUnverified > 0 || state.pagesNotEnforced > 0) {
     return { status: failOnDrift ? 3 : 0, message: incompleteMessage(state) };
   }
   if (state.enforced > 0) {

@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { annotateRulesets } from '../../tools/github/audit-rulesets.mjs';
+import { decide } from '../../tools/github/audit-status.mjs';
 import { runInventory, validateConfiguration, junit, writeSettings, main } from '../../tools/github/reconcile-inventory.mjs';
 import { rulesetPlan, applyRuleset } from '../../tools/github/reconcile-ruleset.mjs';
 import { GitHubApiError } from '../../tools/github/apply-repo-policy.mjs';
@@ -296,6 +299,53 @@ test('ruleset inventory follows pagination and rejects duplicate managed names',
   const plan = await rulesetPlan(f.api,f.inventory,'first',f.policy); assert.equal(plan.write,null); assert.ok(f.reads.some(r => r.includes('page=2&')));
   f.api.get = async resource => resource.includes('/rulesets?') ? [{id:1,name:f.policy.main_ruleset.name},{id:2,name:f.policy.main_ruleset.name}] : get(resource);
   await assert.rejects(rulesetPlan(f.api,f.inventory,'first',f.policy), /Multiple rulesets/); assert.equal(f.writes.length,0);
+});
+
+for (const mode of ['stronger', 'weaker', 'missing', 'inaccessible']) test(`strict audit and reconciliation agree on ${mode} rulesets and retain manual evidence`, async () => {
+  const f = fixture(['first']);
+  if (mode === 'stronger') {
+    const pr = f.states.first.ruleset.rules.find(r => r.type === 'pull_request').parameters;
+    pr.required_approving_review_count = 3; pr.require_code_owner_review = true;
+    f.states.first.ruleset.rules.push({ type: 'required_signatures' });
+  }
+  if (mode === 'weaker') f.states.first.ruleset.enforcement = 'disabled';
+  if (mode === 'missing') f.states.first.ruleset = null;
+  if (mode === 'inaccessible') f.failRead = (_name, suffix) => suffix.startsWith('/rulesets');
+  const preview = await f.preview();
+  assert.equal(preview.repositories[0].status, mode === 'stronger' ? 'compliant' : mode === 'inaccessible' ? 'unresolved' : 'planned');
+  const legacy = 'Living-Proof-Labs/first\n  repository settings: match\n  sponsorship settings: match\n  immutable releases: enabled\n  main ruleset: different\n  pages: matches\n  pages.https_enforced: matches\n\n1 difference(s) found; 0 error(s).\n';
+  const audited = await annotateRulesets(legacy, f.policy, f.inventory, f.api);
+  assert.equal(decide(audited, true).status, mode === 'stronger' ? 0 : mode === 'inaccessible' ? 3 : 2);
+  assert.equal(decide(audited, false).status, 0);
+  if (mode === 'stronger') assert.match(audited, /main ruleset: matches/);
+  if (mode === 'inaccessible') assert.match(audited, /main ruleset: unknown/);
+  assert.equal(await annotateRulesets(audited, f.policy, f.inventory, f.api), audited);
+  assert.equal(f.writes.length, 0);
+  const directory = mkdtempSync(path.join(tmpdir(), 'audit-consistency-'));
+  const files = ['policy.json','audit.txt','junit.xml','manual.json'].map(file => path.join(directory,file));
+  writeFileSync(files[0], JSON.stringify(f.policy)); writeFileSync(files[1],audited);
+  writeFileSync(files[3], JSON.stringify({schema_version:1,observations:[{observed_at:'2026-11-13T00:00:00Z',repositories:['Living-Proof-Labs/first'],settings:{include_git_lfs_objects_in_archives:false, auto_close_linked_issues:false}}]}));
+  const output = spawnSync(process.execPath,[new URL('../../tools/github/audit-junit.mjs',import.meta.url).pathname,...files],{encoding:'utf8'});
+  assert.equal(output.status,0,output.stderr); const xml=readFileSync(files[2],'utf8');
+  if (mode === 'stronger') assert.match(xml, /first :: main ruleset"\/>/);
+  else if (mode === 'inaccessible') assert.match(xml, /first :: main ruleset"><error message="unverified main protection"/);
+  else assert.match(xml, /first :: main ruleset"><failure message="main protection drift"/);
+  assert.match(xml,/manual observation/); assert.match(xml,/2026-11-13T00:00:00Z/);
+  assert.match(xml,/manual correction required/); assert.match(xml,/unverified manual setting/);
+  // Unrelated missing evidence still fails even when stronger protection passes.
+  const unknownImmutable = legacy.replace('immutable releases: enabled','immutable releases: unknown').replace('1 difference(s)','2 difference(s)');
+  const retained = await annotateRulesets(unknownImmutable,f.policy,f.inventory,f.api);
+  assert.equal(decide(retained,true).status,3); assert.match(retained,/immutable releases: unknown/);
+});
+test('strict audit wrapper applies the shared resolver before exit classification and JUnit', () => {
+  const source = readFileSync(new URL('../../tools/github/repository-settings.sh',import.meta.url),'utf8');
+  assert.ok(source.indexOf('audit-rulesets.mjs') < source.indexOf('audit-junit.mjs'));
+  assert.ok(source.indexOf('audit-rulesets.mjs') < source.indexOf('audit-status.mjs'));
+});
+test('ruleset audit rejects malformed or incomplete legacy evidence instead of reporting compliance', async () => {
+  const f = fixture(['first']);
+  for (const text of ['0 difference(s) found; 0 error(s).', 'Living-Proof-Labs/first\n0 difference(s) found; 0 error(s).', 'Living-Proof-Labs/other\n  main ruleset: matches\n0 difference(s) found; 0 error(s).']) await assert.rejects(annotateRulesets(text,f.policy,f.inventory,f.api));
+  assert.equal(f.writes.length,0);
 });
 
 });

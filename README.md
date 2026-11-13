@@ -276,7 +276,9 @@ decision; this change does not broaden credentials. The supported repository
 exception schema is **HTTPS exemptions only**, with `repo` and `reason` in the
 pinned policy. Generic repository overrides are not implemented. Manual-only
 settings remain explicitly unverified by this controller; dated legacy audit
-evidence is not a fresh measurement.
+evidence is not a fresh measurement. The strict main/scheduled audit uses the
+same non-weakening ruleset resolver, so preserved stronger protections pass
+both paths; other audit comparisons and manual evidence remain intact.
 
 Every inventory member has JSON and JUnit outcomes plus a job-summary table.
 Partial failures do not roll back successful writes or hide later repositories;

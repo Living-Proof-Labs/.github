@@ -19,6 +19,10 @@ if [ "${1:-}" = "--junit" ]; then
   if [ -z "$result_file" ]; then echo "--junit requires an output path." >&2; exit 64; fi
   shift 2
 fi
+legacy_apply=false
+for argument in "$@"; do
+  if [ "$argument" = --apply ]; then legacy_apply=true; fi
+done
 policy=$("${node[@]}" -e 'const fs=require("fs"); console.log(JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1]))))' "$policy_file")
 repository=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).repository)' "$policy")
 tag=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tag)' "$policy")
@@ -56,16 +60,24 @@ set -e
 # Redact before the log and the JUnit artifact. A legacy [A-Za-z0-9_] mask
 # stops at the first dot in a stateless ghs_ token and leaves the JWT.
 # GH_TOKEN is inherited and replaced exactly, as well as by the token patterns.
-"${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_output" | tee "$audit_output"
+"${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_output" > "$audit_output"
 "${node[@]}" "$root/tools/github/redact-secrets.mjs" <"$raw_error" >&2
 rm -f "$raw_output" "$raw_error"
 if [ "$tool_status" -ne 0 ]; then
+  cat "$audit_output"
   exit "$tool_status"
 fi
 # Compare pages.https_enforced for sites the audit could read. A repository
 # with no Pages site is required Pages drift. An unreadable value is incomplete, not a
 # pass. v7.10.0 exempts website; that line is not drift.
-"${node[@]}" "$root/tools/github/audit-pages-https.mjs" "$released_policy_file" "$audit_output"
+"${node[@]}" "$root/tools/github/audit-pages-https.mjs" "$released_policy_file" "$audit_output" > /dev/null
+# Use exactly the reconciliation resolver for protection: stronger rules pass;
+# weaker rules drift; unreadable/conflicting evidence remains unknown. This
+# changes neither general comparisons nor dated manual evidence.
+if [ "$legacy_apply" = false ]; then
+  "${node[@]}" "$root/tools/github/audit-rulesets.mjs" "$released_policy_file" "$inventory_file" "$audit_output"
+fi
+cat "$audit_output"
 if [ -n "$result_file" ]; then
   "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file" "$manual_evidence_file"
 fi

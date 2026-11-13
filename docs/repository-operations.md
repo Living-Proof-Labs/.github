@@ -55,6 +55,14 @@ unknown evidence and drift are both present, the exit stays incomplete and
 the summary keeps the difference count. Report mode prints that same
 incomplete summary and exits 0.
 
+The strict main/scheduled audit and normal reconciliation share the same
+non-weakening ruleset resolver. Protection that meets or exceeds the baseline
+passes both; weaker or missing protection is drift, and inaccessible or conflicting
+protection is unverified. The read-only wrapper replaces the pinned helper's
+exact ruleset comparison before rendering the summary and JUnit, while retaining
+all other setting evidence and dated manual observations. It does not perform
+ruleset writes or expand token permissions.
+
 UI-only evidence lives in
 [`config/github/manual-settings-evidence.json`](../config/github/manual-settings-evidence.json).
 It is dated evidence, not a current API measurement.
