@@ -2,13 +2,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import test from 'node:test';
+import test, { describe } from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 const workflow = readFileSync(path.resolve(import.meta.dirname, '../../.github/workflows/apply-repository-settings.yml'), 'utf8');
 const previewJob = workflow.match(/  preview:[\s\S]*?(?=  apply:)/)?.[0];
 const applyJob = workflow.match(/  apply:[\s\S]*/)?.[0];
 const verification = readFileSync(path.resolve(import.meta.dirname, '../../.github/workflows/verify.yml'), 'utf8');
+
+describe('Protected workflow contract', () => {
 
 test('settings apply is manually dispatched, main-only, and environment-gated', () => {
   assert.match(workflow, /workflow_dispatch:/);
@@ -60,4 +62,6 @@ test('normal workflow reconciles full inventory through a saved plan with no sco
   assert.match(applyJob, /Strictly verify every registered repository\n        if: always\(\)/);
   assert.match(applyJob, /--dry-run --fail-on-drift/);
   assert.match(workflow, /concurrency:\n  group: repository-settings\n  cancel-in-progress: false/);
+});
+
 });

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import test from 'node:test';
+import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -66,6 +66,8 @@ function fixture(names = canonical.repositories) {
   f.apply = expectedPlan => runInventory({ ...f, dryRun: false, expectedPlan: expectedPlan ? JSON.parse(JSON.stringify(expectedPlan)) : undefined });
   return f;
 }
+
+describe('Inventory reconciliation safety', () => {
 
 test('complete canonical inventory including Foxglove is assessed, with zero preview/compliant writes', async () => {
   const f = fixture(); const preview = await f.preview();
@@ -234,4 +236,6 @@ test('CLI invalid scope and missing plan fail before network requests', async ()
     assert.equal(await main(argv, { env: {}, fetchImpl: async () => { calls++; throw new Error('unexpected'); }, io: { stdout: { write() {} }, stderr: { write() {} } } }), 1);
     assert.equal(calls, 0);
   }
+});
+
 });
