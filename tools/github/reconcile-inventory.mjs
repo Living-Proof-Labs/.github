@@ -6,6 +6,7 @@ import { isDeepStrictEqual as equal } from 'node:util';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { observe, planRepository, validatePolicy, fetchPinnedPolicy, createGitHubClient, requireToken, repositoryRoot, GitHubApiError } from './apply-repo-policy.mjs';
 import { validateInventory } from './verify-inventory.mjs';
 import { runPages } from './setup-pages.mjs';
@@ -23,7 +24,9 @@ HTTPS) are reconciled. Website's policy HTTPS exemption remains unmanaged.
 Unknown immutable state never authorizes a write. Rulesets are reconciled without weakening stronger existing protection.
 Each security-sensitive action must match its saved preview and protected approval.
 Failures and readback are reported for every repository; no rollback or automatic
-retry after partial failure. Review a fresh preview to retry. GH_TOKEN is read
+retry of writes after partial failure. Post-write reads alone may retry three times
+(1, 2, 4 seconds), only while the complete known pre-write snapshot persists.
+Review a fresh preview to retry writes. GH_TOKEN is read
 from the environment. --report-output FILE, --summary-output FILE and --junit FILE retain audit evidence;
 --fail-on-drift makes a preview fail on changes as well as unresolved state.
 `;
@@ -65,6 +68,40 @@ function settingsPlan(policy, before, owner, name) {
   return planned;
 }
 
+// Retry reads only when the entire known pre-write snapshot persists. A different
+// value, missing field, permission error or unrelated change is not propagation
+// evidence. Keep the original snapshots for comparison; redact only at output.
+const readbackDelays = [1000, 2000, 4000];
+async function verifySettingsWrite({ api, inventory, name, policy, before, expected, setting, diagnostics, wait }) {
+  const diagnostic = { setting, before: structuredClone(before), expected: structuredClone(expected), attempts: [], outcome: 'unverified' };
+  diagnostics.push(diagnostic);
+  const knownBefore = settingsPlan(policy, before, inventory.owner, name).failures.length === 0 &&
+    Object.entries(policy.repository).every(([key, value]) => typeof before.repository[key] === typeof value) &&
+    (!policy.graphql_repository || typeof before.sponsorship?.hasSponsorshipsEnabled === 'boolean');
+  for (let attempt = 0; attempt <= readbackDelays.length; attempt++) {
+    const observation = { attempt: attempt + 1, delay_ms: attempt ? readbackDelays[attempt - 1] : 0 };
+    diagnostic.attempts.push(observation);
+    try {
+      if (observation.delay_ms) await wait(observation.delay_ms);
+      observation.observed = await settingsSnapshot(api, inventory, name, policy);
+    } catch (error) {
+      observation.error = error.message;
+      diagnostic.outcome = 'read-error';
+      throw new Error('Settings readback failed (read error); see settingsReadbacks; remaining settings stopped.');
+    }
+    if (equal(observation.observed, expected)) {
+      diagnostic.outcome = attempt ? 'converged' : 'matched';
+      return;
+    }
+    if (!knownBefore || !equal(observation.observed, before)) {
+      diagnostic.outcome = 'unexpected-state';
+      break;
+    }
+    diagnostic.outcome = 'exhausted';
+  }
+  throw new Error(`Settings readback failed (${diagnostic.outcome}); see settingsReadbacks; remaining settings stopped.`);
+}
+
 // An independent transport boundary prevents a planner regression from reaching
 // unreviewed rulesets, branch protection, domains, access grants or an unregistered target.
 export async function writeSettings(api, inventory, name, policy, write) {
@@ -94,7 +131,7 @@ function writablePlan(entry) {
   return value;
 }
 
-export async function runInventory({ api, inventory, policy, revision, dryRun, expectedPlan }) {
+export async function runInventory({ api, inventory, policy, revision, dryRun, expectedPlan, wait = sleep }) {
   validateConfiguration(inventory, policy);
   if (typeof dryRun !== 'boolean' || typeof revision !== 'string' || !/^[a-f0-9]{40}$/.test(revision)) throw new Error('Boolean mode and exact source revision required.');
   const binding = { schema_version: 1, mode: 'inventory', revision, implementation: implementationDigest(), inventory: digest(inventory), policy: digest(policy), owner: inventory.owner };
@@ -102,7 +139,7 @@ export async function runInventory({ api, inventory, policy, revision, dryRun, e
   const plan = { ...binding, repositories: [] };
   const results = [];
   for (const name of inventory.repositories) {
-    const result = { name, status: 'unverified', changes: [], writes: [], failures: [], after: {} };
+    const result = { name, status: 'unverified', changes: [], writes: [], settingsReadbacks: [], failures: [], after: {} };
     results.push(result);
     const entry = { name };
     plan.repositories.push(entry);
@@ -131,6 +168,7 @@ export async function runInventory({ api, inventory, policy, revision, dryRun, e
       try {
         for (const write of entry.settings?.writes ?? []) {
           if (!equal(await settingsSnapshot(api, inventory, name, policy), current)) throw new Error('State changed before write; remaining settings stopped.');
+          const beforeWrite = structuredClone(current);
           // Execute only newly generated operations, never operations from the saved file.
           await writeSettings(api, inventory, name, policy, write);
           result.writes.push(write.setting);
@@ -138,7 +176,7 @@ export async function runInventory({ api, inventory, policy, revision, dryRun, e
           else if (write.setting === 'immutable_releases') current.immutableReleases = { enabled: true };
           else if (write.setting === 'graphql.hasSponsorshipsEnabled') current.sponsorship.hasSponsorshipsEnabled = write.graphql.variables.enabled;
           else throw new Error('Unexpected write setting.');
-          if (!equal(await settingsSnapshot(api, inventory, name, policy), current)) throw new Error('Settings readback failed; remaining settings stopped.');
+          await verifySettingsWrite({ api, inventory, name, policy, before: beforeWrite, expected: current, setting: write.setting, diagnostics: result.settingsReadbacks, wait });
         }
       } catch (error) { result.failures.push({ setting: 'apply', message: error.message }); }
       if (entry.pages) {
