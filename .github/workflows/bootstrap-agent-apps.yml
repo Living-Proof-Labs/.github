@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Bootstrap agent App identities
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/github/apps/**'
+      - 'config/github/agents.json'
+      - 'config/github/app-access.json'
+      - 'tools/github/bootstrap-apps.mjs'
+      - 'tools/github/manifest-directory.mjs'
+      - '.github/workflows/bootstrap-agent-apps.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: bootstrap-agent-apps
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - run: task setup
+      - run: task github:apps:check
+      - name: Read identities and report owner handoffs
+        run: |
+          mkdir -p artifacts
+          task github:apps:bootstrap > artifacts/app-bootstrap-plan.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: always()
+        name: Explain evidence limits
+        run: |
+          echo '## Agent App bootstrap' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Read-only plan. Unknown, inaccessible and 404 responses never authorize creation. Review the plan artifact and docs/GITHUB-APPS.md. Registration and installation need an owner; no keys or consent forms are uploaded. Art uses the proposed design-review scope.' >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agent-app-bootstrap-plan
+          path: artifacts/app-bootstrap-plan.json
+          retention-days: 14
+          if-no-files-found: error

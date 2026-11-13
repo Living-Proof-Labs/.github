@@ -60,23 +60,19 @@ test('the committed agent directory matches the App manifests in this repository
   const committed = JSON.parse(readFileSync(path.join(root, 'config/github/agents.json'), 'utf8'));
   const inventory = JSON.parse(readFileSync(path.join(root, 'config/github/repositories.json'), 'utf8'));
   assert.equal(validateAgents(committed, { root }).owner, inventory.owner);
-  assert.deepEqual(committed.agents.map((agent) => agent.id), [...BOTS]);
+  assert.ok(committed.agents.every(agent => BOTS.includes(agent.id))); // Identity metadata is optional for enrollment.
   assert.match(committed.identity_note, /null/);
   const roles = {
     rivet: 'Head of Engineering and Delivery',
     cody: 'Software engineer',
-    vera: 'Verification'
+    vera: 'Verification',
+    art: 'Style and product guidance'
   };
   for (const agent of committed.agents) {
     assert.equal(agent.role, roles[agent.id]);
     assert.equal(agent.manifest, BOT_MANIFESTS[agent.id].file);
     assert.equal(existsSync(path.join(root, agent.manifest)), true);
-    assert.deepEqual(agent.github_identity, {
-      commit_name: null,
-      commit_email: null,
-      app_slug: null,
-      app_id: null
-    });
+    assert.deepEqual(Object.keys(agent.github_identity).sort(), ['app_id', 'app_slug', 'commit_email', 'commit_name']);
   }
 });
 

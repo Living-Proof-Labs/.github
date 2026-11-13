@@ -248,8 +248,9 @@ environment split.
 ## Bot GitHub Apps
 
 Living Proof Labs uses one private GitHub App for each bot. The manifests
-live with the repository-settings manifests in
-[`config/github/apps/`](config/github/apps/). The
+live in [`config/github/apps/`](config/github/apps/). Repository-settings
+examples live separately in [`config/github/app-reference-manifests/`](config/github/app-reference-manifests/)
+and are not registration targets. The
 [owner guide](docs/GITHUB-APPS.md) is the procedure for registering each App,
 installing it, and storing the private key. The
 [agent directory](config/github/agents.json) lists the agents that have
@@ -260,6 +261,11 @@ GitHub Apps, with each role, identity, and manifest path.
 | Rivet | [`rivet.manifest.json`](config/github/apps/rivet.manifest.json) | Head of Engineering and Delivery |
 | Cody | [`cody.manifest.json`](config/github/apps/cody.manifest.json) | Software engineer |
 | Vera | [`vera.manifest.json`](config/github/apps/vera.manifest.json) | Verification |
+| Art | [`art.manifest.json`](config/github/apps/art.manifest.json) | Style and product guidance |
+
+Use the [repeatable discovery and owner handoff](docs/GITHUB-APPS.md#repeatable-bootstrap-and-discovery)
+before registering anything. Both bootstrap and audit automatically enroll all
+manifest files; adding a manifest needs no second App list.
 
 Register an App with the organization manifest flow already supported here
 (`task github:apps:form:help`, then the callback and exchange helpers).

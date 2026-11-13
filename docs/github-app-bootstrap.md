@@ -137,8 +137,8 @@ the manual setup above. The manifest path is useful only when an owner already
 has the necessary App-registration access and wants to reproduce the same
 configuration programmatically.
 
-`repository-settings-audit.manifest.json` and
-`repository-settings-apply.manifest.json` describe the settings credential
+`config/github/app-reference-manifests/repository-settings-audit.manifest.json` and
+`config/github/app-reference-manifests/repository-settings-apply.manifest.json` describe the settings credential
 as two role definitions: audit requests Administration read, Pages read and
 Metadata read; apply requests Administration write, Pages write and Metadata
 read. These reference manifests do **not** describe two installed Apps. The

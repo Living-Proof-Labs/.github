@@ -7,9 +7,10 @@
 import { createPrivateKey, createSign } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { redactSecrets } from './redact-secrets.mjs';
+import { registrationManifests } from './manifest-directory.mjs';
 
 const API_VERSION = '2026-03-10';
 const USER_AGENT = 'living-proof-labs-app-token';
@@ -22,14 +23,18 @@ const MAX_RESPONSE_BYTES = 1_000_000;
 
 export const DEFAULT_ORG = 'Living-Proof-Labs';
 export const DEFAULT_API_BASE = 'https://api.github.com';
-export const BOTS = ['rivet', 'cody', 'vera'];
+const REPOSITORY_ROOT = fileURLToPath(new URL('../../', import.meta.url));
+export const discoverBots = (root = REPOSITORY_ROOT) => registrationManifests(root).map(app => app.agent);
+export const BOTS = discoverBots();
 
 export const usage = `Usage: scripts/app-token <bot>
 
 Print a GitHub App installation token for one Living Proof Labs bot.
 The token is the only text on standard output. Errors go to standard error.
 
-bot: rivet, cody, or vera
+bot: filename stem of a valid config/github/apps/*.manifest.json
+Discovery uses this script’s repository, regardless of the working directory.
+Hyphens in the bot name become underscores in environment-variable names.
 
 Environment variables, with <BOT> as the bot name in uppercase:
   <BOT>_GITHUB_APP_ID                 numeric App id
@@ -49,7 +54,7 @@ export class AppTokenError extends Error {
 }
 
 export function envNames(bot) {
-  const prefix = bot.toUpperCase();
+  const prefix = bot.toUpperCase().replaceAll('-', '_');
   return {
     id: `${prefix}_GITHUB_APP_ID`,
     key: `${prefix}_GITHUB_APP_PRIVATE_KEY`,
@@ -57,14 +62,15 @@ export function envNames(bot) {
   };
 }
 
-export function normalizeBot(value) {
-  if (typeof value !== 'string') throw new AppTokenError('Expected bot rivet, cody, or vera.');
+export function normalizeBot(value, root = REPOSITORY_ROOT) {
+  if (typeof value !== 'string') throw new AppTokenError('Expected a registered manifest filename stem. Example: scripts/app-token rivet');
   const bot = value.trim().toLowerCase();
-  if (BOTS.includes(bot)) return bot;
-  if (/^[a-z0-9-]{1,32}$/.test(bot)) {
-    throw new AppTokenError(`Unknown bot "${bot}". Expected rivet, cody, or vera.`);
-  }
-  throw new AppTokenError('Expected bot rivet, cody, or vera. Example: scripts/app-token rivet');
+  let supported;
+  try { supported = discoverBots(root); }
+  catch { throw new AppTokenError('Could not validate registration manifests. Run task github:apps:check.'); }
+  if (supported.includes(bot)) return bot;
+  if (/^[a-z0-9-]{1,32}$/.test(bot)) throw new AppTokenError(`Unknown bot "${bot}". Add a reviewed manifest to config/github/apps/ first.`);
+  throw new AppTokenError('Expected a registered manifest filename stem. Example: scripts/app-token rivet');
 }
 
 function requireDigits(value, label, noun) {
@@ -150,8 +156,8 @@ export function signAppJwt(appId, privateKey, nowMs = Date.now()) {
   return { jwt: `${unsigned}.${signature.toString('base64url')}`, claims };
 }
 
-export function loadBotConfig(botName, env) {
-  const bot = normalizeBot(botName);
+export function loadBotConfig(botName, env, root = REPOSITORY_ROOT) {
+  const bot = normalizeBot(botName, root);
   const names = envNames(bot);
   if (env[names.id] === undefined || env[names.id] === '') {
     throw new AppTokenError(`Set ${names.id} to the numeric GitHub App id.`);
