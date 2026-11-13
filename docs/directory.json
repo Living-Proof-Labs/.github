@@ -73,6 +73,24 @@
       "title": "Scenario evaluator",
       "url": "https://docs.livingprooflabs.com/livingproof-evaluator-scenario/",
       "scope": "Generic Gherkin step vocabulary and runner over observation bindings"
+    },
+    {
+      "repository": "livingproof-worlds",
+      "title": "Test worlds",
+      "url": "https://docs.livingprooflabs.com/livingproof-worlds/",
+      "scope": "Versioned, engine-neutral robot test worlds"
+    },
+    {
+      "repository": "livingproof-unitree-g1",
+      "title": "Unitree G1",
+      "url": "https://docs.livingprooflabs.com/livingproof-unitree-g1/",
+      "scope": "Robot package for the Unitree G1 humanoid"
+    },
+    {
+      "repository": "livingproof-unitree-go1",
+      "title": "Unitree Go1",
+      "url": "https://docs.livingprooflabs.com/livingproof-unitree-go1/",
+      "scope": "Robot package for the Unitree Go1 quadruped"
     }
   ],
   "projects": [
@@ -134,17 +152,17 @@
     {
       "repository": "livingproof-worlds",
       "title": "Test worlds",
-      "summary": "Versioned, engine-neutral robot test worlds (latest release v1.1.1); hosted manual not yet published"
+      "summary": "Versioned, engine-neutral robot test worlds (latest release v1.1.1)"
     },
     {
       "repository": "livingproof-unitree-g1",
       "title": "Unitree G1",
-      "summary": "Robot package: humanoid; hosted manual not yet published"
+      "summary": "Robot package: humanoid"
     },
     {
       "repository": "livingproof-unitree-go1",
       "title": "Unitree Go1",
-      "summary": "Robot package: quadruped; hosted manual not yet published"
+      "summary": "Robot package: quadruped"
     },
     {
       "repository": "livingproof-booster-t1",

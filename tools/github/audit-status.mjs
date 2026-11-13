@@ -1,30 +1,6 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
-/**
- * Classify a repository-settings audit and choose the wrapper's exit status.
- *
- * The pinned tool (collaboration-guidelines v7.10.0) counts every repository whose Pages
- * state is not `matches` as one difference, including repositories that have no Pages
- * site (`missing`) and ones whose Pages state the audit token cannot read
- * (`inaccessible`). Neither is drift this organization enforces: most repositories
- * publish no site, and the audit App is not granted Pages read. Both are subtracted from
- * the strict count and reported separately. A Pages site that exists with another source
- * (`drifted`) and every other difference still count.
- *
- * pages.https_enforced is compared for a repository that has a Pages site.
- * A missing site is not Enforce HTTPS drift. v7.10.0 exempts website in
- * pages.https_enforced_exempt, and that repository is not drift either.
- * A line `pages.https_enforced: unverified` means the value could not be read
- * (permission error, failed request, non-boolean field, or an inaccessible
- * Pages source). That is incomplete, not a pass and not drift. Incomplete
- * takes precedence over confirmed drift so the exit cannot hide missing
- * evidence; the difference count stays in the summary. Report mode, without
- * --fail-on-drift, keeps exit 0 and prints the same incomplete summary.
- *
- * Usage: audit-status.mjs AUDIT_OUTPUT [--fail-on-drift]
- * Exit: 0 compliant (or not strict), 2 drift, 3 incomplete (immutable state
- * unknown, or pages.https_enforced unreadable), 4 unrecognizable summary.
- */
+/** Required missing Pages is drift; inaccessible Pages is unverified, never compliant. */
 import { readFileSync } from 'node:fs';
 import process from 'node:process';
 import { redactSecrets } from './redact-secrets.mjs';
@@ -32,7 +8,7 @@ import { redactSecrets } from './redact-secrets.mjs';
 export function classify(text) {
   const summary = text.match(/^(\d+) difference\(s\) found; \d+ error\(s\)\.$/m);
   const lines = text.split('\n');
-  const pagesNotEnforced = lines.filter((line) => /^ {2}pages: (missing|inaccessible)\b/.test(line)).length;
+  const pagesNotEnforced = lines.filter((line) => /^ {2}pages: inaccessible\b/.test(line)).length;
   const httpsDrift = lines.filter((line) => /^ {2}pages\.https_enforced: (?:true|false) -> (?:true|false)$/.test(line)).length;
   const httpsUnverified = lines.filter((line) => line === '  pages.https_enforced: unverified').length;
   return {
@@ -42,6 +18,7 @@ export function classify(text) {
     httpsDrift,
     httpsUnverified,
     enforced: summary ? Number(summary[1]) - pagesNotEnforced + httpsDrift : undefined,
+    rulesetUnknown: lines.filter(line => line === '  main ruleset: unknown').length,
     immutableUnknown: lines.some((line) => line.startsWith('  immutable releases: unknown'))
   };
 }
@@ -49,11 +26,12 @@ export function classify(text) {
 function incompleteMessage(state) {
   const details = [`${state.enforced} difference(s)`];
   if (state.pagesNotEnforced) {
-    details.push(`${state.pagesNotEnforced} Pages state(s) missing or unreadable, reported but not enforced`);
+    details.push(`${state.pagesNotEnforced} Pages state(s) unreadable, not counted as drift`);
   }
   if (state.httpsUnverified) {
     details.push(`${state.httpsUnverified} pages.https_enforced value(s) unknown, not counted as drift`);
   }
+  if (state.rulesetUnknown) details.push(`${state.rulesetUnknown} main ruleset(s) unverified`);
   if (state.immutableUnknown) details.push('immutable release state unknown');
   return `Audit status: incomplete (${details.join('; ')}).`;
 }
@@ -64,9 +42,9 @@ export function decide(text, failOnDrift) {
     return { status: 4, message: 'Audit did not return a recognizable summary; refusing to classify state.', stream: 'stderr' };
   }
   const note = state.pagesNotEnforced
-    ? `; ${state.pagesNotEnforced} Pages state(s) missing or unreadable, reported but not enforced`
+    ? `; ${state.pagesNotEnforced} Pages state(s) unreadable, not counted as drift`
     : '';
-  if (state.immutableUnknown || state.httpsUnverified > 0) {
+  if (state.immutableUnknown || state.rulesetUnknown > 0 || state.httpsUnverified > 0 || state.pagesNotEnforced > 0) {
     return { status: failOnDrift ? 3 : 0, message: incompleteMessage(state) };
   }
   if (state.enforced > 0) {

@@ -203,9 +203,9 @@ fresh clone to a rendered report. Then find the project for your part of the wor
 | Common library | Shared version and provenance utilities. | [livingproof-common](https://github.com/Living-Proof-Labs/livingproof-common) | [Manual](https://docs.livingprooflabs.com/livingproof-common/) |
 | MuJoCo simulator | The simulator the delivered robot verification runs in. | [livingproof-sim-mujoco](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco) | [Manual](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) |
 | Gazebo simulator | A second simulator; robot verification support is unfinished. | [livingproof-sim-gazebo](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo) | Not yet published |
-| Test worlds | Versioned, engine-neutral robot test worlds. | [livingproof-worlds](https://github.com/Living-Proof-Labs/livingproof-worlds) | Not yet published |
-| Unitree G1 | Robot package for the Unitree G1 humanoid. | [livingproof-unitree-g1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1) | Not yet published |
-| Unitree Go1 | Robot package for the Unitree Go1 quadruped. | [livingproof-unitree-go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1) | Not yet published |
+| Test worlds | Versioned, engine-neutral robot test worlds. | [livingproof-worlds](https://github.com/Living-Proof-Labs/livingproof-worlds) | [Manual](https://docs.livingprooflabs.com/livingproof-worlds/) |
+| Unitree G1 | Robot package for the Unitree G1 humanoid. | [livingproof-unitree-g1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1) | [Manual](https://docs.livingprooflabs.com/livingproof-unitree-g1/) |
+| Unitree Go1 | Robot package for the Unitree Go1 quadruped. | [livingproof-unitree-go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1) | [Manual](https://docs.livingprooflabs.com/livingproof-unitree-go1/) |
 | Booster T1 | Robot package for the Booster T1 humanoid. | [livingproof-booster-t1](https://github.com/Living-Proof-Labs/livingproof-booster-t1) | [Manual](https://docs.livingprooflabs.com/livingproof-booster-t1/) |
 | Unitree Foxglove SDK | Robot visualization example. | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk) | Not yet published |
 | Collaboration guidelines | Shared contribution and engineering standards for every project. | [collaboration-guidelines](https://github.com/Living-Proof-Labs/collaboration-guidelines) | [Manual](https://docs.livingprooflabs.com/collaboration-guidelines/) |

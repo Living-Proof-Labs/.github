@@ -56,11 +56,14 @@ Configure these two environments in `.github`.
    approval prompt, including their ruleset-bypass checks.
 2. Create **`repository-administration`**. Restrict deployments to `main`, add
    the owner as a required reviewer, and add the same Client ID variable and
-   PEM secret. This environment gates only the manually dispatched write path.
+   PEM secret. This environment gates both manually dispatched preview and apply jobs.
 
-The tradeoff is intentional: ordinary preview and the strict audit receive
-Administration write and Pages read because GitHub otherwise cannot reveal all
-managed ruleset data. HTTPS-only preview requests Administration read instead. The apply
+The tradeoff is intentional: the existing strict audit receives Administration write and
+Pages read to reveal managed ruleset data. The protected normal preview requests
+a short-lived Administration write / Pages read token for the same visibility.
+Its planner disables REST writes and GraphQL mutations, although the token has
+write authority. Preview approval authorizes reads only. Unavailable protection
+details remain unverified, not evidence of existing bypass actors. The apply
 job requests Administration write and Pages write. The same App key is present
 in both environments, so the audit environment could mint broader tokens if
 trusted workflow code were changed. Its task is read-only, not its underlying
@@ -70,43 +73,40 @@ malicious workflow code to `main` could misuse that token. Keep `main` write
 access limited to trusted maintainers and retain the selected-repository App
 installation scope. The write workflow adds an independent reviewer gate.
 
-Then use **Actions → Apply repository settings → Run workflow**, selecting
-`main`. Choose a registered repository, enter `all`, or leave the repository
-field blank for an inventory preview or HTTPS-only operation. Ordinary apply
-requires one named repository; blank or `all` is refused before requesting a token.
-Registration defines the managed selection;
-it does not automatically run an apply when a repository is added.
+Then use **Actions → Apply repository settings → Run workflow** on `main`.
+The only input is **Apply**, false by default. Every run previews every repository
+in the canonical inventory, including Pages setup and HTTPS. Registration defines
+the selection; adding a repository neither applies it nor expands access.
 
-- **HTTPS-only mode** previews or applies only `pages.https_enforced` on existing,
-  readable Pages sites, preserving the pinned `website` exemption. It never
-  changes a source, domain, ruleset, release setting, or creates a missing site.
-- **Ordinary mode** uses the pinned shared settings helper. Its separate
-  **Include Pages setup** option enables the helper's `--apply-pages` behavior,
-  creating a confirmed-missing Pages site or correcting its source to GitHub
-  Actions. It does not deploy content or create a documentation workflow. A
-  repository can have Pages enabled before its first documentation deployment.
-- **Apply** is false by default. Start with a preview and review its artifacts.
-  The preview finishes before the reviewer gate. Both jobs use the same source
-  revision. HTTPS apply compares fresh observations against the saved preview
-  plan and refuses changed evidence before writing. Ordinary apply is limited to
-  one named repository because it does not bind writes to a saved plan.
-  Dispatched runs are serialized. An apply uses the protected
-  `repository-administration` environment and needs
-  the owner's reviewer approval. Main-ruleset and release-immutability options
-  remain separate, deliberate selections; do not select them for HTTPS-only work.
+Review the complete preview artifact and job summary, including unresolved
+entries, before approving the protected apply job. The same source revision and
+saved plan are used for both jobs. Inventory, implementation, policy or revision
+changes refuse apply; changed writable repository evidence blocks that repository
+while others continue. Writes have fresh preconditions and readback. Unknown
+immutable state does not authorize writes. Rulesets are reconciled through separately bound actions that preserve stronger
+review requirements, extra rules and branch coverage. The protected approval
+covers the exact disclosed creations/updates; no ruleset deletion is permitted.
+Inherited rulesets, existing bypass actors/exclusions and incompatible or
+unreadable state remain unresolved. If apply reveals previously unreadable
+ruleset details, it cannot add that unreviewed action; other reviewed changes
+can proceed. Missing bypass data remains unresolved even with write-level
+access; never infer that bypass actors exist from an omitted field.
 
-An HTTPS preview can produce a usable plan while reporting blocked repositories.
-Its original outcome is recorded in the job summary and its report; it is not a
-claim of compliance. After approval, apply may change the eligible sites only if
-the complete plan, including blocked outcomes, still matches. Unresolved sites
-keep the final operation failing even when some writes succeed.
+Only HTTPS repository exemptions are supported in the pinned manifest, using
+`repo` and `reason`; generic overrides are not implemented. The website
+Cloudflare exception remains unmanaged.
 
-Each apply reads settings back and runs the strict all-inventory report. Review
-both the scoped operation results and the strict report; a completed write is
-not proof that the entire inventory is compliant. Missing sites, access failures
-and unavailable certificate state remain unresolved, not successful enforcement.
-A second compliant HTTPS-only run should make no writes. No workflow here
-silently remediates later drift or expands the App installation's repository scope.
+A preview may produce a complete plan with unresolved outcomes. Its original
+failure is recorded in the summary. Approval authorizes only disclosed, verified
+changes; unknown state is never compliant. Partial apply fails explicitly,
+continues other repositories, and requires a fresh preview before retry. Each
+apply is followed by complete readback. JSON, JUnit and summaries are retained
+14 days. A second compliant run makes no writes. Certificate-not-ready and denied
+access stay unresolved. Pages setup does not deploy documentation content.
+
+See [repository operations](repository-operations.md) for commands and the
+remaining final read/write race limitation. No workflow automatically remediates
+later drift or expands the App installation's repository scope.
 
 GitHub documents App registration and installation in its
 [GitHub App guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app)
@@ -118,16 +118,16 @@ An installation token from this App can read ruleset bypass actors and perform
 authorized settings changes. It is minted only in trusted-main audit code or
 the protected manual write workflow, never in a pull-request or fork workflow.
 
-The released generic helper’s ordinary `--apply` mode also manages release
-immutability. Before using it, review its complete
-proposed change set—not only the general settings and main ruleset—and make a
-deliberate decision about release immutability. The separate acknowledgement
-allows the helper to apply it when its current API state is unknown; it is not
-a general switch that excludes release immutability from ordinary apply. Use
-HTTPS-only mode when no other setting should change. The workflow reads every
-target back through strict verification. The App setup above is the minimal correct
-credential preparation, without creating a second App or storing an
-administrator key in an untrusted workflow.
+The normal workflow uses a bound inventory plan and never writes unknown
+immutable state. If additional authority makes previously unknown writable state
+readable at apply, that changed evidence rejects the repository rather than
+silently expanding the approved writes. This is a deliberate safety limit; the
+workflow does not broaden preview grants to avoid it.
+
+The legacy generic helper and local CLI remain available for separately scoped
+work, but are no longer the normal workflow's write path. Their broader apply
+behavior must not be confused with a Pages-only request. The existing
+[Pages-only command](../README.md) remains separate; no identity or grant is added.
 
 ## Optional versioned manifests
 
