@@ -80,6 +80,12 @@ tasks:
     desc: Read-only identity discovery and owner handoff for every App manifest
     cmds:
       - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs {{.CLI_ARGS}}
+  github:apps:bootstrap:report:
+    desc: Save a JSON-only bootstrap plan while retaining failure on unverified evidence
+    cmds:
+      - mkdir -p artifacts
+      # Capture only the planner process, not Task's own failure annotations.
+      - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs > artifacts/app-bootstrap-plan.json
   github:apps:bootstrap:test:
     desc: Publish bootstrap safety scenarios as JUnit
     cmds:

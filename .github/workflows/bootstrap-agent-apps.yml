@@ -33,9 +33,7 @@ jobs:
       - run: task setup
       - run: task github:apps:check
       - name: Read identities and report owner handoffs
-        run: |
-          mkdir -p artifacts
-          task github:apps:bootstrap > artifacts/app-bootstrap-plan.json
+        run: task github:apps:bootstrap:report
         env:
           GH_TOKEN: ${{ github.token }}
       - if: always()
