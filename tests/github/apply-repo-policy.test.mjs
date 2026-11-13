@@ -8,7 +8,7 @@ import test from 'node:test';
 import {
   DryRunWriteError,
   createGitHubClient,
-  fetchPinnedPolicy,
+  readPolicyFile,
   gitBlobSha,
   isGraphqlMutation,
   listOrgRepositories,
@@ -207,40 +207,13 @@ test('git blob SHA matches git hash-object for the pinned policy fixture', () =>
   assert.equal(pinned().pages.build_type, 'workflow');
 });
 
-test('pinned policy download uses the commit, checks the blob, and sends no token', async () => {
-  const pin = JSON.parse(readFileSync(path.join(root, 'config/github/repository-policy.json'), 'utf8'));
-  assert.equal(pin.tag, 'v7.10.0');
-  assert.equal(pin.commit, '122db54d0763dc39f81133ec06e35dab2b24d41b');
-  assert.equal(pin.policy_blob_sha, 'b5f31a288ae719c0f9e632f5ec359f33839f0850');
-  assert.equal(pin.tool_blob_sha, 'f5105da2a2cc2e767762bc10909e67262cea3144');
-  let seen;
-  const policy = await fetchPinnedPolicy(pin, async (url, init) => {
-    seen = { url, authorization: init.headers?.Authorization };
-    const response = await fetch(url, { headers: init.headers });
-    const bytes = Buffer.from(await response.arrayBuffer());
-    return { ok: response.ok, status: response.status, arrayBuffer: async () => bytes };
-  });
-  assert.equal(seen.authorization, undefined);
-  assert.equal(seen.url, `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.policy_path}`);
-  assert.doesNotMatch(seen.url, /\/v7\.10\.0\//);
-  assert.equal(policy.pages.build_type, 'workflow');
-  assert.equal(policy.pages.https_enforced, true);
-  assert.deepEqual(policy.pages.https_enforced_exempt, [
-    { repo: 'website', reason: 'HTTPS terminated at Cloudflare' }
-  ]);
+test('checked-in policy preserves the migrated released policy bytes', () => {
+  const bytes = readFileSync(path.join(root, 'config/github/repository-policy.json'));
+  assert.equal(gitBlobSha(bytes), 'b5f31a288ae719c0f9e632f5ec359f33839f0850');
+  const policy = readPolicyFile();
   validatePolicy(policy);
-  const toolUrl = `https://raw.githubusercontent.com/${pin.repository}/${pin.commit}/${pin.tool_path}`;
-  const toolResponse = await fetch(toolUrl);
-  assert.equal(toolResponse.ok, true);
-  assert.equal(gitBlobSha(Buffer.from(await toolResponse.arrayBuffer())), pin.tool_blob_sha);
-  await assert.rejects(
-    () => fetchPinnedPolicy({ ...pin, policy_blob_sha: 'b'.repeat(40) }, async () => ({
-      ok: true,
-      status: 200,
-      arrayBuffer: async () => Buffer.from('{}\n')
-    })),
-    /does not match/
-  );
+  assert.equal(policy.pages.https_enforced, true);
+  assert.deepEqual(policy.pages.https_enforced_exempt, [{ repo: 'website', reason: 'HTTPS terminated at Cloudflare' }]);
 });
 
 test('argument defaults stay on the organization and require an explicit mode', () => {
@@ -529,26 +502,14 @@ test('missing GH_TOKEN fails before any request and does not echo a value', asyn
   assert.doesNotMatch(io.out() + io.err(), /test-token-value/);
 });
 
-test('a mismatched pinned blob is refused before the GitHub API', async (t) => {
-  const io = capture();
-  const pinPath = path.join(tempDirectory(t, 'policy-pin-'), 'repository-policy.json');
-  const pin = JSON.parse(readFileSync(path.join(root, 'config/github/repository-policy.json'), 'utf8'));
-  pin.policy_blob_sha = 'c'.repeat(40);
-  writeFileSync(pinPath, JSON.stringify(pin));
-  const hosts = [];
+test('invalid local policy fails before the GitHub API', async (t) => {
+  const io = capture(); let calls = 0;
+  const policyPath = writePolicy(t, { schema_version: 2 });
   const code = await main(['--dry-run'], {
-    env: { GH_TOKEN: TOKEN },
-    io,
-    pinPath,
-    fetchImpl: async (url) => {
-      hosts.push(new URL(url).host);
-      return { ok: true, status: 200, arrayBuffer: async () => Buffer.from('{}\n'), async text() { return '{}\n'; } };
-    }
+    env: { GH_TOKEN: TOKEN }, io, policyPath,
+    fetchImpl: async () => { calls++; throw new Error('unexpected network'); }
   });
-  assert.equal(code, 1);
-  assert.deepEqual(hosts, ['raw.githubusercontent.com']);
-  assert.match(io.err(), /blob SHA/);
-  assert.doesNotMatch(io.out() + io.err(), /test-token-value/);
+  assert.equal(code, 1); assert.equal(calls, 0); assert.match(io.err(), /schema/);
 });
 
 test('dry-run makes no write API calls', async (t) => {

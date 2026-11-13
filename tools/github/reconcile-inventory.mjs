@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { observe, planRepository, validatePolicy, fetchPinnedPolicy, createGitHubClient, requireToken, repositoryRoot, GitHubApiError } from './apply-repo-policy.mjs';
+import { observe, planRepository, validatePolicy, readPolicyFile, createGitHubClient, requireToken, repositoryRoot, GitHubApiError } from './apply-repo-policy.mjs';
 import { validateInventory } from './verify-inventory.mjs';
 import { runPages } from './setup-pages.mjs';
 import { rulesetPlan, applyRuleset, strengthenRuleset } from './reconcile-ruleset.mjs';
@@ -16,7 +16,7 @@ import { redactSecrets } from './redact-secrets.mjs';
 export const help = `Usage: task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json
        task github:settings:reconcile -- --apply --expected-plan artifacts/settings-plan.json
 
-Reconcile EVERY registered repository using the pinned policy. No target or scope
+Reconcile EVERY registered repository using the local policy. No target or scope
 checkboxes. Preview never writes. Apply requires the saved plan from this source
 revision, inventory and policy; each repository is checked again before writes.
 Known general settings, sponsorships, immutable releases and Pages (including
@@ -236,7 +236,7 @@ export async function main(argv, { env = process.env, fetchImpl = globalThis.fet
     const read = file => JSON.parse(readFileSync(file, 'utf8'));
     const revision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
     const token = requireToken(env);
-    const report = await runInventory({ api: createGitHubClient({ token, fetchImpl, allowWrites: !dryRun }), inventory: read(path.join(root, 'config/github/repositories.json')), policy: await fetchPinnedPolicy(read(path.join(root, 'config/github/repository-policy.json')), fetchImpl), revision, dryRun, expectedPlan: options['--expected-plan'] ? read(options['--expected-plan']) : undefined });
+    const report = await runInventory({ api: createGitHubClient({ token, fetchImpl, allowWrites: !dryRun }), inventory: read(path.join(root, 'config/github/repositories.json')), policy: readPolicyFile(), revision, dryRun, expectedPlan: options['--expected-plan'] ? read(options['--expected-plan']) : undefined });
     const save = (file, text) => { if (file) { mkdirSync(path.dirname(file), { recursive: true }); writeFileSync(file, redactSecrets(text, token)); } };
     save(options['--plan-output'], JSON.stringify(report.plan, null, 2) + '\n');
     save(options['--report-output'], JSON.stringify(report, null, 2) + '\n');

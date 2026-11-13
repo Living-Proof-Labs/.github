@@ -19,6 +19,14 @@ If Task is absent, use `bash tools/setup.sh` once and then
 `bash tools/task.sh <task>`. Tools stay in `.tools/`; setup neither uses
 `sudo` nor changes a shell profile.
 
+## Settings ownership
+
+This checkout owns `config/github/repository-policy.json`, the audit tool,
+controllers and their tests. Policy changes and implementation changes are
+reviewed together here. Audit, preview and apply load local files; none fetches
+settings code or policy from collaboration-guidelines. The workflow still binds
+preview and apply to the same reviewed source revision and policy digest.
+
 ## Register a repository
 
 1. Add the repository name to
@@ -43,7 +51,7 @@ it in policy tooling or another repository.
 The strict audit compares `pages.https_enforced` on a repository that already
 has a Pages site. A repository with no Pages site is not an Enforce HTTPS
 failure by itself, but required Pages absence counts as Pages drift. Inaccessible
-Pages is unverified. The pinned collaboration-guidelines v7.10.0 policy lists `website`
+Pages is unverified. The local policy lists `website`
 in `pages.https_enforced_exempt` with reason `HTTPS terminated at Cloudflare`.
 That repository is reported as `exempt (HTTPS terminated at Cloudflare)` and
 is not drift. The exemption list must be non-empty, and it is accepted only
@@ -58,7 +66,7 @@ incomplete summary and exits 0.
 The strict main/scheduled audit and normal reconciliation share the same
 non-weakening ruleset resolver. Protection that meets or exceeds the baseline
 passes both; weaker or missing protection is drift, and inaccessible or conflicting
-protection is unverified. The read-only wrapper replaces the pinned helper's
+protection is unverified. The read-only wrapper replaces the local audit helper's
 exact ruleset comparison before rendering the summary and JUnit, while retaining
 all other setting evidence and dated manual observations. It does not perform
 ruleset writes or expand token permissions.
@@ -74,7 +82,7 @@ Open **Actions → Apply repository settings → Run workflow** on `main`.
 canonical inventory; there is no repository selector, HTTPS mode, or scope
 checkbox. Normal reconciliation includes general settings, sponsorships, known
 immutable-release state, Pages setup and HTTPS. Repository-specific HTTPS
-exceptions come from the pinned policy manifest with validated names and reasons.
+exceptions come from the local policy manifest with validated names and reasons.
 The `website` exemption leaves HTTPS unmanaged, never disabled.
 
 Review the JSON plan and per-repository summary before approving
@@ -103,7 +111,7 @@ Bypass actors, excluded branches, inherited or unknown ownership, incomplete
 fields and incompatible merge methods remain explicit unresolved results. Hidden
 bypass details at preview therefore prevent that update. This is a real access
 boundary, not a successful reconciliation. No new token grant is included.
-The only supported repository-specific exception schema is the pinned policy's
+The only supported repository-specific exception schema is the local policy's
 HTTPS `repo`/`reason` entries; generic overrides are not implemented.
 
 The full local interface is:
@@ -128,10 +136,10 @@ fresh reviewed preview before retry. GitHub cannot atomically bind these reads
 to writes; external changes in that interval remain a risk. Pages setup does not
 deploy content. Manual-only settings remain explicitly unverified by this controller.
 
-## Apply the pinned policy with a token
+## Apply the local policy with a token
 
 [`scripts/apply-repo-policy`](../scripts/apply-repo-policy) compares the policy
-pinned in
+checked in
 [`config/github/repository-policy.json`](../config/github/repository-policy.json)
 with every repository from `GET /orgs/Living-Proof-Labs/repos`. `--dry-run`
 prints `current -> desired` and does not write. `--apply` writes only settings
@@ -143,7 +151,7 @@ repositories with the organization endpoint and does not call `/user`.
 
 Token permissions, the Pages Enforce HTTPS field, and examples are in the
 [repository README](../README.md#apply-repository-policy). The workflow above
-remains the environment-gated apply path. The pinned v7.10.0 policy sets
+remains the environment-gated apply path. The local policy sets
 `pages.https_enforced` and exempts `website`. The command applies that boolean
 on other repositories that already have a Pages site, and it does not send
 Enforce HTTPS for an exempt repository. A Pages write that GitHub rejects is

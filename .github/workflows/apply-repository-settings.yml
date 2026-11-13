@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   preview:
-    name: Preview pinned policy
+    name: Preview checked-in policy
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: repository-administration
@@ -98,7 +98,7 @@ jobs:
           permission-administration: write
           permission-pages: write
       - run: task setup
-      - name: Apply pinned policy
+      - name: Apply checked-in policy
         shell: bash
         run: |
           set -o pipefail

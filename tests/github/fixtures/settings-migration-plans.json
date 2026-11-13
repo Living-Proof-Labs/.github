@@ -1,0 +1,13 @@
+{
+  "source_revision": "6744acbfab0648ca6d1568fa652d28281025b61b",
+  "policy_source": "collaboration-guidelines v7.10.0",
+  "policy_blob": "b5f31a288ae719c0f9e632f5ec359f33839f0850",
+  "compliant": {
+    "repositories_sha256": "76d5ae741b56c99ac9ce92994d99979c51bca0be01bea67ce5de2b5caf2ed32a",
+    "repository_count": 20
+  },
+  "drift": {
+    "repositories_sha256": "cfc49c3aa8065253b8740db52edd34e81121799e2d9367d106f3283c440ac57b",
+    "repository_count": 20
+  }
+}

@@ -2,7 +2,7 @@
 /**
  * Enforce HTTPS (pages.https_enforced) for the strict audit and for apply.
  *
- * collaboration-guidelines v7.10.0 sets pages.https_enforced and exempts
+ * the local repository policy sets pages.https_enforced and exempts
  * website, which is served through Cloudflare:
  * [{ "repo": "website", "reason": "HTTPS terminated at Cloudflare" }].
  * The exemption list must be non-empty, and only when https_enforced is true.
