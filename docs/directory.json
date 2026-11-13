@@ -85,6 +85,12 @@
       "title": "Unitree G1",
       "url": "https://docs.livingprooflabs.com/livingproof-unitree-g1/",
       "scope": "Robot package for the Unitree G1 humanoid"
+    },
+    {
+      "repository": "livingproof-unitree-go1",
+      "title": "Unitree Go1",
+      "url": "https://docs.livingprooflabs.com/livingproof-unitree-go1/",
+      "scope": "Robot package for the Unitree Go1 quadruped"
     }
   ],
   "projects": [
@@ -156,7 +162,7 @@
     {
       "repository": "livingproof-unitree-go1",
       "title": "Unitree Go1",
-      "summary": "Robot package: quadruped; hosted manual not yet published"
+      "summary": "Robot package: quadruped"
     },
     {
       "repository": "livingproof-booster-t1",
