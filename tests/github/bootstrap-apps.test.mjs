@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, statSync, symlinkSync, readdirSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, statSync, symlinkSync, readdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { plan, prepare, validateConfig } from '../../tools/github/bootstrap-apps.mjs';
@@ -130,4 +131,38 @@ test('settings reference manifests are validated examples, never bootstrap targe
   const base = local(t);
   await assert.rejects(prepare({ ...enrolled, agent: 'repository-settings-apply', directory: path.join(base, 'registration'), interactive: true, read: reader(), confirm: async () => { throw new Error('must not ask'); } }));
   assert.deepEqual(readdirSync(base), []);
+});
+
+test('the workflow report task keeps failing-plan artifacts pure JSON under GitHub Actions', t => {
+  const root = path.resolve(import.meta.dirname, '../..');
+  const temporary = local(t);
+  for (const directory of ['tools', 'config']) cpSync(path.join(root, directory), path.join(temporary, directory), { recursive: true });
+  cpSync(path.join(root, 'Taskfile.yml'), path.join(temporary, 'Taskfile.yml'));
+  // Exercise the real pinned Task binary and the real planner without network
+  // or credentials. The local Node wrapper avoids copying an entire runtime.
+  const task = readdirSync(path.join(root, '.tools')).map(name => path.join(root, '.tools', name, 'task')).find(existsSync);
+  assert.ok(task, 'Run task setup before testing the workflow entry point.');
+  const bin = path.join(temporary, '.tools', 'fixture', 'bin');
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(path.join(bin, 'node'), `#!/bin/sh\nexec '${process.execPath}' "$@"\n`, { mode: 0o700 });
+  const mock = path.join(temporary, 'deny-network.mjs');
+  writeFileSync(mock, "globalThis.fetch = async () => ({ok:false,status:403});\n");
+  const workflow = readFileSync(path.join(root, '.github/workflows/bootstrap-agent-apps.yml'), 'utf8');
+  assert.match(workflow, /run: task github:apps:bootstrap:report/);
+  assert.doesNotMatch(workflow, /task github:apps:bootstrap[^\n]*>/);
+  const result = spawnSync(task, ['github:apps:bootstrap:report'], {
+    cwd: temporary,
+    env: { PATH: process.env.PATH, CI: 'true', GITHUB_ACTIONS: 'true', NODE_OPTIONS: `--import=${mock}` },
+    encoding: 'utf8'
+  });
+  assert.equal(result.error, undefined);
+  assert.notEqual(result.status, 0, 'Unavailable evidence must still fail the task.');
+  const artifact = readFileSync(path.join(temporary, 'artifacts/app-bootstrap-plan.json'), 'utf8');
+  const report = JSON.parse(artifact);
+  assert.equal(report.mode, 'read-only');
+  assert.equal(report.discovery, 'unverified');
+  assert.ok(report.results.length > 0);
+  assert.ok(report.results.every(app => app.status === 'unverified'));
+  assert.doesNotMatch(artifact, /::error|task: Failed/);
+  assert.match(result.stdout + result.stderr, /Failed to run task/);
 });
