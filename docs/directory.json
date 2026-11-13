@@ -79,6 +79,12 @@
       "title": "Test worlds",
       "url": "https://docs.livingprooflabs.com/livingproof-worlds/",
       "scope": "Versioned, engine-neutral robot test worlds"
+    },
+    {
+      "repository": "livingproof-unitree-g1",
+      "title": "Unitree G1",
+      "url": "https://docs.livingprooflabs.com/livingproof-unitree-g1/",
+      "scope": "Robot package for the Unitree G1 humanoid"
     }
   ],
   "projects": [
@@ -145,7 +151,7 @@
     {
       "repository": "livingproof-unitree-g1",
       "title": "Unitree G1",
-      "summary": "Robot package: humanoid; hosted manual not yet published"
+      "summary": "Robot package: humanoid"
     },
     {
       "repository": "livingproof-unitree-go1",
