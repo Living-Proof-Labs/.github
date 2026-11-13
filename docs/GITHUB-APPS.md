@@ -696,3 +696,73 @@ this slice. No website edits are performed by the audit.
 4. Save only the approved metadata changes. Read back `/app` and compare `name`,
    `description` and `external_url` with the reviewed manifest. Keep permission
    and installation approval changes separate; do not delete/recreate the App.
+
+## Disabled Keel Actions comment pilot
+
+The cloud's Keel JWT passes local structure and signature checks, while GitHub
+returns an undecodable-token error. Managed credential substitution is suspected,
+not proven. The separate `keel-comment-pilot.yml` tests the supported GitHub-hosted
+path without returning an App token to the cloud. It is **disabled**, has no keys,
+and does not run on pull requests, pushes or schedules. This is not a general
+agent dispatcher and does not register an App through the manifest workflow.
+
+The only target is `Living-Proof-Labs/collaboration-guidelines`, Keel's previously
+verified repository. Do not expand installation access to `.github` for this
+experiment. The workflow lives in `.github`; its execution repository and token
+target are intentionally distinct. It permits only one reviewed issue and the
+fixed comment in `tools/github/keel-comment-pilot.mjs`, with request ID
+`keel-identity-pilot-001`. Dispatch accepts no destination, operation or body.
+
+Before any live pilot, obtain explicit approval for the exact comment and issue,
+the existing key's protected storage location, and the run. The owner must:
+
+1. Verify Keel's existing App ID, slug, installation ID, numeric bot user ID and
+   target issue. Commit them in `config/github/keel-comment-pilot.json`, changing
+   `enabled` only in that reviewed authorization. Null values stop execution;
+   none are guessed or discovered as permission to post.
+2. Create/review environment `keel-comment-pilot` in `.github`, restricted to the
+   **main branch only** (not tags or a wildcard), with required independent owner
+   approval, prevent self-review, and administrator bypass disabled. Verify main
+   branch protection separately. Environment existence alone proves no protection.
+3. Only with approved credential-storage consent, configure the existing key as
+   environment secret `KEEL_GITHUB_APP_PRIVATE_KEY` and the App client ID as
+   environment variable `KEEL_GITHUB_APP_CLIENT_ID`. Do not copy keys into repo,
+   organization-wide secrets, artifacts, shell arguments, logs or this chat.
+4. Enable repository variable `KEEL_COMMENT_PILOT_ENABLED` only after these
+   controls and the exact comment are approved. Dispatch on main; while the job
+   is waiting for environment approval, set the **environment secret**
+   `KEEL_COMMENT_PILOT_APPROVED_RUN_ID` to that exact run ID. This value is an
+   authorization lock, not a credential. Environment secrets are read when the
+   job starts. Approve only this run and its reviewed commit.
+5. Review the sanitized result and the comment's actual bot author. Disable the
+   pilot variable again. A failed or cancelled run after posting began requires
+   manual inspection; never authorize a different run ID for this same request.
+
+The code rejects other repositories, refs, events, runs and reruns before key use.
+It signs GET requests to verify the existing App and selected installation, then
+uses the repository's pinned `actions/create-github-app-token` with only Issues
+write on `collaboration-guidelines`. Its output stays inside the job; no job
+output, artifact or external return carries a token. Normal action cleanup revokes
+it; abrupt runner loss may leave it valid until expiry. No grant is expanded.
+
+Before posting, the code checks minted identity and narrowed repository scope,
+then completely paginates comments. An exact marker/body/expected bot identity
+match is a no-op. Foreign, duplicate, altered or unreadable evidence stops. It
+sends at most one POST in the approved first run attempt, with no retry or redirect,
+and reads the comment back to verify the App and bot author. Responses and secrets
+are never printed. The fixed message contains no arbitrary text or mentions.
+
+This is **at-most-one-POST**, not guaranteed exactly-once delivery. GitHub's comment
+API has no transactional idempotency key. The approved run ID must remain bound to
+this fixed request even after uncertainty; changing that lock can allow another
+POST. A timeout may mean a comment exists despite a failed run. Do not rerun,
+delete/recreate evidence or authorize a second run to make a failure disappear.
+A broader dispatcher would require a separately reviewed durable request ledger.
+
+This PR does not provision secrets/environments, enable the pilot, dispatch it,
+post a comment, change live permissions, or prove the managed-authentication theory.
+Those actions and live end-to-end identity verification remain pending approval.
+
+References: [pinned token action](https://github.com/actions/create-github-app-token/tree/64ab729a6294000f5aa4a4bc0b73d1f32bc45510),
+[environment approval](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),
+and [environment secret timing](https://docs.github.com/en/actions/reference/security/secrets).

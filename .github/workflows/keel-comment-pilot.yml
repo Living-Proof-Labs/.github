@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Keel fixed comment identity pilot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keel-fixed-comment-pilot
+  cancel-in-progress: false
+
+jobs:
+  pilot:
+    if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main' && vars.KEEL_COMMENT_PILOT_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: keel-comment-pilot
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Validate one-use run authorization before credentials
+        run: node tools/github/keel-comment-pilot.mjs --preflight
+        env:
+          APPROVED_RUN_ID: ${{ secrets.KEEL_COMMENT_PILOT_APPROVED_RUN_ID }}
+      - name: Verify Keel App and installation identity without writes
+        run: node tools/github/keel-comment-pilot.mjs --verify-app
+        env:
+          APPROVED_RUN_ID: ${{ secrets.KEEL_COMMENT_PILOT_APPROVED_RUN_ID }}
+          KEEL_APP_PRIVATE_KEY: ${{ secrets.KEEL_GITHUB_APP_PRIVATE_KEY }}
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        id: keel-token
+        with:
+          client-id: ${{ vars.KEEL_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.KEEL_GITHUB_APP_PRIVATE_KEY }}
+          owner: Living-Proof-Labs
+          repositories: collaboration-guidelines
+          permission-issues: write
+          skip-token-revoke: false
+          github-api-url: https://api.github.com
+      - name: Execute the approved fixed comment once and verify author
+        run: node tools/github/keel-comment-pilot.mjs --post
+        env:
+          APPROVED_RUN_ID: ${{ secrets.KEEL_COMMENT_PILOT_APPROVED_RUN_ID }}
+          GH_TOKEN: ${{ steps.keel-token.outputs.token }}
+          TOKEN_APP_SLUG: ${{ steps.keel-token.outputs.app-slug }}
+          TOKEN_INSTALLATION_ID: ${{ steps.keel-token.outputs.installation-id }}
