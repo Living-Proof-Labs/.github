@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "repository": {
+    "has_wiki": false,
+    "has_issues": true,
+    "has_discussions": false,
+    "has_projects": false,
+    "pull_request_creation_policy": "all",
+    "allow_merge_commit": true,
+    "allow_squash_merge": false,
+    "allow_rebase_merge": false,
+    "merge_commit_title": "PR_TITLE",
+    "merge_commit_message": "BLANK",
+    "allow_update_branch": true,
+    "allow_auto_merge": true,
+    "delete_branch_on_merge": true
+  },
+  "graphql_repository": {
+    "hasSponsorshipsEnabled": false
+  },
+  "manual_or_unavailable_settings": {
+    "preserve_repository_in_archive_program": true,
+    "include_git_lfs_objects_in_archives": false,
+    "limit_ref_updates_per_push": false,
+    "auto_close_linked_issues": true
+  },
+  "immutable_releases": true,
+  "pages": {
+    "build_type": "workflow",
+    "https_enforced": true,
+    "https_enforced_exempt": [
+      { "repo": "website", "reason": "HTTPS terminated at Cloudflare" }
+    ]
+  },
+  "main_ruleset": {
+    "name": "Protect main: pull requests only",
+    "target": "branch",
+    "enforcement": "active",
+    "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+    "bypass_actors": [],
+    "rules": [
+      { "type": "deletion" },
+      { "type": "non_fast_forward" },
+      {
+        "type": "pull_request",
+        "parameters": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": false,
+          "require_code_owner_review": false,
+          "require_last_push_approval": false,
+          "required_review_thread_resolution": false,
+          "allowed_merge_methods": ["merge"]
+        }
+      }
+    ]
+  }
+}

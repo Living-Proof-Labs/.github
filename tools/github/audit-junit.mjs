@@ -63,6 +63,10 @@ for (const [repo, state] of entries) {
     else if (actual === 'undefined') cases.push(`<testcase name="${escape(name)}"><error message="GraphQL field unavailable">expected ${escape(JSON.stringify(expected))}</error></testcase>`);
     else cases.push(`<testcase name="${escape(name)}"><failure message="setting drift">actual ${escape(actual)}; expected ${escape(JSON.stringify(expected))}</failure></testcase>`);
   }
+  const pagesName = `${repo} :: pages`;
+  if (policy.pages) cases.push(state.pages === 'matches' ? `<testcase name="${escape(pagesName)}"/>` :
+    ['missing', 'drifted'].includes(state.pages) ? `<testcase name="${escape(pagesName)}"><failure message="required Pages drift">${escape(state.pages)}</failure></testcase>` :
+    `<testcase name="${escape(pagesName)}"><error message="Pages state unverified"/></testcase>`);
   const https = pagesHttpsEnforced(policy, repo.split('/').pop());
   const httpsName = `${repo} :: pages.https_enforced`;
   if (https.report) {

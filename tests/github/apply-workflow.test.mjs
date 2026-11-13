@@ -2,13 +2,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import test from 'node:test';
+import test, { describe } from 'node:test';
 import { spawnSync } from 'node:child_process';
 
 const workflow = readFileSync(path.resolve(import.meta.dirname, '../../.github/workflows/apply-repository-settings.yml'), 'utf8');
 const previewJob = workflow.match(/  preview:[\s\S]*?(?=  apply:)/)?.[0];
 const applyJob = workflow.match(/  apply:[\s\S]*/)?.[0];
 const verification = readFileSync(path.resolve(import.meta.dirname, '../../.github/workflows/verify.yml'), 'utf8');
+
+describe('Protected workflow contract', () => {
 
 test('settings apply is manually dispatched, main-only, and environment-gated', () => {
   assert.match(workflow, /workflow_dispatch:/);
@@ -48,49 +50,18 @@ test('daily strict audit is unattended while apply remains reviewer-gated', () =
   assert.doesNotMatch(previewJob, /environment: repository-administration/);
 });
 
-test('settings apply previews first and scopes privileged changes to explicit inputs', () => {
-  assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --junit/);
-  assert.match(workflow, /--https-only --inventory config\/github\/repositories\.json/);
-  assert.match(workflow, /--plan-output artifacts\/https-plan\.json/);
-  assert.match(workflow, /--expected-plan artifacts\/preview\/https-plan\.json/);
-  assert.match(workflow, /needs: preview/);
-  assert.match(workflow, /permission-pages: read/);
-  assert.match(workflow, /permission-pages: write/);
-  assert.match(workflow, /ref: \$\{\{ github\.sha \}\}/);
-  assert.match(workflow, /if \[ "\$PAGES" = true \]; then arguments\+=\(--apply-pages\)/);
-  assert.match(workflow, /include_release_immutability/);
-  assert.match(workflow, /if \[ "\$RULESET" = true \]/);
-  assert.match(workflow, /if \[ "\$IMMUTABILITY" = true \]/);
-  assert.doesNotMatch(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
-  assert.match(workflow, /--apply-immutable-releases-when-unknown/);
-  assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\)/);
-});
-
-const validation = workflow.match(/- name: Validate selected operation\n        run: \|\n([\s\S]*?)        env:/)?.[1];
-const runValidation = (overrides) => spawnSync('bash', ['-c', validation], {
-  env: { ...process.env, MODE: 'ordinary', APPLY: 'true', TARGET_REPOSITORY: '', PAGES: 'false', RULESET: 'false', IMMUTABILITY: 'false', ...overrides },
-  encoding: 'utf8',
-});
-
-test('ordinary apply rejects inventory-wide selection before token creation', () => {
-  assert.ok(validation);
-  assert.ok(workflow.indexOf('Validate selected operation') < workflow.indexOf('actions/create-github-app-token'));
-  for (const target of ['', 'all']) {
-    assert.equal(runValidation({ TARGET_REPOSITORY: target }).status, 64);
-    assert.equal(runValidation({ TARGET_REPOSITORY: target, APPLY: 'false' }).status, 0);
-    assert.equal(runValidation({ TARGET_REPOSITORY: target, MODE: 'https-only' }).status, 0);
-  }
-  assert.equal(runValidation({ TARGET_REPOSITORY: 'livingproof-evaluator-scenario', PAGES: 'true' }).status, 0);
-});
-
-test('HTTPS-only rejects broader settings options', () => {
-  for (const option of ['PAGES', 'RULESET', 'IMMUTABILITY']) {
-    assert.equal(runValidation({ MODE: 'https-only', [option]: 'true' }).status, 64);
-  }
-});
-
-test('settings runs serialize and HTTPS preview uses read authority', () => {
+test('normal workflow reconciles full inventory through a saved plan with no scope checkboxes', () => {
+  assert.doesNotMatch(workflow, /apply_pages|apply_main_ruleset|include_release_immutability|inputs.repository|inputs.mode|https-only/);
+  assert.match(previewJob, /--dry-run --plan-output artifacts\/settings-plan.json/);
+  assert.match(applyJob, /--apply --expected-plan artifacts\/preview\/settings-plan.json/);
+  assert.match(applyJob, /needs: preview/);
+  assert.match(workflow, /ref: \$\{\{ github.sha \}\}/);
+  assert.match(previewJob, /permission-administration: read/);
+  assert.match(previewJob, /permission-pages: read/);
+  assert.match(applyJob, /permission-pages: write/);
+  assert.match(applyJob, /Strictly verify every registered repository\n        if: always\(\)/);
+  assert.match(applyJob, /--dry-run --fail-on-drift/);
   assert.match(workflow, /concurrency:\n  group: repository-settings\n  cancel-in-progress: false/);
-  assert.match(previewJob, /permission-administration: \$\{\{ inputs.mode == 'https-only' && 'read' \|\| 'write' \}\}/);
-  assert.match(applyJob, /permission-administration: write/);
+});
+
 });

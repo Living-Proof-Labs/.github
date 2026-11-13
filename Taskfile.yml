@@ -85,3 +85,12 @@ tasks:
     cmds:
       - mkdir -p artifacts
       - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/app-bootstrap.xml tests/github/bootstrap-apps.test.mjs
+  github:settings:reconcile:
+    desc: Preview or apply every registered repository using a saved plan and fresh readback
+    cmds:
+      - bash tools/with-node.sh node tools/github/reconcile-inventory.mjs {{.CLI_ARGS}}
+  github:settings:scenarios:
+    desc: Publish inventory reconciliation safety scenarios as JUnit
+    cmds:
+      - mkdir -p artifacts
+      - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/settings-scenarios.xml tests/github/reconcile-inventory.test.mjs tests/github/apply-workflow.test.mjs

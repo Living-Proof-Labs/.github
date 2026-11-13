@@ -49,18 +49,18 @@ export function parseArgs(argv) {
   return options;
 }
 
-function scope(inventory, repo) {
+function scope(inventory, repo, fullInventory = false) {
   validateInventory(inventory);
   if (inventory.owner !== 'Living-Proof-Labs' || !inventory.repositories.includes(repo) ||
-      repo.toLowerCase() === 'unitree-foxglove-sdk') {
+      (!fullInventory && repo.toLowerCase() === 'unitree-foxglove-sdk')) {
     throw new Error('Select one allowed Living-Proof-Labs repository from the canonical inventory; unitree-foxglove-sdk is excluded.');
   }
   return `/repos/${inventory.owner}/${repo}`;
 }
 
 /** Defense in depth: even a faulty planner cannot write outside these fields. */
-export function pagesOnlyApi(api, inventory, repo, dryRun) {
-  const base = scope(inventory, repo);
+export function pagesOnlyApi(api, inventory, repo, dryRun, fullInventory = false) {
+  const base = scope(inventory, repo, fullInventory);
   return {
     get(resource) {
       if (resource !== base && resource !== `${base}/pages`) throw new Error('Pages-only read refused.');
@@ -107,15 +107,15 @@ async function snapshot(api, base) {
 
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
-export async function runPages({ api, inventory, repo, policy, dryRun, expectedPlan }) {
-  const base = scope(inventory, repo);
+export async function runPages({ api, inventory, repo, policy, dryRun, expectedPlan, fullInventory = false }) {
+  const base = scope(inventory, repo, fullInventory);
   validatePages(policy?.pages);
   const decision = pagesHttpsEnforced(policy, repo);
   if (policy?.pages?.build_type !== 'workflow' || (!decision.report && decision.desired !== true)) {
     throw new Error('Pinned policy must require workflow Pages and HTTPS, or declare an HTTPS exemption.');
   }
   if (typeof dryRun !== 'boolean' || (!dryRun && !expectedPlan)) throw new Error('Apply requires a reviewed saved plan.');
-  const scoped = pagesOnlyApi(api, inventory, repo, dryRun);
+  const scoped = pagesOnlyApi(api, inventory, repo, dryRun, fullInventory);
   const before = await snapshot(scoped, base);
   const setup = before.site?.build_type === 'workflow' ? null : { method: before.site ? 'PUT' : 'POST', body: { build_type: 'workflow' } };
   const plan = {
