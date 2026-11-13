@@ -1,17 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { BOT_MANIFESTS, validateBotManifest, validateSettingsManifest, LOCAL_REDIRECT, HOMEPAGE } from './verify-app-manifests.mjs';
+import { BOT_MANIFESTS, validateBotManifest, LOCAL_REDIRECT, HOMEPAGE } from './verify-app-manifests.mjs';
 
 export function validateRegistrationManifest(agent, manifest) {
-  if (BOT_MANIFESTS[agent]) return validateBotManifest(agent, manifest);
-  if (agent === 'repository-settings-audit') return validateSettingsManifest(manifest, 'read');
-  if (agent === 'repository-settings-apply') return validateSettingsManifest(manifest, 'write');
+  if (Object.hasOwn(BOT_MANIFESTS, agent)) return validateBotManifest(agent, manifest);
   // A new manifest is enrolled without adding code or a registry entry. Its
   // permissions are an explicit reviewed proposal, not a live grant.
   const allowed = ['name', 'description', 'url', 'redirect_url', 'public', 'default_permissions', 'default_events'];
   if (!manifest || Object.keys(manifest).some(key => !allowed.includes(key)) || typeof manifest.name !== 'string' || !manifest.name.trim() || manifest.name.length > 34 || typeof manifest.description !== 'string' || !manifest.description.trim() || manifest.public !== false || manifest.url !== HOMEPAGE || manifest.redirect_url !== LOCAL_REDIRECT || !Array.isArray(manifest.default_events) || manifest.default_events.length || !manifest.default_permissions || Array.isArray(manifest.default_permissions) || manifest.default_permissions.metadata !== 'read' || Object.entries(manifest.default_permissions).some(([key, level]) => !/^[a-z_]+$/.test(key) || !['read', 'write'].includes(level))) throw new Error('Invalid registration manifest.');
   return manifest;
+}
+
+// Shared enrollment for bootstrap, audit and token issuance. Reference manifests
+// live outside this directory and are never registration targets.
+export function registrationManifests(root = process.cwd()) {
+  return readdirSync(path.join(root, 'config/github/apps')).sort()
+    .filter(file => file.endsWith('.manifest.json')).map(file => {
+      const agent = file.slice(0, -'.manifest.json'.length);
+      if (!/^[a-z][a-z0-9-]{0,31}$/.test(agent)) throw new Error('Invalid manifest filename.');
+      const manifestPath = `config/github/apps/${file}`;
+      const manifest = validateRegistrationManifest(agent, JSON.parse(readFileSync(path.join(root, manifestPath), 'utf8')));
+      return { agent, manifestPath, manifest };
+    });
 }
 
 export function loadManifestDirectory(root = process.cwd()) {
@@ -20,12 +31,7 @@ export function loadManifestDirectory(root = process.cwd()) {
   const access = json('config/github/app-access.json');
   if (directory.owner !== 'Living-Proof-Labs' || access.owner !== directory.owner) throw new Error('Identity owners disagree.');
   const manifests = {}, apps = [];
-  for (const file of readdirSync(path.join(root, 'config/github/apps')).sort()) {
-    if (!file.endsWith('.manifest.json')) continue;
-    const agent = file.slice(0, -'.manifest.json'.length);
-    if (!/^[a-z0-9-]+$/.test(agent)) throw new Error('Invalid manifest filename.');
-    const manifestPath = `config/github/apps/${file}`;
-    const manifest = validateRegistrationManifest(agent, json(manifestPath));
+  for (const { agent, manifestPath, manifest } of registrationManifests(root)) {
     manifests[agent] = manifest;
     const identities = [];
     for (const entry of access.apps.filter(item => item.manifest === manifestPath)) identities.push({ app_id: entry.app_id, app_slug: entry.app_slug });

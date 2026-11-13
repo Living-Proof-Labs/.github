@@ -119,10 +119,21 @@ change the manifest in the repository before trying again.
 The manifest directory is the registration source of truth. Both
 `task github:apps:bootstrap` and `task github:apps:audit` enumerate every
 `config/github/apps/*.manifest.json` in sorted order. Adding a valid manifest
-is sufficient for enrollment: there is no second bootstrap list. The two
-repository-settings reference manifests are included too; their existence is
-not evidence that two separate live administration Apps should be created.
-Reconcile those references with the owner's existing administration App first.
+is sufficient for enrollment: there is no second bootstrap list. The token
+helper uses the same directory and validates each manifest; no bot-name list or
+agent-directory entry is required. It resolves the directory relative to its own
+script, so calling it from another working directory does not change enrollment.
+Hyphens in names become underscores in credential environment names (for example,
+`design-review` uses `DESIGN_REVIEW_GITHUB_APP_ID`). Existing App ID, private-key,
+installation lookup and token handling remain required and unchanged.
+
+The two repository-settings examples now live in
+[`config/github/app-reference-manifests/`](../config/github/app-reference-manifests/).
+They remain checked by manifest validation but are not registration targets,
+token-helper identities or missing installation-policy entries. They describe
+alternative scopes for the existing administration credential, not two Apps to
+create. Promoting an example into the registration directory would require a
+reviewed, valid registration manifest and the same identity/absence safeguards.
 
 The **Bootstrap agent App identities** workflow runs on relevant pushes to
 `main` and manual dispatch, with read-only repository permissions and serialized runs. It emits a

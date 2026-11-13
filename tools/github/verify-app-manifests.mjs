@@ -9,8 +9,8 @@ export const HOMEPAGE = 'https://github.com/Living-Proof-Labs/.github';
 const MANIFEST_KEYS = ['name', 'description', 'url', 'redirect_url', 'public', 'default_permissions', 'default_events'];
 
 export const SETTINGS_MANIFESTS = [
-  ['config/github/apps/repository-settings-audit.manifest.json', 'read'],
-  ['config/github/apps/repository-settings-apply.manifest.json', 'write']
+  ['config/github/app-reference-manifests/repository-settings-audit.manifest.json', 'read'],
+  ['config/github/app-reference-manifests/repository-settings-apply.manifest.json', 'write']
 ];
 
 // Rivet permissions come from the reviewed access definition, not a second grant list.

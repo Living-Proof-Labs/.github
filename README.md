@@ -248,8 +248,9 @@ environment split.
 ## Bot GitHub Apps
 
 Living Proof Labs uses one private GitHub App for each bot. The manifests
-live with the repository-settings manifests in
-[`config/github/apps/`](config/github/apps/). The
+live in [`config/github/apps/`](config/github/apps/). Repository-settings
+examples live separately in [`config/github/app-reference-manifests/`](config/github/app-reference-manifests/)
+and are not registration targets. The
 [owner guide](docs/GITHUB-APPS.md) is the procedure for registering each App,
 installing it, and storing the private key. The
 [agent directory](config/github/agents.json) lists the agents that have

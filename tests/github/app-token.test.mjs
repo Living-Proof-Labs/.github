@@ -2,13 +2,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createVerify, generateKeyPairSync } from 'node:crypto';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
   AppTokenError,
   BOTS,
+  discoverBots,
+  normalizeBot,
   DEFAULT_ORG,
   envNames,
   loadBotConfig,
@@ -19,6 +21,7 @@ import {
   signAppJwt
 } from '../../tools/github/app-token.mjs';
 import { BOT_MANIFESTS, validateAllFromDisk, validateBotManifest } from '../../tools/github/verify-app-manifests.mjs';
+import { registrationManifests, validateRegistrationManifest } from '../../tools/github/manifest-directory.mjs';
 import { CLASSIC_INSTALLATION_TOKEN, statelessInstallationToken } from './installation-token.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
@@ -68,9 +71,8 @@ function rivetEnv(overrides = {}) {
 
 test('versioned manifests match the least-privilege bot sets', () => {
   validateAllFromDisk(root);
-  for (const bot of BOTS) {
-    const manifest = JSON.parse(readFileSync(path.join(root, BOT_MANIFESTS[bot].file), 'utf8'));
-    assert.equal(validateBotManifest(bot, manifest).name, BOT_MANIFESTS[bot].name);
+  for (const { agent: bot, manifest } of registrationManifests(root)) {
+    assert.equal(validateRegistrationManifest(bot, manifest).name, manifest.name);
     assert.deepEqual(manifest.default_events, []);
     assert.equal(manifest.public, false);
     assert.equal(Object.hasOwn(manifest, 'hook_attributes'), false);
@@ -437,4 +439,33 @@ test('token helper source does not read or write files', () => {
   assert.equal(source.includes('readFile'), false);
   assert.match(wrapper, /app-token\.mjs/);
   assert.equal(wrapper.includes('writeFile'), false);
+});
+
+test('a new valid manifest alone enables token configuration, without agent-directory enrollment', t => {
+  const temporary = mkdtempSync(path.join(tmpdir(), 'token-enrollment-'));
+  t.after(() => rmSync(temporary, { recursive: true, force: true }));
+  mkdirSync(path.join(temporary, 'config/github/apps'), { recursive: true });
+  const file = path.join(temporary, 'config/github/apps/design-review.manifest.json');
+  const manifest = { ...JSON.parse(readFileSync(path.join(root, 'config/github/apps/art.manifest.json'), 'utf8')), name: 'Design review' };
+  writeFileSync(file, JSON.stringify(manifest));
+  assert.deepEqual(discoverBots(temporary), ['design-review']);
+  assert.equal(normalizeBot('Design-Review', temporary), 'design-review');
+  const names = envNames('design-review');
+  assert.equal(names.id, 'DESIGN_REVIEW_GITHUB_APP_ID');
+  const config = loadBotConfig('design-review', { [names.id]: '12345', [names.key]: privateKey }, temporary);
+  assert.equal(config.bot, 'design-review');
+  assert.equal(config.appId, '12345');
+  assert.throws(() => loadBotConfig('design-review', { [names.id]: '12345', [names.key]: '/tmp/key.pem' }, temporary), /file path is rejected/i);
+  manifest.public = true;
+  writeFileSync(file, JSON.stringify(manifest));
+  assert.throws(() => normalizeBot('design-review', temporary), /Could not validate/);
+  assert.throws(() => normalizeBot('../design-review', temporary));
+});
+
+test('token helper excludes settings references and finds manifests outside the current directory', () => {
+  assert.ok(!BOTS.some(bot => bot.startsWith('repository-settings-')));
+  const result = spawnSync(process.execPath, [path.join(root, 'tools/github/app-token.mjs'), 'art'], { cwd: tmpdir(), env: { PATH: process.env.PATH }, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.match(result.stderr, /Set ART_GITHUB_APP_ID/);
 });

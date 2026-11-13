@@ -121,6 +121,13 @@ test('audit automatically covers every manifest and explicitly reports missing i
   const policy=JSON.parse(readFileSync('config/github/app-access.json','utf8'));
   const report=await auditManifestDirectory(policy,{read:reader(),revision:'fixture',configDigest:'fixture',now:()=> '2026-11-13T00:00:00Z'});
   assert.deepEqual(report.registrations.results.map(app=>app.agent),enrolled.config.apps.map(app=>app.agent));
-  for(const agent of ['art','cody','vera','repository-settings-audit','repository-settings-apply']) assert.ok(report.missing_installation_policy.includes(agent));
+  for(const agent of ['art','cody','vera']) assert.ok(report.missing_installation_policy.includes(agent));
   assert.equal(report.status,'incomplete-or-drift');
+});
+
+test('settings reference manifests are validated examples, never bootstrap targets', async t => {
+  assert.equal(enrolled.config.apps.some(app => app.agent.startsWith('repository-settings-')), false);
+  const base = local(t);
+  await assert.rejects(prepare({ ...enrolled, agent: 'repository-settings-apply', directory: path.join(base, 'registration'), interactive: true, read: reader(), confirm: async () => { throw new Error('must not ask'); } }));
+  assert.deepEqual(readdirSync(base), []);
 });
