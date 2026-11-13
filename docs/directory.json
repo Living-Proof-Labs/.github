@@ -91,6 +91,12 @@
       "title": "Unitree Go1",
       "url": "https://docs.livingprooflabs.com/livingproof-unitree-go1/",
       "scope": "Robot package for the Unitree Go1 quadruped"
+    },
+    {
+      "repository": "livingproof-sim-gazebo",
+      "title": "Gazebo simulator",
+      "url": "https://docs.livingprooflabs.com/livingproof-sim-gazebo/",
+      "scope": "Simulator project; robot verification support unfinished"
     }
   ],
   "projects": [
@@ -147,7 +153,7 @@
     {
       "repository": "livingproof-sim-gazebo",
       "title": "Gazebo simulator",
-      "summary": "Simulator project; robot verification support unfinished; hosted manual not yet published"
+      "summary": "Simulator project; robot verification support unfinished"
     },
     {
       "repository": "livingproof-worlds",
