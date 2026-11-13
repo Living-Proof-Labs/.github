@@ -42,7 +42,8 @@ it in policy tooling or another repository.
 
 The strict audit compares `pages.https_enforced` on a repository that already
 has a Pages site. A repository with no Pages site is not an Enforce HTTPS
-failure. The pinned collaboration-guidelines v7.10.0 policy lists `website`
+failure by itself, but required Pages absence counts as Pages drift. Inaccessible
+Pages is unverified. The pinned collaboration-guidelines v7.10.0 policy lists `website`
 in `pages.https_enforced_exempt` with reason `HTTPS terminated at Cloudflare`.
 That repository is reported as `exempt (HTTPS terminated at Cloudflare)` and
 is not drift. The exemption list must be non-empty, and it is accepted only
@@ -60,33 +61,42 @@ It is dated evidence, not a current API measurement.
 
 ## Apply a reviewed change
 
-Open **Actions → Apply repository settings → Run workflow** on `main`. Leave
-**Apply** unchecked for an initial read-only preview. HTTPS-only mode supports
-one registered repository or `all`/blank for the canonical inventory. Ordinary
-preview can cover the inventory, but **ordinary apply requires one named
-registered repository** and rejects `all` or blank before requesting a token.
+Open **Actions → Apply repository settings → Run workflow** on `main`.
+**Apply** is the only input and defaults to false. Every run previews the entire
+canonical inventory; there is no repository selector, HTTPS mode, or scope
+checkbox. Normal reconciliation includes general settings, sponsorships, known
+immutable-release state, Pages setup and HTTPS. Repository-specific HTTPS
+exceptions come from the pinned policy manifest with validated names and reasons.
+The `website` exemption leaves HTTPS unmanaged, never disabled.
 
-| Input | Effect |
-| --- | --- |
-| `repository` | One registered name; `all`/blank only for HTTPS-only or read-only preview |
-| `mode` | `https-only` changes only HTTPS on existing sites; `ordinary` uses the pinned settings helper |
-| `apply` | Writes after preview and the protected reviewer gate |
-| `apply_pages` | Ordinary mode only: includes Pages creation or Actions source correction with the full ordinary apply |
-| `apply_main_ruleset` | Ordinary mode only: adds the separately scoped main-ruleset change |
-| `include_release_immutability` | Ordinary mode only: allows immutability writes when the API state is unknown |
+Review the JSON plan and per-repository summary before approving
+`repository-administration`. The plan binds source, implementation bytes,
+inventory, policy, identity and writable observations. Global binding changes
+refuse all writes; stale repository evidence blocks that repository, while later
+entries continue. Every write has a fresh state check and readback. Unknown
+immutable state never authorizes enabling it. Rulesets are audited only:
+differences require separate review to avoid weakening stronger protection.
+Ruleset evidence may become readable with apply authority; this independent
+audit-only observation does not invalidate reviewed, unrelated writes.
 
-HTTPS-only apply compares fresh evidence with the saved preview and refuses all
-writes if it changed. Ordinary apply does not provide that plan binding; it is
-therefore restricted to one repository. Review the full ordinary policy change
-set: `apply_pages` is **not a Pages-only switch**, and ordinary apply can also
-change general settings and enable release immutability where it is off.
+The full local interface is:
 
-Preview uses `repository-audit`; apply uses `repository-administration` and
-requires its environment review. Runs are serialized, and neither job executes
-pull-request or fork code. Each apply finishes with strict all-repository
-verification and 14-day artifacts. Pages setup does not deploy content; HTTPS-only
-does not create missing sites. Live App permissions and installation acceptance
-must already support the selected operation.
+```sh
+task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json
+task github:settings:reconcile -- --apply --expected-plan artifacts/settings-plan.json
+```
+
+Preview uses `repository-audit` with Administration read and Pages read; apply
+uses the protected `repository-administration` environment with write authority.
+The shared App key can mint broader tokens, so trusted-main access remains a
+security boundary; see the [App guide](github-app-bootstrap.md).
+
+Partial failures and certificate-not-ready remain unresolved, with a nonzero
+apply exit and full-inventory readback. JSON, JUnit and summaries are retained
+for 14 days. Compliant repositories receive no writes. A partial run needs a
+fresh reviewed preview before retry. GitHub cannot atomically bind these reads
+to writes; external changes in that interval remain a risk. Pages setup does not
+deploy content. Manual-only settings remain explicitly unverified by this controller.
 
 ## Apply the pinned policy with a token
 

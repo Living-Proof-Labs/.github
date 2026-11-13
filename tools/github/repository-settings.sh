@@ -63,14 +63,13 @@ if [ "$tool_status" -ne 0 ]; then
   exit "$tool_status"
 fi
 # Compare pages.https_enforced for sites the audit could read. A repository
-# with no Pages site is not drift. An unreadable value is incomplete, not a
+# with no Pages site is required Pages drift. An unreadable value is incomplete, not a
 # pass. v7.10.0 exempts website; that line is not drift.
 "${node[@]}" "$root/tools/github/audit-pages-https.mjs" "$released_policy_file" "$audit_output"
 if [ -n "$result_file" ]; then
   "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file" "$manual_evidence_file"
 fi
-# Exit status and summary: Pages "missing" and "inaccessible" are reported, not
-# enforced. pages.https_enforced: unverified is incomplete (see audit-status.mjs).
+# Exit status and summary: missing Pages is drift; inaccessible is unverified. pages.https_enforced: unverified is incomplete (see audit-status.mjs).
 strict_flag=()
 if [ "$fail_on_drift" = true ]; then strict_flag=(--fail-on-drift); fi
 set +e

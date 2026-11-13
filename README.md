@@ -40,8 +40,8 @@ interface through `.devcontainer/devcontainer.json`.
 For documentation rollout, use `task github:pages:setup -- --help`. This separate
 command requires one named repository in the canonical inventory and a reviewed
 saved preview. It refuses `unitree-foxglove-sdk`, archived, disabled, private, or
-unverified repositories. The ordinary workflow's **Include Pages setup** option
-also reconciles general settings; it is not suitable for a Pages-only request.
+unverified repositories. The normal workflow reconciles the full inventory, including general settings
+and Pages with HTTPS; use the scoped command for a Pages-only request.
 
 After `task setup`, with an existing authorized `GH_TOKEN` in the environment:
 
@@ -233,11 +233,57 @@ site. Publication remains separately authorized.
 | --- | --- | --- |
 | Pull-request report | Pull requests | Informational and secret-free; it never changes settings |
 | Strict audit | Trusted `main`, manual dispatch, and daily schedule | Fails for observable drift, access errors, or unverified required state |
-| Apply repository settings | Manually dispatched trusted-main workflow | Previews one registered repository, then writes only after explicit inputs and environment approval |
+| Apply repository settings | Manually dispatched trusted-main workflow | Previews every registered repository, then applies its saved plan after environment approval |
 
 Audits never auto-remediate drift. The apply workflow always previews first;
-ordinary settings, main protection, and release immutability are separately
-scoped inputs. It follows every apply attempt with strict fleet verification.
+the only workflow choice is preview or protected apply. Both use the complete
+checked-in inventory, including `unitree-foxglove-sdk`. Its exclusion in the older
+Pages-only command was task-specific, not a standing settings exception.
+
+Use `task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json`
+to inspect the exact changes. After review, use the same task with
+`--apply --expected-plan artifacts/settings-plan.json`. The normal workflow saves
+and transfers this plan automatically within one run, pinned to its source commit.
+It binds inventory, implementation bytes, policy, repository identity and observed
+writable state. Audit-only ruleset visibility may change with apply authority
+without invalidating unrelated reviewed writes. Changed configuration refuses the whole apply; changed repository state
+blocks that repository while the rest continue. Every write has a fresh state
+check and readback. Already compliant repositories receive no writes.
+
+General preferences, sponsorships, known immutable-release state and Pages setup
+with HTTPS are reconciled. Exceptions must be reviewed in the pinned policy
+manifest with a repository and nonempty reason; unknown or duplicate repository
+exceptions fail before requests. The existing `website` Cloudflare exemption
+leaves HTTPS unmanaged; it never disables it. Required missing Pages is drift;
+unreadable state and certificate-not-ready remain unresolved. Unknown immutable
+state (including 404) never authorizes a write. An unreadable component remains
+reported while other independently verified components can converge.
+
+Rulesets remain **audit-only** in this path. The pinned desired ruleset allows
+zero reviews and must not overwrite stronger existing protection. Missing or
+different rulesets fail the audit and require a separately reviewed change;
+there is no bypass checkbox. Manual-only settings are explicitly listed as
+unverified by this controller. The older audit's dated manual evidence is not a
+fresh measurement. This change does not provision or broaden credentials.
+
+Every inventory member has JSON and JUnit outcomes plus a job-summary table.
+Partial failures do not roll back successful writes or hide later repositories;
+apply exits unsuccessfully and requires a fresh preview to retry. Every apply
+attempt is followed by another complete read-only audit, with artifacts retained
+14 days. Preview uses Administration read and Pages read; inaccessible fields
+remain unresolved instead of requesting write authority for preview. A reviewer
+approves the disclosed verified subset as well as the unresolved entries.
+GitHub offers no atomic compare-and-swap for these endpoints, so an external
+change in the final read/write interval remains possible. Workflow concurrency
+serializes this workflow only. No content deployment or live-manual verification
+is implied by Pages setup.
+
+`task github:settings:scenarios` runs the mocked safety scenarios and writes
+`artifacts/settings-scenarios.xml`; CI publishes individual results. This work
+supersedes the ordinary workflow orchestration proposed in draft #68; that draft
+must be reconciled before any later merge. The dedicated Pages command from #71
+and legacy CLI remain available, but the normal workflow no longer calls the
+legacy unbound apply path.
 
 The audit credential is available only to trusted-main workflows. Never expose
 the App key to pull-request, fork, or local shell-profile code. The

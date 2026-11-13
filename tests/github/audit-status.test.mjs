@@ -41,21 +41,21 @@ const unreadable = Array.from({ length: 10 }, (_, index) => ({
 }));
 const published = [{ name: 'docs', pages: 'matches' }];
 
-test('strict audit is green when the only differences are missing or inaccessible Pages sources', () => {
+test('strict audit reports missing Pages drift and inaccessible Pages as incomplete', () => {
   const text = audit([...published, ...noPages, ...unreadable]);
   assert.match(text, /^17 difference\(s\) found/m); // what the pinned audit tool would fail on
   const result = strict(text);
-  assert.equal(result.status, 0, result.stdout + result.stderr);
-  assert.match(result.stdout, /compliant \(17 Pages state\(s\) missing or unreadable, reported but not enforced\)/);
+  assert.equal(result.status, 3, result.stdout + result.stderr);
+  assert.match(result.stdout, /incomplete \(7 difference\(s\); 10 Pages state\(s\) unreadable/);
 });
 
-test('strict audit stays red on real repository-settings drift alongside Pages exemptions', () => {
+test('strict audit stays red on real repository-settings drift alongside inaccessible Pages', () => {
   const result = strict(audit([...published, ...noPages, ...unreadable, { name: 'wiki', pages: 'missing', settings: ['has_wiki'] }]));
-  assert.equal(result.status, 2, result.stdout);
-  assert.match(result.stdout, /drift detected \(1 difference\(s\); 18 Pages state\(s\) missing/);
+  assert.equal(result.status, 3, result.stdout);
+  assert.match(result.stdout, /incomplete \(9 difference\(s\); 10 Pages state/);
 });
 
-test('strict audit fails when a Pages site does not enforce HTTPS and ignores a missing site', () => {
+test('strict audit fails when a Pages site does not enforce HTTPS and also fails for a missing site', () => {
   const drifted = audit([{ name: 'docs', pages: 'matches' }]).replace(
     '  pages: matches',
     '  pages: matches\n  pages.https_enforced: false -> true'
@@ -68,8 +68,8 @@ test('strict audit fails when a Pages site does not enforce HTTPS and ignores a 
     '  pages: missing\n  pages.https_enforced: no Pages site'
   );
   const absentResult = strict(absent);
-  assert.equal(absentResult.status, 0, absentResult.stdout);
-  assert.match(absentResult.stdout, /compliant/);
+  assert.equal(absentResult.status, 2, absentResult.stdout);
+  assert.match(absentResult.stdout, /drift detected/);
   const exempt = audit([{ name: 'website', pages: 'matches' }]).replace(
     '  pages: matches',
     '  pages: matches\n  pages.https_enforced: exempt (HTTPS terminated at Cloudflare)'
@@ -78,7 +78,7 @@ test('strict audit fails when a Pages site does not enforce HTTPS and ignores a 
   assert.equal(exemptResult.status, 0, exemptResult.stdout);
 });
 
-test('unreadable Enforce HTTPS is incomplete; a missing site and an exemption are not drift; true passes and false drifts', () => {
+test('unreadable Enforce HTTPS is incomplete; missing sites drift and HTTPS exemptions remain unmanaged; true passes and false drifts', () => {
   const sample = (pages, https) => audit([{ name: 'docs', pages }]).replace(
     `  pages: ${pages}`,
     `  pages: ${pages}\n  pages.https_enforced: ${https}`
@@ -100,8 +100,8 @@ test('unreadable Enforce HTTPS is incomplete; a missing site and an exemption ar
   assert.equal(report.status, 0, report.stdout);
   assert.match(report.stdout, /incomplete \(0 difference\(s\); 1 pages\.https_enforced value\(s\) unknown, not counted as drift\)/);
   assert.doesNotMatch(report.stdout, /compliant/);
-  expectStatus('no Pages site', sample('missing', 'no Pages site'), 0, /compliant/);
-  assert.doesNotMatch(strict(sample('missing', 'no Pages site')).stdout, /unknown|drift detected/);
+  expectStatus('no Pages site', sample('missing', 'no Pages site'), 2, /drift detected/);
+  assert.doesNotMatch(strict(sample('missing', 'no Pages site')).stdout, /unknown|compliant/);
   expectStatus('exempt', sample('matches', 'exempt (HTTPS terminated at Cloudflare)'), 0, /^Audit status: compliant\.$/m);
   expectStatus('enforced true', sample('matches', 'matches'), 0, /^Audit status: compliant\.$/m);
   const drifted = sample('matches', 'false -> true');
@@ -120,13 +120,13 @@ test('unreadable Enforce HTTPS is incomplete; a missing site and an exemption ar
 test('strict audit stays red when a Pages site exists with another source', () => {
   const result = strict(audit([...noPages, { name: 'legacy', pages: 'drifted (source legacy -> workflow)' }]));
   assert.equal(result.status, 2, result.stdout);
-  assert.match(result.stdout, /drift detected \(1 difference\(s\)/);
+  assert.match(result.stdout, /drift detected \(8 difference\(s\)/);
 });
 
 test('unknown immutable release state is still incomplete (exit 3), and nothing is exempted from it', () => {
   const result = strict(audit([...noPages, { name: 'unknown', pages: 'missing', immutable: 'unknown' }]));
   assert.equal(result.status, 3, result.stdout);
-  assert.match(result.stdout, /incomplete \(1 difference\(s\); 8 Pages state/);
+  assert.match(result.stdout, /incomplete \(9 difference\(s\); immutable release state unknown/);
 });
 
 test('without --fail-on-drift drift is reported but exits 0, and an unrecognizable audit exits 4', () => {
@@ -154,7 +154,7 @@ test('audit status output does not print a stateless installation token', () => 
   assert.match(printed, /compliant/);
 });
 
-test('only Pages lines are exempted, never a setting that happens to mention pages', () => {
+test('missing Pages and general settings both count as drift', () => {
   const state = classify('Living-Proof-Labs/x\n  has_pages: true -> false\n  pages: missing\n\n2 difference(s) found; 0 error(s).\n');
-  assert.deepEqual([state.differences, state.pagesNotEnforced, state.enforced], [2, 1, 1]);
+  assert.deepEqual([state.differences, state.pagesNotEnforced, state.enforced], [2, 0, 2]);
 });

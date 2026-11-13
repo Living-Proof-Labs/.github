@@ -237,6 +237,7 @@ export async function fetchPinnedPolicy(pin, fetchImpl) {
   let response;
   try {
     response = await fetchImpl(url, {
+      redirect: 'error',
       headers: { Accept: 'application/vnd.github.raw', 'User-Agent': USER_AGENT }
     });
   } catch (error) {
@@ -525,7 +526,7 @@ export function createGitHubClient({ token, fetchImpl, allowWrites, baseUrl = 'h
       'User-Agent': USER_AGENT,
       'X-GitHub-Api-Version': API_VERSION
     };
-    const init = { method, headers };
+    const init = { method, headers, redirect: 'error' };
     if (graphql || body !== undefined) {
       headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(graphql ? { query: graphql.query, variables: graphql.variables ?? {} } : body);
@@ -657,7 +658,7 @@ async function readRuleset(api, org, name, desired) {
   return { state, id, existing: full.value };
 }
 
-async function observe(api, org, name, policy) {
+export async function observe(api, org, name, policy) {
   const repository = await readResource(api, `/repos/${org}/${name}`);
   if (repository.error) return { repositoryError: repository.error };
   const observed = { repository: repository.value };

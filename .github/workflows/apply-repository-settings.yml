@@ -4,35 +4,8 @@ name: Apply repository settings
 on:
   workflow_dispatch:
     inputs:
-      repository:
-        description: Registered repository; all/blank allowed for HTTPS or preview, ordinary apply requires one name
-        required: false
-        type: string
-      mode:
-        description: HTTPS-only changes existing sites; ordinary uses the pinned settings helper
-        required: true
-        default: https-only
-        type: choice
-        options:
-          - https-only
-          - ordinary
       apply:
-        description: Apply the reviewed preview after the protected reviewer gate
-        required: true
-        default: false
-        type: boolean
-      apply_pages:
-        description: Ordinary mode only — include Pages setup with full ordinary settings reconciliation
-        required: true
-        default: false
-        type: boolean
-      apply_main_ruleset:
-        description: Ordinary mode only — include the separately scoped main-ruleset update
-        required: true
-        default: false
-        type: boolean
-      include_release_immutability:
-        description: Ordinary mode only — also apply release immutability when API state is unknown
+        description: Apply this run's full-inventory preview after protected approval (review all unresolved results)
         required: true
         default: false
         type: boolean
@@ -61,63 +34,32 @@ jobs:
       - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
         with:
           version: '3.54.0'
-      - name: Validate selected operation
-        run: |
-          if [ "$MODE" = https-only ] && { [ "$PAGES" = true ] || [ "$RULESET" = true ] || [ "$IMMUTABILITY" = true ]; }; then
-            echo 'HTTPS-only mode cannot include Pages setup, rulesets or release immutability.' >&2
-            exit 64
-          fi
-          if [ "$MODE" = ordinary ] && [ "$APPLY" = true ] && { [ -z "$TARGET_REPOSITORY" ] || [ "$TARGET_REPOSITORY" = all ]; }; then
-            echo 'Ordinary apply requires one named registered repository; all-inventory ordinary apply is not supported.' >&2
-            exit 64
-          fi
-        env:
-          MODE: ${{ inputs.mode }}
-          APPLY: ${{ inputs.apply }}
-          TARGET_REPOSITORY: ${{ inputs.repository }}
-          PAGES: ${{ inputs.apply_pages }}
-          RULESET: ${{ inputs.apply_main_ruleset }}
-          IMMUTABILITY: ${{ inputs.include_release_immutability }}
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         id: app-token
         with:
           client-id: ${{ vars.REPO_ADMIN_APP_CLIENT_ID }}
           private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          permission-administration: ${{ inputs.mode == 'https-only' && 'read' || 'write' }}
+          permission-administration: read
           permission-pages: read
       - run: task setup
-      - name: Preview selected settings without writes
+      - name: Preview full inventory without writes
         id: preview_operation
         continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
           mkdir -p artifacts
-          printf 'source_revision=%s\nmode=%s\nrepository=%s\n' "$SOURCE_REVISION" "$MODE" "${TARGET_REPOSITORY:-all registered}" > artifacts/operation.txt
-          arguments=()
-          if [ -n "$TARGET_REPOSITORY" ] && [ "$TARGET_REPOSITORY" != all ]; then arguments+=(--repo "$TARGET_REPOSITORY"); fi
-          if [ "$MODE" = https-only ]; then
-            bash scripts/apply-repo-policy --dry-run --https-only --inventory config/github/repositories.json "${arguments[@]}" --plan-output artifacts/https-plan.json --junit artifacts/https-preview.xml | tee artifacts/preview.txt
-          else
-            bash tools/github/repository-settings.sh --junit artifacts/settings-preview.xml "${arguments[@]}" | tee artifacts/preview.txt
-          fi
+          task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json --summary-output artifacts/preview.md --report-output artifacts/preview.json --junit artifacts/settings-preview.xml | tee artifacts/preview.txt
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          MODE: ${{ inputs.mode }}
-          TARGET_REPOSITORY: ${{ inputs.repository }}
-          SOURCE_REVISION: ${{ github.sha }}
-      - name: Record preview result and require a usable plan
+      - name: Record preview result and require a complete plan
         if: always()
         run: |
-          printf 'Preview outcome: %s\n' "$PREVIEW_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$MODE" = https-only ]; then
-            test -s artifacts/https-plan.json
-          else
-            test "$PREVIEW_OUTCOME" = success
-          fi
+          printf 'Preview outcome: %s. Review repository-settings-preview for every repository, planned changes and unresolved state. Rulesets are audit-only.\n' "$PREVIEW_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f artifacts/preview.md ]; then cat artifacts/preview.md >> "$GITHUB_STEP_SUMMARY"; fi
+          test -s artifacts/settings-plan.json
         env:
-          MODE: ${{ inputs.mode }}
           PREVIEW_OUTCOME: ${{ steps.preview_operation.outcome }}
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -160,29 +102,21 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          arguments=()
-          if [ -n "$TARGET_REPOSITORY" ] && [ "$TARGET_REPOSITORY" != all ]; then arguments+=(--repo "$TARGET_REPOSITORY"); fi
-          if [ "$MODE" = https-only ]; then
-            bash scripts/apply-repo-policy --apply --https-only --inventory config/github/repositories.json "${arguments[@]}" --expected-plan artifacts/preview/https-plan.json --junit artifacts/https-apply.xml | tee artifacts/apply.txt
-          else
-            arguments+=(--apply)
-            if [ "$PAGES" = true ]; then arguments+=(--apply-pages); fi
-            if [ "$RULESET" = true ]; then arguments+=(--apply-main-ruleset); fi
-            if [ "$IMMUTABILITY" = true ]; then arguments+=(--apply-immutable-releases-when-unknown); fi
-            bash tools/github/repository-settings.sh "${arguments[@]}" | tee artifacts/apply.txt
-          fi
+          task github:settings:reconcile -- --apply --expected-plan artifacts/preview/settings-plan.json --summary-output artifacts/apply.md --report-output artifacts/apply.json --junit artifacts/settings-apply.xml | tee artifacts/apply.txt
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          MODE: ${{ inputs.mode }}
-          TARGET_REPOSITORY: ${{ inputs.repository }}
-          PAGES: ${{ inputs.apply_pages }}
-          RULESET: ${{ inputs.apply_main_ruleset }}
-          IMMUTABILITY: ${{ inputs.include_release_immutability }}
       - name: Strictly verify every registered repository
         if: always()
-        run: task github:settings:test
+        run: |
+          task github:settings:reconcile -- --dry-run --fail-on-drift --summary-output artifacts/readback.md --report-output artifacts/readback.json --junit artifacts/readback.xml
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Publish complete outcome summary
+        if: always()
+        run: |
+          for report in artifacts/apply.md artifacts/readback.md; do
+            if [ -f "$report" ]; then cat "$report" >> "$GITHUB_STEP_SUMMARY"; fi
+          done
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

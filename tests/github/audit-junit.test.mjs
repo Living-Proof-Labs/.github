@@ -105,7 +105,8 @@ test('junit separates Enforce HTTPS drift from an unreadable value, a match, a m
   assert.match(xml, /actual false -> true; expected true/);
   assert.match(xml, /live :: pages\.https_enforced"\/>/);
   assert.match(xml, /blocked :: pages\.https_enforced"><error message="unverified Enforce HTTPS">/);
-  assert.equal((xml.match(/<failure /g) || []).length, 1);
+  assert.equal((xml.match(/<failure /g) || []).length, 2);
+  assert.match(xml, /plain :: pages"><failure message="required Pages drift"/);
   assert.equal((xml.match(/<error /g) || []).length, 1);
 });
 
