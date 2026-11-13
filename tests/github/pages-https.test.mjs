@@ -140,8 +140,8 @@ test('HTTP 403, a failed fetch, and a non-boolean field are unverified on an oth
   assert.deepEqual(untouched, []);
   assert.match(absent, /pages\.https_enforced: no Pages site/);
   assert.match(exempted, /pages\.https_enforced: exempt \(HTTPS terminated at Cloudflare\)/);
-  assert.equal(decide(absent, true).status, 0);
-  assert.match(decide(absent, true).message, /compliant/);
+  assert.equal(decide(absent, true).status, 2);
+  assert.match(decide(absent, true).message, /drift detected/);
   assert.doesNotMatch(decide(absent, true).message, /unknown/);
   assert.equal(decide(exempted, true).status, 0);
   assert.match(decide(exempted, true).message, /^Audit status: compliant\.$/);

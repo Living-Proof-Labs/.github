@@ -6,7 +6,8 @@
   "public": false,
   "default_permissions": {
     "administration": "read",
-    "metadata": "read"
+    "metadata": "read",
+    "pages": "read"
   },
   "default_events": []
 }

@@ -9,12 +9,17 @@ export const HOMEPAGE = 'https://github.com/Living-Proof-Labs/.github';
 const MANIFEST_KEYS = ['name', 'description', 'url', 'redirect_url', 'public', 'default_permissions', 'default_events'];
 
 export const SETTINGS_MANIFESTS = [
-  ['config/github/apps/repository-settings-audit.manifest.json', 'read'],
-  ['config/github/apps/repository-settings-apply.manifest.json', 'write']
+  ['config/github/app-reference-manifests/repository-settings-audit.manifest.json', 'read'],
+  ['config/github/app-reference-manifests/repository-settings-apply.manifest.json', 'write']
 ];
 
 // Rivet permissions come from the reviewed access definition, not a second grant list.
 export const BOT_MANIFESTS = {
+  art: {
+    file: 'config/github/apps/art.manifest.json',
+    name: 'Living Proof Labs Art',
+    permissions: { contents: 'read', issues: 'write', metadata: 'read', pull_requests: 'write' }
+  },
   rivet: {
     file: 'config/github/apps/rivet.manifest.json',
     name: 'Rivet Agent - Living Proof Labs',
@@ -75,10 +80,9 @@ export function validateManifest(manifest, administration) {
 export function validateSettingsManifest(manifest, administration) {
   validateManifest(manifest, administration);
   assertCommonShape(manifest);
-  if (!samePermissions(manifest.default_permissions, { administration, metadata: 'read' })) {
-    throw new Error('Settings manifest must request only Administration and Metadata.');
+  if (!samePermissions(manifest.default_permissions, { administration, metadata: 'read', pages: administration })) {
+    throw new Error('Settings manifest must request only Administration, Pages at the same level, and Metadata read.');
   }
-  if (Object.hasOwn(manifest.default_permissions, 'pages')) throw new Error('Settings manifest must not request Pages.');
   return manifest;
 }
 

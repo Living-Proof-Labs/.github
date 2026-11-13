@@ -42,7 +42,8 @@ it in policy tooling or another repository.
 
 The strict audit compares `pages.https_enforced` on a repository that already
 has a Pages site. A repository with no Pages site is not an Enforce HTTPS
-failure. The pinned collaboration-guidelines v7.10.0 policy lists `website`
+failure by itself, but required Pages absence counts as Pages drift. Inaccessible
+Pages is unverified. The pinned collaboration-guidelines v7.10.0 policy lists `website`
 in `pages.https_enforced_exempt` with reason `HTTPS terminated at Cloudflare`.
 That repository is reported as `exempt (HTTPS terminated at Cloudflare)` and
 is not drift. The exemption list must be non-empty, and it is accepted only
@@ -54,25 +55,78 @@ unknown evidence and drift are both present, the exit stays incomplete and
 the summary keeps the difference count. Report mode prints that same
 incomplete summary and exits 0.
 
+The strict main/scheduled audit and normal reconciliation share the same
+non-weakening ruleset resolver. Protection that meets or exceeds the baseline
+passes both; weaker or missing protection is drift, and inaccessible or conflicting
+protection is unverified. The read-only wrapper replaces the pinned helper's
+exact ruleset comparison before rendering the summary and JUnit, while retaining
+all other setting evidence and dated manual observations. It does not perform
+ruleset writes or expand token permissions.
+
 UI-only evidence lives in
 [`config/github/manual-settings-evidence.json`](../config/github/manual-settings-evidence.json).
 It is dated evidence, not a current API measurement.
 
 ## Apply a reviewed change
 
-Open **Actions → Apply repository settings → Run workflow** on `main`. Select
-one registered repository and leave **Apply** unchecked for the initial
-preview.
+Open **Actions → Apply repository settings → Run workflow** on `main`.
+**Apply** is the only input and defaults to false. Every run previews the entire
+canonical inventory; there is no repository selector, HTTPS mode, or scope
+checkbox. Normal reconciliation includes general settings, sponsorships, known
+immutable-release state, Pages setup and HTTPS. Repository-specific HTTPS
+exceptions come from the pinned policy manifest with validated names and reasons.
+The `website` exemption leaves HTTPS unmanaged, never disabled.
 
-| Input | Effect |
-| --- | --- |
-| `apply` | Writes ordinary pinned settings after the preview |
-| `apply_main_ruleset` | Adds the separately scoped main-ruleset change |
-| `include_release_immutability` | Allows immutability writes when the API state is unknown |
+Review the JSON plan and per-repository summary before approving
+`repository-administration`. The plan binds source, implementation bytes,
+inventory, policy, identity and writable observations. Global binding changes
+refuse all writes; stale repository evidence blocks that repository, while later
+entries continue. Every write has a fresh state check and readback. After a successful settings
+write, a readback that exactly repeats the complete known pre-write snapshot
+can be read again after 1, 2 and 4 seconds. Writes are never repeated. Only an
+exact expected whole-settings snapshot allows the settings loop to continue;
+unknown values, read errors or unrelated changes stop it immediately. A mismatch
+that outlasts the read budget remains a failure even if the final audit passes.
+The JSON and JUnit reports retain `settingsReadbacks`: the setting, before and
+expected snapshots, each observed snapshot (or read error), attempt number,
+delay and outcome. Existing credential redaction covers these artifacts and
+standard output. Final strict verification and per-repository isolation remain
+required. Unknown
+immutable state never authorizes enabling it. Rulesets are reconciled without lowering protection: create missing named
+repository rulesets, preserve extra rules, retain higher review counts and
+stricter review flags, intersect merge methods and preserve branch coverage.
+Each ruleset action has an exact saved-plan check before writing and fresh
+readback. Newly readable ruleset state cannot authorize an unreviewed action;
+unrelated reviewed work can continue.
 
-An apply run uses `repository-administration`, requires its environment review,
-and finishes with strict all-repository verification plus a 14-day JUnit
-test-result artifact. It never runs from pull-request or fork code.
+Bypass actors, excluded branches, inherited or unknown ownership, incomplete
+fields and incompatible merge methods remain explicit unresolved results. Hidden
+bypass details at preview therefore prevent that update. This is a real access
+boundary, not a successful reconciliation. No new token grant is included.
+The only supported repository-specific exception schema is the pinned policy's
+HTTPS `repo`/`reason` entries; generic overrides are not implemented.
+
+The full local interface is:
+
+```sh
+task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json
+task github:settings:reconcile -- --apply --expected-plan artifacts/settings-plan.json
+```
+
+Preview and apply both use the protected `repository-administration` environment.
+Preview requests a short-lived Administration write / Pages read token because
+GitHub withholds ruleset bypass actors without write-level access. Its planner
+disables REST writes and GraphQL mutations. Preview approval authorizes reads
+only; apply requires a separate approval of its saved plan and Pages write access.
+The shared App key can mint broader tokens, so trusted-main access remains a
+security boundary; see the [App guide](github-app-bootstrap.md).
+
+Partial failures and certificate-not-ready remain unresolved, with a nonzero
+apply exit and full-inventory readback. JSON, JUnit and summaries are retained
+for 14 days. Compliant repositories receive no writes. A partial run needs a
+fresh reviewed preview before retry. GitHub cannot atomically bind these reads
+to writes; external changes in that interval remain a risk. Pages setup does not
+deploy content. Manual-only settings remain explicitly unverified by this controller.
 
 ## Apply the pinned policy with a token
 

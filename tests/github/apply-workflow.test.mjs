@@ -2,16 +2,24 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import test from 'node:test';
+import test, { describe } from 'node:test';
+import { spawnSync } from 'node:child_process';
 
 const workflow = readFileSync(path.resolve(import.meta.dirname, '../../.github/workflows/apply-repository-settings.yml'), 'utf8');
+const previewJob = workflow.match(/  preview:[\s\S]*?(?=  apply:)/)?.[0];
+const applyJob = workflow.match(/  apply:[\s\S]*/)?.[0];
 const verification = readFileSync(path.resolve(import.meta.dirname, '../../.github/workflows/verify.yml'), 'utf8');
+
+describe('Protected workflow contract', () => {
 
 test('settings apply is manually dispatched, main-only, and environment-gated', () => {
   assert.match(workflow, /workflow_dispatch:/);
   assert.doesNotMatch(workflow, /pull_request:/);
   assert.match(workflow, /github\.ref == 'refs\/heads\/main'/);
-  assert.match(workflow, /environment: repository-administration/);
+  assert.ok(applyJob);
+  assert.match(applyJob, /environment: repository-administration/);
+  assert.ok(previewJob);
+  assert.match(previewJob, /environment: repository-administration/);
   assert.match(workflow, /actions\/create-github-app-token@[0-9a-f]{40}/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /permission-administration: write/);
@@ -36,15 +44,26 @@ test('daily strict audit is unattended while apply remains reviewer-gated', () =
   assert.ok(trustedAudit);
   assert.match(trustedAudit, /environment: repository-audit/);
   assert.doesNotMatch(trustedAudit, /environment: repository-administration/);
-  assert.match(workflow, /environment: repository-administration/);
+  assert.ok(applyJob);
+  assert.match(applyJob, /environment: repository-administration/);
+  assert.ok(previewJob);
+  assert.match(previewJob, /environment: repository-administration/);
 });
 
-test('settings apply previews first and scopes privileged changes to explicit inputs', () => {
-  assert.match(workflow, /name: Preview pinned policy[\s\S]*repository-settings\.sh --repo/);
-  assert.match(workflow, /include_release_immutability/);
-  assert.match(workflow, /if \[ '\$\{\{ inputs\.apply_main_ruleset \}\}' = true \]/);
-  assert.match(workflow, /if \[ '\$\{\{ inputs\.include_release_immutability \}\}' = true \]/);
-  assert.doesNotMatch(workflow, /if: inputs\.apply && !inputs\.include_release_immutability/);
-  assert.match(workflow, /--apply-immutable-releases-when-unknown/);
-  assert.match(workflow, /name: Strictly verify every registered repository\n        if: always\(\) && inputs\.apply/);
+test('normal workflow reconciles full inventory through a saved plan with no scope checkboxes', () => {
+  assert.doesNotMatch(workflow, /apply_pages|apply_main_ruleset|include_release_immutability|inputs.repository|inputs.mode|https-only/);
+  assert.match(previewJob, /--dry-run --plan-output artifacts\/settings-plan.json/);
+  assert.match(applyJob, /--apply --expected-plan artifacts\/preview\/settings-plan.json/);
+  assert.match(applyJob, /needs: preview/);
+  assert.match(workflow, /ref: \$\{\{ github.sha \}\}/);
+  assert.match(previewJob, /permission-administration: write/);
+  assert.match(previewJob, /permission-pages: read/);
+  assert.doesNotMatch(previewJob, /permission-pages: write|--apply|skip-token-revoke: true/);
+  assert.match(previewJob, /if: github\.ref == 'refs\/heads\/main'/);
+  assert.match(applyJob, /permission-pages: write/);
+  assert.match(applyJob, /Strictly verify every registered repository\n        if: always\(\)/);
+  assert.match(applyJob, /--dry-run --fail-on-drift/);
+  assert.match(workflow, /concurrency:\n  group: repository-settings\n  cancel-in-progress: false/);
+});
+
 });

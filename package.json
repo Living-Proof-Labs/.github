@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node tools/github/verify-inventory.mjs && node tools/github/verify-agents.mjs && node tools/docs/check-docs.mjs && node tools/github/verify-app-manifests.mjs && node tools/github/audit-app-access.mjs --check-config",
+    "check": "node tools/github/verify-inventory.mjs && node tools/github/verify-agents.mjs && node tools/docs/check-docs.mjs && node tools/github/verify-app-manifests.mjs && node tools/github/audit-app-access.mjs --check-config && node tools/github/bootstrap-apps.mjs --check-config",
     "test": "node --test tests/github/*.test.mjs tests/docs/*.test.mjs"
   },
   "license": "Apache-2.0"

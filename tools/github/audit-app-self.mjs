@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import { isDeepStrictEqual } from 'node:util';
-import { normalizePrivateKey, signAppJwt } from './app-token.mjs';
+import { envNames, normalizePrivateKey, signAppJwt } from './app-token.mjs';
+import { loadManifestDirectory } from './manifest-directory.mjs';
 import { validateAccess, compareApp, githubRead } from './audit-app-access.mjs';
 
 // No installation tokens are minted. Each App can read its own registration and
 // installations with a short-lived, locally signed request; no organization
 // Administration permission or shared owner credential is required.
 export function appReader(desired, env = process.env, fetchImpl = fetch) {
-  const prefix = desired.agent.toUpperCase().replaceAll('-', '_');
-  const id = env[`${prefix}_GITHUB_APP_ID`];
+  const names = envNames(desired.agent);
+  const id = env[names.id];
   if (id !== String(desired.app_id)) throw new Error('App identity must match reviewed configuration.');
-  const key = normalizePrivateKey(env[`${prefix}_GITHUB_APP_PRIVATE_KEY`], `${prefix}_GITHUB_APP_PRIVATE_KEY`);
+  const key = normalizePrivateKey(env[names.key], names.key);
   return endpoint => {
     if (endpoint !== '/app' && !/^\/app\/installations(?:\?per_page=100&page=[1-9][0-9]*|\/[1-9][0-9]*)$/.test(endpoint)) throw new Error('Unexpected App audit endpoint.');
     const {jwt} = signAppJwt(desired.app_id, key);
@@ -30,10 +31,17 @@ export async function collectAppInstallations(read, appId) {
   throw new Error('Installation pagination limit.');
 }
 
-export async function auditAsApp(config, agent, {readerFactory = appReader, revision, configDigest, now = () => new Date().toISOString()} = {}) {
+export async function auditAsApp(config, agent, {readerFactory = appReader, revision, configDigest, now = () => new Date().toISOString(), root = process.cwd()} = {}) {
   validateAccess(config);
-  const desired = config.apps.find(app => app.agent === agent);
-  if (!desired) throw new Error('Choose an enrolled App from the reviewed configuration.');
+  const enrolled = loadManifestDirectory(root);
+  const selected = enrolled.config.apps.find(app => app.agent === agent);
+  if (!selected) throw new Error('Choose an App from the registration manifest directory.');
+  const excluded = enrolled.config.apps.filter(app => app.agent !== agent).map(app => app.agent);
+  const desired = config.apps.find(app => app.agent === agent && app.manifest === selected.manifest);
+  if (!desired) return {schema_version:1, observed_at:now(), configuration_revision:revision, configuration_sha256:configDigest,
+    mode:'read-only', authentication:'app-signed', audited_agents:[agent], excluded_agents:excluded,
+    sources:[], results:[{agent, status:'unverified', reason:'Manifest enrolled; reviewed identity and installation policy are required for App-signed access audit.'}], status:'incomplete-or-drift'};
+  if (!selected.identity || selected.identity.app_id !== desired.app_id || selected.identity.app_slug !== desired.app_slug) throw new Error('Stored identities disagree.');
   const sources = [];
   let registration, installation;
   const record = (endpoint, status, extra = {}) => sources.push({endpoint, status, ...extra});
@@ -42,7 +50,7 @@ export async function auditAsApp(config, agent, {readerFactory = appReader, revi
     registration = await read('/app');
     record('/app', 'read');
     // Verify identity before using another endpoint with this credential.
-    if (registration?.id !== desired.app_id || registration.slug !== desired.app_slug || registration.owner?.login?.toLowerCase() !== config.owner.toLowerCase()) throw new Error('Registration identity mismatch.');
+    if (registration?.id !== desired.app_id || registration.slug !== desired.app_slug || registration.owner?.type !== 'Organization' || registration.owner?.login?.toLowerCase() !== config.owner.toLowerCase()) throw new Error('Registration identity mismatch.');
     const endpoint = `/app/installations/${desired.installation_id}`;
     const direct = await read(endpoint);
     record(endpoint, 'read');
@@ -62,6 +70,6 @@ export async function auditAsApp(config, agent, {readerFactory = appReader, revi
   const result = compareApp(config, desired, registration, installation);
   return {schema_version:1, observed_at:now(), configuration_revision:revision, configuration_sha256:configDigest,
     mode:'read-only', authentication:'app-signed', audited_agents:[agent],
-    excluded_agents:config.apps.filter(app => app.agent !== agent).map(app => app.agent),
+    excluded_agents:excluded,
     sources, results:[result], status:result.status === 'compliant' ? 'compliant' : 'incomplete-or-drift'};
 }

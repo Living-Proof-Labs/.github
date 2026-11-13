@@ -120,6 +120,7 @@ jobs:
           private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           permission-administration: write
+          permission-pages: read
       - run: task setup
       - run: task github:settings:test
         env:
@@ -136,5 +137,71 @@ jobs:
         with:
           name: strict-repository-settings-results
           path: artifacts/repository-settings.xml
+          retention-days: 14
+          if-no-files-found: error
+  app-bootstrap-tests:
+    permissions:
+      contents: read
+      checks: write
+    name: App bootstrap safety scenarios
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - run: task setup
+      - run: task github:apps:bootstrap:test
+      - if: always()
+        uses: dorny/test-reporter@8861569aa5348397e7a26b6dda744c17c9265478 # v2.1.1
+        with:
+          name: App bootstrap scenarios
+          path: artifacts/app-bootstrap.xml
+          reporter: java-junit
+          use-actions-summary: true
+          only-summary: false
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: app-bootstrap-tests
+          path: artifacts/app-bootstrap.xml
+          retention-days: 14
+          if-no-files-found: error
+  settings-scenarios:
+    name: Inventory reconciliation safety scenarios
+    permissions:
+      contents: read
+      checks: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+        with:
+          version: '3.54.0'
+      - run: task setup
+      - run: task github:settings:scenarios
+      - if: always()
+        uses: dorny/test-reporter@8861569aa5348397e7a26b6dda744c17c9265478 # v2.1.1
+        with:
+          name: Inventory reconciliation scenarios
+          path: artifacts/settings-scenarios.xml
+          reporter: java-junit
+          use-actions-summary: true
+          only-summary: false
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: inventory-reconciliation-tests
+          path: artifacts/settings-scenarios.xml
           retention-days: 14
           if-no-files-found: error

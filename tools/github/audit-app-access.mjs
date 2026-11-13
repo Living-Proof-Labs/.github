@@ -101,18 +101,31 @@ export async function audit(config, {read,revision,configDigest,now = () => new 
   return {schema_version:1, observed_at:now(), configuration_revision:revision, configuration_sha256:configDigest, mode:'read-only', sources, results, status:results.every(x=>x.status==='compliant')?'compliant':'incomplete-or-drift'};
 }
 
+// Both commands use the same filesystem enrollment; installation policy is
+// additional evidence, never a registration allowlist.
+export async function auditManifestDirectory(config, options, root = process.cwd()) {
+  const { loadManifestDirectory } = await import('./manifest-directory.mjs');
+  const { plan } = await import('./bootstrap-apps.mjs');
+  const enrolled = loadManifestDirectory(root);
+  const report = await audit(config, options);
+  report.registrations = await plan(enrolled.config, enrolled.manifests, options.read);
+  report.missing_installation_policy = enrolled.config.apps.filter(app => !config.apps.some(policy => policy.manifest === app.manifest)).map(app => app.agent);
+  if (report.missing_installation_policy.length || report.registrations.results.some(app => app.status !== 'verified')) report.status = 'incomplete-or-drift';
+  return report;
+}
+
 export const usage = `Usage: node tools/github/audit-app-access.mjs [--check-config | --as-app <agent> | --help]
 Read-only GitHub App registration and installation permission audit.
-Defaults to config/github/app-access.json. JSON report on stdout; nonzero on drift
+Enrolls every config/github/apps/*.manifest.json; app-access.json adds installation policy. JSON report on stdout; nonzero on drift
 or unavailable evidence. GH_TOKEN (or GITHUB_TOKEN) supplies existing authorized
 read access. No credentials are created and no settings are changed.
 --check-config validates desired state and manifest agreement without network.
---as-app audits only the named enrolled App using its existing
-<AGENT>_GITHUB_APP_ID and <AGENT>_GITHUB_APP_PRIVATE_KEY (RSA PEM text).
-It signs requests in memory and never prints or mints an installation token.
-Example: task github:apps:audit -- --as-app rivet > rivet-access-audit.json`;
+--as-app selects one manifest-backed App and its existing approved key for GET-only
+self-audit. Missing identity or installation policy remains unverified. Other
+manifest agents are explicitly excluded; the default mode still discovers all.
+Example: bash tools/with-node.sh node tools/github/audit-app-access.mjs --as-app rivet > rivet-access-audit.json`;
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+async function main() {
   try {
     const args=process.argv.slice(2);
     if (args.length===1 && args[0]==='--help') { console.log(usage); }
@@ -120,16 +133,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       if(args.length && !(args.length===1 && args[0]==='--check-config') && !(args.length===2 && args[0]==='--as-app')) throw new Error(usage);
       const text=readFileSync('config/github/app-access.json','utf8'); const config=validateAccess(JSON.parse(text));
       for(const app of config.apps) if(comparePermissions(app.permissions,JSON.parse(readFileSync(app.manifest,'utf8')).default_permissions).status!=='compliant') throw new Error('Desired permissions and registration manifest differ.');
+      const { loadManifestDirectory } = await import('./manifest-directory.mjs');
+      const enrolled = loadManifestDirectory();
       if(args[0]==='--check-config') console.log('App access configuration and manifests agree.');
       else {
         const revision=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
-        const dirty=execFileSync('git',['status','--porcelain','--','config/github/app-access.json',...config.apps.map(x=>x.manifest)],{encoding:'utf8'}).trim();
+        const dirty=execFileSync('git',['status','--porcelain','--','config/github/app-access.json','config/github/agents.json',...enrolled.config.apps.map(x=>x.manifest)],{encoding:'utf8'}).trim();
         const options={revision:dirty?`${revision}-dirty`:revision,configDigest:createHash('sha256').update(text).digest('hex')};
         const report=args[0]==='--as-app'
           ? await auditAsApp(config,args[1],options)
-          : await audit(config,{...options,read:endpoint=>githubRead(endpoint,process.env.GH_TOKEN||process.env.GITHUB_TOKEN)});
+          : await auditManifestDirectory(config,{...options,read:endpoint=>githubRead(endpoint,process.env.GH_TOKEN||process.env.GITHUB_TOKEN)});
         console.log(JSON.stringify(report,null,2)); process.exitCode=report.status==='compliant'?0:1;
       }
     }
   } catch { console.error('App access audit could not complete. Check configuration, Git checkout and --help. No secrets logged.'); process.exitCode=1; }
 }
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();

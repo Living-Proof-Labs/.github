@@ -104,12 +104,12 @@ you should expect:
 
 The demo prints JSON. To see the report a person reads, download a published
 example bundle and open its `report.html`. This bundle comes from the
-[capability verifier v1.3.0 release](https://github.com/Living-Proof-Labs/capability-verifier/releases/tag/v1.3.0);
+[capability verifier v1.16.3 release](https://github.com/Living-Proof-Labs/capability-verifier/releases/tag/v1.16.3);
 it is not the output of the demo you just ran.
 
 ```sh
-BASE=https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.3.0
-BUNDLE=capability-verifier-v1.3.0-baseline-22ce11f3-4bbe-5ee8-b0cf-a357ad5e41a8-amd64-40284818922-1.zip
+BASE=https://github.com/Living-Proof-Labs/capability-verifier/releases/download/v1.16.3
+BUNDLE=capability-verifier-v1.16.3-baseline-9c83a567-9471-5c0d-ba5b-9c8c906e215d-amd64-43152187237-1.zip
 
 curl -fsSLO "$BASE/$BUNDLE"
 curl -fsSLO "$BASE/BUNDLE-SHA256SUMS"

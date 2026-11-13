@@ -6,7 +6,7 @@ import { generateKeyPairSync, verify } from 'node:crypto';
 import { appReader, auditAsApp, collectAppInstallations } from '../../tools/github/audit-app-self.mjs';
 const config=JSON.parse(readFileSync(new URL('../../config/github/app-access.json',import.meta.url)));
 const desired=config.apps[0];
-const registration=()=>({id:desired.app_id,slug:desired.app_slug,owner:{login:config.owner},permissions:{...desired.permissions}});
+const registration=()=>({id:desired.app_id,slug:desired.app_slug,owner:{login:config.owner,type:'Organization'},permissions:{...desired.permissions}});
 const installation=()=>({id:desired.installation_id,app_id:desired.app_id,account:{login:config.owner},target_type:'Organization',suspended_at:null,repository_selection:'all',permissions:{...desired.permissions}});
 const reader=(changes={})=>async endpoint=> endpoint in changes ? changes[endpoint] : endpoint==='/app'?registration():endpoint.includes('?')?[installation()]:installation();
 const run=(read)=>auditAsApp(config,'rivet',{readerFactory:()=>read,revision:'abc',configDigest:'def'});
@@ -53,4 +53,16 @@ test('documented command exits with sanitized unverified report when key unavail
  const {spawnSync}=await import('node:child_process');
  const result=spawnSync(process.execPath,['tools/github/audit-app-access.mjs','--as-app','rivet'],{cwd:new URL('../../',import.meta.url),encoding:'utf8',env:{...process.env,RIVET_GITHUB_APP_ID:'',RIVET_GITHUB_APP_PRIVATE_KEY:''}});
  assert.equal(result.status,1);assert.equal(JSON.parse(result.stdout).status,'incomplete-or-drift');assert.equal(result.stderr,'');
+});
+
+test('manifest-only target is explicit unverified evidence, not silently excluded or sent credentials',async()=>{
+ let calls=0;
+ const report=await auditAsApp(config,'cody',{readerFactory:()=>{calls++;throw Error('must not authenticate');}});
+ assert.equal(calls,0);assert.deepEqual(report.audited_agents,['cody']);
+ assert.ok(report.excluded_agents.includes('art'));assert.ok(report.excluded_agents.includes('vera'));
+ assert.equal(report.results[0].status,'unverified');assert.equal(report.status,'incomplete-or-drift');
+});
+test('organization type must be verified before further signed reads',async()=>{
+ let calls=0;const report=await run(async()=>{calls++;return {...registration(),owner:{login:config.owner,type:'User'}};});
+ assert.equal(calls,1);assert.equal(report.status,'incomplete-or-drift');
 });

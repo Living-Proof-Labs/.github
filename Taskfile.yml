@@ -72,3 +72,31 @@ tasks:
     desc: Read-only App registration and installation audit; fail on drift or unverified evidence
     cmds:
       - bash tools/with-node.sh node tools/github/audit-app-access.mjs {{.CLI_ARGS}}
+  github:pages:setup:
+    desc: Preview or reconcile Pages only for one named repository using a saved plan
+    cmds:
+      - bash tools/with-node.sh node tools/github/setup-pages.mjs {{.CLI_ARGS}}
+  github:apps:bootstrap:
+    desc: Read-only identity discovery and owner handoff for every App manifest
+    cmds:
+      - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs {{.CLI_ARGS}}
+  github:apps:bootstrap:report:
+    desc: Save a JSON-only bootstrap plan while retaining failure on unverified evidence
+    cmds:
+      - mkdir -p artifacts
+      # Capture only the planner process, not Task's own failure annotations.
+      - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs > artifacts/app-bootstrap-plan.json
+  github:apps:bootstrap:test:
+    desc: Publish bootstrap safety scenarios as JUnit
+    cmds:
+      - mkdir -p artifacts
+      - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/app-bootstrap.xml tests/github/bootstrap-apps.test.mjs
+  github:settings:reconcile:
+    desc: Preview or apply every registered repository using a saved plan and fresh readback
+    cmds:
+      - bash tools/with-node.sh node tools/github/reconcile-inventory.mjs {{.CLI_ARGS}}
+  github:settings:scenarios:
+    desc: Publish inventory reconciliation safety scenarios as JUnit
+    cmds:
+      - mkdir -p artifacts
+      - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/settings-scenarios.xml tests/github/reconcile-inventory.test.mjs tests/github/apply-workflow.test.mjs

@@ -4,7 +4,7 @@
 # Bot GitHub Apps
 
 This is the organization owner's procedure for registering one private GitHub
-App each for Rivet, Cody, and Vera, then storing the App id and private key
+App each for Rivet, Cody, Vera, and Art, then storing the App id and private key
 on that bot's secret card in Grok Bot. Keel has no manifest in this set yet.
 
 The manifests, [`scripts/app-token`](../scripts/app-token), and
@@ -54,7 +54,7 @@ permission sets.
 
 ## Permissions
 
-These tables are the `default_permissions` objects in the three manifests.
+These tables are the `default_permissions` objects in the bot manifests.
 Each manifest sets `public` to false, `default_events` to `[]`, and no
 webhook. GitHub still adds Metadata read for an App; the manifests request it
 explicitly.
@@ -110,11 +110,128 @@ Name: `Living Proof Labs Vera` (22 characters).
 | pull_requests | write |
 
 GitHub App names are unique across GitHub and are limited to 34 characters.
-The three names above are inside that limit. Keep the manifest name on the
+The bot names above are inside that limit. Keep the manifest name on the
 confirmation page. If GitHub reports that a name is already taken, stop and
 change the manifest in the repository before trying again.
 
+## Repeatable bootstrap and discovery
+
+The manifest directory is the registration source of truth. Both
+`task github:apps:bootstrap` and `task github:apps:audit` enumerate every
+`config/github/apps/*.manifest.json` in sorted order. Adding a valid manifest
+is sufficient for enrollment: there is no second bootstrap list. The token
+helper uses the same directory and validates each manifest; no bot-name list or
+agent-directory entry is required. It resolves the directory relative to its own
+script, so calling it from another working directory does not change enrollment.
+Hyphens in names become underscores in credential environment names (for example,
+`design-review` uses `DESIGN_REVIEW_GITHUB_APP_ID`). Existing App ID, private-key,
+installation lookup and token handling remain required and unchanged.
+
+The two repository-settings examples now live in
+[`config/github/app-reference-manifests/`](../config/github/app-reference-manifests/).
+They remain checked by manifest validation but are not registration targets,
+token-helper identities or missing installation-policy entries. They describe
+alternative scopes for the existing administration credential, not two Apps to
+create. Promoting an example into the registration directory would require a
+reviewed, valid registration manifest and the same identity/absence safeguards.
+
+The **Bootstrap agent App identities** workflow runs on relevant pushes to
+`main` and manual dispatch, with read-only repository permissions and serialized runs. It emits a
+sanitized plan artifact retained for 14 days. It cannot register or install Apps,
+generate keys, or accept new permissions. Its repository token usually cannot
+read private registrations or the organization's installation inventory; an
+unverified result is expected in that case, never permission to create an App.
+Run the same task locally with existing authorized `GH_TOKEN` read access to
+improve evidence. Do not introduce a broad owner token into Actions for this.
+
+The planner verifies stored numeric App ID, slug and organization owner before
+checking permissions and events. Existing identity comes from `agents.json`
+and/or `app-access.json`; disagreement or a partial identity fails closed.
+With no stored identity, it tries a name-derived slug and slugs from the complete
+paginated organization installation list. Names are lookup hints, not identity.
+One exact owner/name match yields an adoption proposal; record its ID and slug
+through a PR and rerun. Multiple matches, an occupied hint, malformed responses,
+403, 404, rate limits and unavailable evidence never produce a create decision.
+Renamed, uninstalled or private Apps may require owner inspection and recording
+their actual identity before they can be found. No key is needed for adoption.
+
+Registration drift is reported without writes. Installation permission checks
+are separate; `permissions-verified` does not mean repository selection was
+verified. Add reviewed installation ID, permissions/justifications and repository
+selection to `app-access.json` for the existing strict audit. A new manifest
+still enrolls without that policy, but its installation remains incomplete.
+Selected-repository membership currently requires independent complete evidence;
+the audit does not mistake token-visible repositories for authoritative scope.
+GitHub's public registration response also does not prove private visibility,
+callback configuration or webhook URL: owners must inspect those settings.
+
+### Art's proposed scope
+
+[`art.manifest.json`](../config/github/apps/art.manifest.json) represents
+**Style and product guidance**: Contents and Metadata read; Issues and Pull
+requests write. This lets Art read source/designs, create granular design issues,
+and comment on or review changes. It grants no Contents write, Actions, Checks,
+Workflows, Pages or Administration. Whether Art should directly edit design files
+is unresolved; this proposal leaves implementation to Cody. Any later expansion
+needs a reviewed manifest change and owner acceptance, not an automatic grant.
+Private registration, no events and the existing loopback callback are retained.
+The token helper accepts `art` using the existing `ART_GITHUB_APP_ID` /
+`ART_GITHUB_APP_PRIVATE_KEY` convention; no credentials are provisioned by this change.
+
+### Owner-confirmed absence handoff
+
+GitHub provides no supported exhaustive REST inventory of organization-owned
+App registrations. An empty installation list and `GET /apps/{slug}` returning
+404 are not absence evidence. Only an organization owner who can inspect the
+complete owned-App settings list, including renamed and uninstalled Apps, can
+supply the missing confirmation for this handoff. Incomplete UI access means stop.
+
+On the owner's computer, use the new guarded entry point before the older raw
+form helper. Choose a private directory outside the checkout with an existing
+parent. Substitute an absolute local path:
+
+```sh
+bash tools/with-node.sh node tools/github/bootstrap-apps.mjs --help
+bash tools/with-node.sh node tools/github/bootstrap-apps.mjs \
+  --prepare cody --directory /private/cody-registration
+```
+
+The command checks active organization-owner membership with the existing token,
+reruns read-only discovery and refuses a known or conflicting identity. It then
+asks the owner to inspect the complete registration inventory **now** and type an
+exact confirmation bound to the organization, role and manifest digest. That
+human observation is explicitly the authority; the code cannot verify the UI
+inspection. No confirmation is accepted from a workflow, pipe or saved plan.
+After confirmation it exclusively creates a mode-0700 directory containing
+mode-0600 `registration.html`, `state` and a nonsecret confirmation record.
+No App is created until the owner submits the browser form.
+
+Use that `state` with the existing loopback callback receiver below, saving the
+code and conversion response in the same private directory. Do not render another
+form (that would produce different state). Finish one App at a time. Recheck the
+owned registrations immediately before submitting and coordinate with other
+owners: GitHub provides no atomic create-if-absent transaction, and an old HTML
+form is not a durable authorization. Never reuse a stale form.
+
+An existing local directory is a retry guard, not global state. If browser
+submission or conversion has an uncertain outcome, **do not** create a fresh
+directory and retry registration: inspect and recover the existing App first.
+Do not upload the state, form, callback code, keys or conversion response as
+artifacts. Store credentials through the existing approved secret procedure,
+record nonsecret identity through a PR, separately review installation repository
+selection/permission acceptance, then rerun bootstrap and audit. Never recreate
+an App to fix drift or regenerate a key on routine runs.
+
+GitHub references: [manifest owner-consent flow](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest),
+[registration lookup](https://docs.github.com/en/rest/apps/apps#get-an-app), and
+[organization installations](https://docs.github.com/en/rest/orgs/orgs#list-app-installations-for-an-organization).
+
 ## Create each App
+
+Use the guarded absence handoff above first. The raw helper instructions below
+remain a low-level reference; they do not perform identity discovery or establish
+absence. If `registration.html` and `state` already exist from the guarded command,
+skip raw form generation and use those files for the callback and conversion.
 
 Run this on the organization owner's computer. Finish one bot before starting
 the next. The callback listens only on `127.0.0.1:8787`, so the browser that
@@ -430,7 +547,9 @@ a key anywhere.
 ## Audit existing App access
 
 `config/github/app-access.json` is the reviewed desired state for existing Apps.
-It currently enrolls Rivet only; other manifests are not audited by this command.
+Registration discovery automatically reads every `config/github/apps/*.manifest.json`.
+Rivet currently has the only reviewed installation policy; other Apps explicitly
+report missing installation policy rather than inheriting Rivet’s grants.
 It records registration and installation identifiers, exact permissions with
 justifications, and repository selection. Rivet's entry retrospectively records
 the owner's requested rollout, not independently verified accepted grants.
@@ -514,11 +633,15 @@ add organization Administration to work around that boundary. With the existing
 approved Rivet App id and private key available in its execution environment:
 
 ```sh
-task github:apps:audit -- --as-app rivet > rivet-access-audit.json
+bash tools/with-node.sh node tools/github/audit-app-access.mjs --as-app rivet > rivet-access-audit.json
 ```
 
-This explicitly audits **only Rivet**, not every configured App. The output lists
-both audited and excluded agents. `RIVET_GITHUB_APP_ID` must match the reviewed
+This explicitly selects **only Rivet**; substitute another registration-manifest
+filename stem to select that App. The output lists audited and excluded agents
+from the manifest directory. A manifest without reviewed identity and installation
+policy returns unverified without attempting authentication. Default audit mode
+still discovers every manifest. Capture the Node process directly as shown so
+Task failure annotations cannot enter the JSON report. `RIVET_GITHUB_APP_ID` must match the reviewed
 configuration; `RIVET_GITHUB_APP_PRIVATE_KEY` is existing RSA private-key text.
 Never put that value in a command argument, report, commit or chat. The command
 reuses the signing helper, signs short-lived requests in memory, and does not
@@ -531,8 +654,10 @@ with its complete listing. Denied reads, missing identity, inconsistent pages,
 suspension and missing fields fail closed. Accepted installation permissions
 remain separate from requested registration permissions. Selected-repository
 membership is still unverified in this slice, even when the selection mode
-matches. Enroll Cody, Vera, Keel and the settings App only after verified identity
-records and an authoritative selected-repository membership reader are ready.
+matches. Adding a manifest enrolls it automatically; verified identity and
+installation policy are additional evidence, not a second enrollment list. The
+settings reference examples remain excluded from registration. No private keys
+are needed for the default discovery mode.
 
 GitHub documents the [App-authenticated endpoints](https://docs.github.com/en/rest/apps/apps)
 and [request signing](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app).
