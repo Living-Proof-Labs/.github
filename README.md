@@ -35,6 +35,45 @@ If Task is not installed, run `bash tools/setup.sh` once, then use
 shell profiles, and keeps tools in this checkout. Codespaces uses the same
 interface through `.devcontainer/devcontainer.json`.
 
+## Set up Pages only
+
+For documentation rollout, use `task github:pages:setup -- --help`. This separate
+command requires one named repository in the canonical inventory and a reviewed
+saved preview. It refuses `unitree-foxglove-sdk`, archived, disabled, private, or
+unverified repositories. The ordinary workflow's **Include Pages setup** option
+also reconciles general settings; it is not suitable for a Pages-only request.
+
+After `task setup`, with an existing authorized `GH_TOKEN` in the environment:
+
+```sh
+task github:pages:setup -- --repo livingproof-evaluator --dry-run --plan-output pages-plan.json
+# Review pages-plan.json before the separately authorized apply:
+task github:pages:setup -- --repo livingproof-evaluator --apply --expected-plan pages-plan.json
+```
+
+The command creates a confirmed-missing site or changes its build type to
+Actions (`workflow`), then reuses the HTTPS-only controller and its policy
+exemptions. It never sends a custom domain or source field. The write guard
+allows only the selected repository's Pages endpoint and a single
+`build_type: workflow` or `https_enforced: true` field. It cannot change general
+preferences, release immutability, rulesets, credentials, or permissions.
+Existing token access must already permit the requested Pages operation; this
+command does not provision access or change the settings workflow.
+
+The saved plan binds repository identity, Pages configuration (including custom
+domain and source), the pinned policy, and inventory. Any mismatch prevents
+writes. State is read again immediately before each write, and setup and HTTPS
+are verified afterward. GitHub's Pages API does not provide an atomic
+compare-and-swap here: concurrent external changes in the final read/write
+interval cannot be prevented. A failed or partial operation is not rolled back;
+inspect the reported failure and review a fresh preview before retrying.
+Certificate provisioning can require a later retry. The plan is a review
+precondition, not a credential or authorization grant.
+
+This command configures Pages only. Each repository still needs its reviewed
+documentation workflow deployed and its live site verified separately. It does
+not dispatch workflows, merge changes, or claim a successful content deployment.
+
 ## Apply repository policy
 
 `scripts/apply-repo-policy` compares the collaboration-guidelines repository
