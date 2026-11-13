@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { observe, planRepository, validatePolicy, fetchPinnedPolicy, createGitHubClient, requireToken, repositoryRoot, GitHubApiError } from './apply-repo-policy.mjs';
 import { validateInventory } from './verify-inventory.mjs';
 import { runPages } from './setup-pages.mjs';
+import { rulesetPlan, applyRuleset, strengthenRuleset } from './reconcile-ruleset.mjs';
 import { redactSecrets } from './redact-secrets.mjs';
 
 export const help = `Usage: task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json
@@ -19,19 +20,19 @@ checkboxes. Preview never writes. Apply requires the saved plan from this source
 revision, inventory and policy; each repository is checked again before writes.
 Known general settings, sponsorships, immutable releases and Pages (including
 HTTPS) are reconciled. Website's policy HTTPS exemption remains unmanaged.
-Unknown immutable state never authorizes a write. Rulesets are audited only:
-changing them needs separate review to preserve stronger existing protection.
+Unknown immutable state never authorizes a write. Rulesets are reconciled without weakening stronger existing protection.
+Each security-sensitive action must match its saved preview and protected approval.
 Failures and readback are reported for every repository; no rollback or automatic
 retry after partial failure. Review a fresh preview to retry. GH_TOKEN is read
 from the environment. --report-output FILE, --summary-output FILE and --junit FILE retain audit evidence;
 --fail-on-drift makes a preview fail on changes as well as unresolved state.
 `;
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const implementationDigest = () => digest(['reconcile-inventory.mjs', 'apply-repo-policy.mjs', 'setup-pages.mjs', 'pages-https.mjs', 'verify-inventory.mjs', 'redact-secrets.mjs'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')));
+const implementationDigest = () => digest(['reconcile-inventory.mjs', 'reconcile-ruleset.mjs', 'apply-repo-policy.mjs', 'setup-pages.mjs', 'pages-https.mjs', 'verify-inventory.mjs', 'redact-secrets.mjs'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')));
 const fields = new Set(['has_wiki', 'has_issues', 'has_discussions', 'has_projects', 'pull_request_creation_policy', 'allow_merge_commit', 'allow_squash_merge', 'allow_rebase_merge', 'merge_commit_title', 'merge_commit_message', 'allow_update_branch', 'allow_auto_merge', 'delete_branch_on_merge']);
 
 export function validateConfiguration(inventory, policy) {
-  validateInventory(inventory); validatePolicy(policy);
+  validateInventory(inventory); validatePolicy(policy); strengthenRuleset(null, policy.main_ruleset);
   if (inventory.owner !== 'Living-Proof-Labs' || new Set(inventory.repositories.map(n => n.toLowerCase())).size !== inventory.repositories.length) throw new Error('Expected unique Living-Proof-Labs inventory.');
   for (const field of Object.keys(policy.repository)) if (!fields.has(field)) throw new Error(`Unsupported general setting: ${field}`);
   if (policy.immutable_releases !== true || policy.pages?.build_type !== 'workflow' || policy.pages?.https_enforced !== true) throw new Error('Policy must require immutable releases, workflow Pages and HTTPS; downgrades refused.');
@@ -53,22 +54,19 @@ async function settingsSnapshot(api, inventory, name, policy) {
       throw error;
     }
   } };
-  const state = await observe(scoped, inventory.owner, name, { ...policy, pages: undefined });
+  const state = await observe(scoped, inventory.owner, name, { ...policy, pages: undefined, main_ruleset: undefined });
   const repo = state.repository;
   if (!Number.isSafeInteger(repo?.id) || repo.full_name !== `${inventory.owner}/${name}` || repo.archived !== false || repo.disabled !== false || repo.visibility !== 'public' || typeof repo.default_branch !== 'string') throw new Error('Repository identity/public active state unverified; no writes.');
   state.repository = Object.fromEntries(['id', 'full_name', 'archived', 'disabled', 'visibility', 'default_branch', ...Object.keys(policy.repository)].filter(key => Object.hasOwn(repo, key)).map(key => [key, repo[key]]));
   return state;
 }
 function settingsPlan(policy, before, owner, name) {
-  const planned = planRepository({ ...policy, pages: undefined }, before, { owner, name });
-  const protectedWrites = planned.writes.filter(write => write.setting === 'main_ruleset');
-  planned.writes = planned.writes.filter(write => write.setting !== 'main_ruleset');
-  if (protectedWrites.length) planned.failures.push({ setting: 'main_ruleset', message: 'Protection differs; separate review required. No ruleset writes are permitted.' });
+  const planned = planRepository({ ...policy, pages: undefined, main_ruleset: undefined }, before, { owner, name });
   return planned;
 }
 
 // An independent transport boundary prevents a planner regression from reaching
-// rulesets, branch protection, domains, access grants or an unregistered target.
+// unreviewed rulesets, branch protection, domains, access grants or an unregistered target.
 export async function writeSettings(api, inventory, name, policy, write) {
   if (!inventory.repositories.includes(name)) throw new Error('Unregistered write refused.');
   const base = `/repos/${inventory.owner}/${name}`;
@@ -87,16 +85,12 @@ export async function writeSettings(api, inventory, name, policy, write) {
   throw new Error('Settings write refused.');
 }
 
-// Ruleset evidence can differ with read versus write token authority. It never
-// authorizes writes here and is reported independently, not used as a precondition
-// for unrelated settings. All writable state remains bound to the reviewed plan.
+// Bind rulesets separately per action so an unavailable ruleset does not hide
+// unrelated work. A newly visible ruleset never authorizes an unreviewed write.
 function writablePlan(entry) {
   const value = structuredClone(entry);
-  if (value.before) delete value.before.ruleset;
-  if (value.settings) {
-    value.settings.lines = value.settings.lines.filter(line => line.setting !== 'main_ruleset');
-    value.settings.failures = value.settings.failures.filter(failure => failure.setting !== 'main_ruleset');
-  }
+  delete value.ruleset;
+  delete value.rulesetError;
   return value;
 }
 
@@ -119,10 +113,14 @@ export async function runInventory({ api, inventory, policy, revision, dryRun, e
     } catch (error) { entry.settingsError = error.message; }
     try { entry.pages = (await runPages({ ...pagesArgs, dryRun: true })).plan; }
     catch (error) { entry.pagesError = error.message; }
-    result.changes = entry.settings?.lines ?? [];
+    try { entry.ruleset = await rulesetPlan(api, inventory, name, policy); }
+    catch (error) { entry.rulesetError = error.message; }
+    result.changes = structuredClone(entry.settings?.lines ?? []);
+    result.ruleset = entry.ruleset ?? { error: entry.rulesetError };
+    if (entry.ruleset?.write) result.changes.push({ setting: 'main_ruleset', current: entry.ruleset.before, desired: entry.ruleset.write.body });
     result.pages = entry.pages ?? { error: entry.pagesError };
     result.failures.push(...(entry.settings?.failures ?? []));
-    for (const key of ['settingsError', 'pagesError']) if (entry[key]) result.failures.push({ setting: key, message: entry[key] });
+    for (const key of ['settingsError', 'pagesError', 'rulesetError']) if (entry[key]) result.failures.push({ setting: key, message: entry[key] });
     if (!dryRun && !equal(writablePlan(entry), writablePlan(expectedPlan.repositories.find(r => r.name === name)))) {
       result.status = 'unresolved';
       result.failures.push({ setting: 'plan', message: 'Repository changed since preview; no writes for this repository. Review a fresh plan.' });
@@ -147,6 +145,14 @@ export async function runInventory({ api, inventory, policy, revision, dryRun, e
         try { result.after.pages = await runPages({ ...pagesArgs, dryRun: false, expectedPlan: entry.pages }); }
         catch (error) { result.failures.push({ setting: 'pages', message: error.message }); }
       }
+      if (entry.ruleset) {
+        try { result.after.ruleset = await applyRuleset(api, inventory, name, policy, expectedPlan.repositories.find(r => r.name === name).ruleset); }
+        catch (error) { result.failures.push({ setting: 'main_ruleset', message: error.message }); }
+      }
+      try {
+        result.after.rulesetAudit = await rulesetPlan(api, inventory, name, policy);
+        if (result.after.rulesetAudit.write) result.failures.push({ setting: 'main_ruleset.readback', message: 'Ruleset drift remains.' });
+      } catch (error) { result.failures.push({ setting: 'main_ruleset.readback', message: error.message }); }
       // Always fresh readback, including after partial write/certificate failures.
       try {
         result.after.settings = settingsPlan(policy, await settingsSnapshot(api, inventory, name, policy), inventory.owner, name);
@@ -162,12 +168,12 @@ export async function runInventory({ api, inventory, policy, revision, dryRun, e
     const pagesDrift = entry.pages && (entry.pages.setup || (entry.pages.https === true && entry.pages.before.site?.https_enforced !== true));
     result.status = result.failures.length ? 'unresolved' : dryRun && (result.changes.length || pagesDrift) ? 'planned' : dryRun ? 'compliant' : 'verified';
   }
-  return { plan, dryRun, repositories: results, failures: results.filter(r => r.failures.length).length, manual: Object.keys(policy.manual_or_unavailable_settings ?? {}), protection: 'audit-only; separate review required for changes' };
+  return { plan, dryRun, repositories: results, failures: results.filter(r => r.failures.length).length, manual: Object.keys(policy.manual_or_unavailable_settings ?? {}), protection: 'non-weakening reconciliation; each action bound to reviewed preview' };
 }
 
 export function summary(report) {
   const rows = report.repositories.map(r => `| ${r.name} | ${r.status} | ${r.changes.length} | ${r.pages?.setup ? 'setup + HTTPS policy' : r.pages?.https ?? 'unverified'} | ${r.failures.length} |`);
-  return `## Repository settings ${report.dryRun ? 'preview' : 'readback'}\n\n${report.repositories.length} registered repositories; ${report.failures} unresolved. Review the JSON artifact for exact before/desired values, write outcomes and failures.\n\n| Repository | Outcome | General/protection differences | Pages | Errors |\n| --- | --- | ---: | --- | ---: |\n${rows.join('\n')}\n\nRulesets: audit-only; separate review required. Manual settings are unverified by this controller: ${report.manual.join(', ')}. Artifacts retained 14 days.\n`;
+  return `## Repository settings ${report.dryRun ? 'preview' : 'readback'}\n\n${report.repositories.length} registered repositories; ${report.failures} unresolved. Review the JSON artifact for exact before/desired values, write outcomes and failures.\n\n| Repository | Outcome | General/protection differences | Pages | Errors |\n| --- | --- | ---: | --- | ---: |\n${rows.join('\n')}\n\nRulesets: non-weakening reconciliation with per-action plan checks. Manual settings are unverified by this controller: ${report.manual.join(', ')}. Artifacts retained 14 days.\n`;
 }
 
 export function junit(report) {

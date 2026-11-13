@@ -80,11 +80,18 @@ entries, before approving the protected apply job. The same source revision and
 saved plan are used for both jobs. Inventory, implementation, policy or revision
 changes refuse apply; changed writable repository evidence blocks that repository
 while others continue. Writes have fresh preconditions and readback. Unknown
-immutable state does not authorize writes. Ruleset differences are audit-only and
-require separate review to protect stronger existing rules. Their visibility can
-change with apply authority without invalidating unrelated reviewed writes.
-Repository-specific HTTPS exceptions must be in the pinned policy manifest with
-reasons; the website Cloudflare exception remains unmanaged.
+immutable state does not authorize writes. Rulesets are reconciled through separately bound actions that preserve stronger
+review requirements, extra rules and branch coverage. The protected approval
+covers the exact disclosed creations/updates; no ruleset deletion is permitted.
+Inherited rulesets, existing bypass actors/exclusions and incompatible or
+unreadable state remain unresolved. If apply reveals previously unreadable
+ruleset details, it cannot add that unreviewed action; other reviewed changes
+can proceed. In particular, hidden bypass actors may prevent previewing an
+update with read authority. No broader token grant is included.
+
+Only HTTPS repository exemptions are supported in the pinned manifest, using
+`repo` and `reason`; generic overrides are not implemented. The website
+Cloudflare exception remains unmanaged.
 
 A preview may produce a complete plan with unresolved outcomes. Its original
 failure is recorded in the summary. Approval authorizes only disclosed, verified

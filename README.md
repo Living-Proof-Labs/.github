@@ -245,8 +245,8 @@ to inspect the exact changes. After review, use the same task with
 `--apply --expected-plan artifacts/settings-plan.json`. The normal workflow saves
 and transfers this plan automatically within one run, pinned to its source commit.
 It binds inventory, implementation bytes, policy, repository identity and observed
-writable state. Audit-only ruleset visibility may change with apply authority
-without invalidating unrelated reviewed writes. Changed configuration refuses the whole apply; changed repository state
+writable state. Ruleset actions have their own exact saved-plan check; newly
+visible ruleset details cannot authorize an unreviewed protection change. Changed configuration refuses the whole apply; changed repository state
 blocks that repository while the rest continue. Every write has a fresh state
 check and readback. Already compliant repositories receive no writes.
 
@@ -259,12 +259,24 @@ unreadable state and certificate-not-ready remain unresolved. Unknown immutable
 state (including 404) never authorizes a write. An unreadable component remains
 reported while other independently verified components can converge.
 
-Rulesets remain **audit-only** in this path. The pinned desired ruleset allows
-zero reviews and must not overwrite stronger existing protection. Missing or
-different rulesets fail the audit and require a separately reviewed change;
-there is no bypass checkbox. Manual-only settings are explicitly listed as
-unverified by this controller. The older audit's dated manual evidence is not a
-fresh measurement. This change does not provision or broaden credentials.
+Rulesets are reconciled as a **minimum protection baseline**, not an exact
+replacement. Missing named repository rulesets are created. Updates preserve
+extra rules and unknown parameters, retain higher review counts and stricter
+review flags, intersect allowed merge methods, retain existing branch coverage,
+and activate enforcement. Every security-sensitive action is disclosed in the
+saved plan and must match fresh evidence before the protected apply. No ruleset
+is deleted and inherited rulesets are never edited.
+
+Existing bypass actors, excluded branches, unknown ownership, incomplete
+protection fields and incompatible merge methods remain unresolved rather than
+silently weakening protection or erasing a possible exception. Preview read
+authority may not expose bypass actors: those updates remain unplanned, even if
+apply can read them later. Resolving that access boundary needs an explicit owner
+decision; this change does not broaden credentials. The supported repository
+exception schema is **HTTPS exemptions only**, with `repo` and `reason` in the
+pinned policy. Generic repository overrides are not implemented. Manual-only
+settings remain explicitly unverified by this controller; dated legacy audit
+evidence is not a fresh measurement.
 
 Every inventory member has JSON and JUnit outcomes plus a job-summary table.
 Partial failures do not roll back successful writes or hide later repositories;

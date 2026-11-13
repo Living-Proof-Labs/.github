@@ -56,7 +56,7 @@ jobs:
       - name: Record preview result and require a complete plan
         if: always()
         run: |
-          printf 'Preview outcome: %s. Review repository-settings-preview for every repository, planned changes and unresolved state. Rulesets are audit-only.\n' "$PREVIEW_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Preview outcome: %s. Review repository-settings-preview for every repository, planned changes and unresolved state. Review each disclosed ruleset action; stronger protection is preserved.\n' "$PREVIEW_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           if [ -f artifacts/preview.md ]; then cat artifacts/preview.md >> "$GITHUB_STEP_SUMMARY"; fi
           test -s artifacts/settings-plan.json
         env:

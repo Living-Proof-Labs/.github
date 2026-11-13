@@ -74,10 +74,19 @@ Review the JSON plan and per-repository summary before approving
 inventory, policy, identity and writable observations. Global binding changes
 refuse all writes; stale repository evidence blocks that repository, while later
 entries continue. Every write has a fresh state check and readback. Unknown
-immutable state never authorizes enabling it. Rulesets are audited only:
-differences require separate review to avoid weakening stronger protection.
-Ruleset evidence may become readable with apply authority; this independent
-audit-only observation does not invalidate reviewed, unrelated writes.
+immutable state never authorizes enabling it. Rulesets are reconciled without lowering protection: create missing named
+repository rulesets, preserve extra rules, retain higher review counts and
+stricter review flags, intersect merge methods and preserve branch coverage.
+Each ruleset action has an exact saved-plan check before writing and fresh
+readback. Newly readable ruleset state cannot authorize an unreviewed action;
+unrelated reviewed work can continue.
+
+Bypass actors, excluded branches, inherited or unknown ownership, incomplete
+fields and incompatible merge methods remain explicit unresolved results. Hidden
+bypass details at preview therefore prevent that update. This is a real access
+boundary, not a successful reconciliation. No new token grant is included.
+The only supported repository-specific exception schema is the pinned policy's
+HTTPS `repo`/`reason` entries; generic overrides are not implemented.
 
 The full local interface is:
 

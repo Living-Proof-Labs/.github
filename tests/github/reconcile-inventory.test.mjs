@@ -5,6 +5,7 @@ import { readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { runInventory, validateConfiguration, junit, writeSettings, main } from '../../tools/github/reconcile-inventory.mjs';
+import { rulesetPlan, applyRuleset } from '../../tools/github/reconcile-ruleset.mjs';
 import { GitHubApiError } from '../../tools/github/apply-repo-policy.mjs';
 const canonical = JSON.parse(readFileSync(new URL('../../config/github/repositories.json', import.meta.url)));
 const policy = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
@@ -17,7 +18,7 @@ function fixture(names = canonical.repositories) {
     repo: { id: i + 1, full_name: `${inventory.owner}/${name}`, archived: false, disabled: false, visibility: 'public', default_branch: 'main', has_pages: true, ...p.repository },
     pages: { build_type: 'workflow', https_enforced: true, cname: null, source: null },
     immutable: { enabled: true }, sponsorship: { id: `NODE_${name}`, hasSponsorshipsEnabled: false },
-    ruleset: { id: 1, ...structuredClone(p.main_ruleset) }
+    ruleset: { id: 1, source_type: 'Repository', source: `${inventory.owner}/${name}`, ...structuredClone(p.main_ruleset) }
   }]));
   const writes = [], reads = [];
   const f = { inventory, policy: p, revision, states, writes, reads };
@@ -37,7 +38,7 @@ function fixture(names = canonical.repositories) {
         if (state.immutable === null) throw new GitHubApiError(404, 'unknown', 'GET', resource);
         return structuredClone(state.immutable);
       }
-      if (suffix === '/rulesets') return state.ruleset ? [{ id: 1, name: p.main_ruleset.name }] : [];
+      if (suffix.startsWith('/rulesets?')) return state.ruleset ? [{ id: 1, name: p.main_ruleset.name, source_type: state.ruleset.source_type, source: state.ruleset.source }] : [];
       if (suffix === '/rulesets/1') return structuredClone(state.ruleset);
       assert.fail(`Unexpected read: ${resource}`);
     },
@@ -48,6 +49,7 @@ function fixture(names = canonical.repositories) {
       if (f.dropWrites) return;
       if (method === 'PATCH' && suffix === '') Object.assign(state.repo, body);
       else if (method === 'PUT' && suffix === '/immutable-releases' && body === undefined) state.immutable = { enabled: true };
+      else if (['POST','PUT'].includes(method) && ['/rulesets', '/rulesets/1'].includes(suffix)) state.ruleset = { id: 1, source_type: 'Repository', source: state.repo.full_name, ...structuredClone(body) };
       else if (['POST','PUT'].includes(method) && suffix === '/pages') {
         assert.ok(Object.keys(body).every(k => ['build_type','https_enforced'].includes(k)));
         assert.notEqual(body.https_enforced, false);
@@ -118,10 +120,11 @@ test('ambiguous immutable 404 is unresolved and never enables immutability blind
   const report = await f.apply((await f.preview()).plan); assert.equal(report.failures, 1);
   assert.equal(f.writes.length, 1); assert.equal(f.writes[0].method, 'PATCH'); assert.match(JSON.stringify(report), /unverified/);
 });
-test('stronger existing rules and missing rulesets are reported and never modified', async () => {
+test('stronger existing rules remain unchanged and missing rulesets are created', async () => {
   const f = fixture(['first','second']); f.states.first.ruleset.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count = 2; f.states.second.ruleset = null;
-  const report = await f.apply((await f.preview()).plan); assert.equal(report.failures, 2); assert.equal(f.writes.length, 0);
-  assert.match(JSON.stringify(report), /separate review required/);
+  const report = await f.apply((await f.preview()).plan); assert.equal(report.failures, 0, JSON.stringify(report)); assert.equal(f.writes.length, 1);
+  assert.equal(f.writes[0].method, 'POST'); assert.match(f.writes[0].resource, /second\/rulesets$/);
+  assert.equal(f.states.first.ruleset.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count, 2);
 });
 test('stale repository state blocks only that repository and preserves subsequent work', async () => {
   const f = fixture(['first','second']); f.states.first.repo.has_wiki = true; f.states.second.repo.has_wiki = true;
@@ -178,12 +181,13 @@ test('saved source fixture matches the checked-in released policy blob pin', asy
   assert.equal(gitBlobSha(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url))), pin.policy_blob_sha);
 });
 
-test('audit-only ruleset visibility changes do not invalidate reviewed settings', async () => {
+test('newly visible rulesets cannot authorize unreviewed actions but allow reviewed general settings', async () => {
   const f = fixture(['first']); f.states.first.repo.has_wiki = true;
   f.failRead = (_name, suffix) => suffix.startsWith('/rulesets');
   const preview = await f.preview(); assert.equal(preview.failures, 1);
   f.failRead = undefined;
-  const report = await f.apply(preview.plan); assert.equal(report.failures, 0); assert.equal(f.writes.length, 1);
+  const report = await f.apply(preview.plan); assert.equal(report.failures, 1); assert.equal(f.writes.length, 1);
+  assert.match(JSON.stringify(report.repositories[0].failures), /differs from reviewed preview/);
 });
 test('newly readable writable state does not silently expand approval', async () => {
   const f = fixture(['first']); f.states.first.immutable = null; f.states.first.repo.has_wiki = true;
@@ -217,7 +221,7 @@ test('CLI preview and apply retain parseable complete reports with mocked transp
     try {
       let value;
       if (u.pathname === '/graphql') { const body = JSON.parse(init.body); value = await f.api.graphql(body.query, body.variables); }
-      else if (init.method === 'GET') value = await f.api.get(u.pathname);
+      else if (init.method === 'GET') value = await f.api.get(u.pathname + u.search);
       else value = await f.api.write(init.method, u.pathname, init.body ? JSON.parse(init.body) : undefined);
       return new Response(JSON.stringify(value ?? {}));
     } catch (error) { return new Response(JSON.stringify({ message: error.message }), { status: error.status ?? 500 }); }
@@ -236,6 +240,62 @@ test('CLI invalid scope and missing plan fail before network requests', async ()
     assert.equal(await main(argv, { env: {}, fetchImpl: async () => { calls++; throw new Error('unexpected'); }, io: { stdout: { write() {} }, stderr: { write() {} } } }), 1);
     assert.equal(calls, 0);
   }
+});
+
+test('ruleset reconciliation strengthens weak fields while preserving stricter reviews, extra rules and covered branches', async () => {
+  const f = fixture(['first']); const state = f.states.first.ruleset;
+  state.enforcement = 'disabled'; state.conditions.ref_name.include = ['refs/heads/release/*'];
+  state.rules = state.rules.filter(r => r.type !== 'non_fast_forward');
+  state.rules.push({ type: 'required_signatures' }, { type: 'required_status_checks', parameters: { strict_required_status_checks_policy: true, required_status_checks: [{ context: 'ci', integration_id: 7 }] } });
+  const pr = state.rules.find(r => r.type === 'pull_request').parameters;
+  pr.required_approving_review_count = 3; pr.require_code_owner_review = true; pr.require_last_push_approval = true; pr.dismiss_stale_reviews_on_push = true; pr.required_review_thread_resolution = true; pr.allowed_merge_methods = ['merge', 'squash']; pr.future_restriction = true;
+  const preview = await f.preview(); const proposed = preview.plan.repositories[0].ruleset.write;
+  assert.equal(proposed.method, 'PUT'); assert.equal(proposed.body.enforcement, 'active');
+  const result = await f.apply(preview.plan); assert.equal(result.failures, 0, JSON.stringify(result));
+  const after = f.states.first.ruleset, afterPr = after.rules.find(r => r.type === 'pull_request').parameters;
+  assert.equal(afterPr.required_approving_review_count, 3);
+  for (const key of ['require_code_owner_review','require_last_push_approval','dismiss_stale_reviews_on_push','required_review_thread_resolution','future_restriction']) assert.equal(afterPr[key], true);
+  assert.deepEqual(afterPr.allowed_merge_methods, ['merge']);
+  assert.deepEqual(after.conditions.ref_name.include, ['refs/heads/release/*', '~DEFAULT_BRANCH']);
+  assert.ok(after.rules.some(r => r.type === 'non_fast_forward')); assert.ok(after.rules.some(r => r.type === 'required_signatures'));
+  assert.deepEqual(after.rules.find(r => r.type === 'required_status_checks'), state.rules.find(r => r.type === 'required_status_checks'));
+  const count = f.writes.length; assert.equal((await f.apply((await f.preview()).plan)).failures, 0); assert.equal(f.writes.length, count);
+});
+for (const conflict of ['bypass', 'excluded', 'inherited', 'unknown ownership', 'missing parameters', 'incompatible merges', 'duplicate rules']) test(`ruleset ${conflict} is unresolved without weakening or hiding other repositories`, async () => {
+  const f = fixture(['first','second']); const r = f.states.first.ruleset;
+  if (conflict === 'bypass') r.bypass_actors = [{ actor_id: 5, actor_type: 'Team', bypass_mode: 'always' }];
+  if (conflict === 'excluded') r.conditions.ref_name.exclude = ['refs/heads/special'];
+  if (conflict === 'inherited') r.source_type = 'Organization';
+  if (conflict === 'unknown ownership') delete r.source;
+  if (conflict === 'missing parameters') delete r.rules.find(r => r.type === 'pull_request').parameters.require_code_owner_review;
+  if (conflict === 'incompatible merges') r.rules.find(r => r.type === 'pull_request').parameters.allowed_merge_methods = ['squash'];
+  if (conflict === 'duplicate rules') r.rules.push({ type: 'deletion' });
+  f.states.second.ruleset = null; const before = structuredClone(r);
+  const report = await f.apply((await f.preview()).plan); assert.equal(report.failures, 1); assert.deepEqual(f.states.first.ruleset, before);
+  assert.equal(report.repositories[1].status, 'verified'); assert.equal(f.writes.length, 1); assert.match(f.writes[0].resource, /second\/rulesets$/);
+});
+test('tampered or stale ruleset actions never authorize a security-sensitive write', async () => {
+  for (const change of ['payload','id','bypass']) {
+    const f = fixture(['first']); f.states.first.ruleset.enforcement = 'disabled'; const plan = (await f.preview()).plan;
+    if (change === 'payload') plan.repositories[0].ruleset.write.body.rules = [];
+    if (change === 'id') plan.repositories[0].ruleset.before.id = 88;
+    if (change === 'bypass') f.states.first.ruleset.bypass_actors = [{ actor_id: 1, actor_type: 'Team', bypass_mode: 'always' }];
+    assert.equal((await f.apply(plan)).failures, 1); assert.equal(f.writes.length, 0);
+  }
+});
+test('ruleset race before write and failed readback are detected', async () => {
+  const f = fixture(['first']); f.states.first.ruleset.enforcement = 'disabled'; const approved = await rulesetPlan(f.api,f.inventory,'first',f.policy);
+  let reads = 0; f.onRead = resource => { if (resource.includes('/rulesets?') && ++reads === 2) f.states.first.ruleset.rules.push({ type: 'required_signatures' }); };
+  await assert.rejects(applyRuleset(f.api,f.inventory,'first',f.policy,approved), /changed before write/); assert.equal(f.writes.length,0);
+  const g = fixture(['first','second']); g.states.first.ruleset.enforcement = 'disabled'; g.dropWrites = true;
+  const result = await g.apply((await g.preview()).plan); assert.equal(result.failures,1); assert.match(JSON.stringify(result.repositories[0].failures), /readback failed/); assert.equal(result.repositories[1].status,'verified');
+});
+test('ruleset inventory follows pagination and rejects duplicate managed names', async () => {
+  const f = fixture(['first']); const get = f.api.get;
+  f.api.get = async resource => resource.includes('/rulesets?') && resource.includes('page=1&') ? Array.from({length:100},(_,i) => ({id:i+10,name:`unrelated-${i}`})) : get(resource);
+  const plan = await rulesetPlan(f.api,f.inventory,'first',f.policy); assert.equal(plan.write,null); assert.ok(f.reads.some(r => r.includes('page=2&')));
+  f.api.get = async resource => resource.includes('/rulesets?') ? [{id:1,name:f.policy.main_ruleset.name},{id:2,name:f.policy.main_ruleset.name}] : get(resource);
+  await assert.rejects(rulesetPlan(f.api,f.inventory,'first',f.policy), /Multiple rulesets/); assert.equal(f.writes.length,0);
 });
 
 });
