@@ -73,6 +73,12 @@
       "title": "Scenario evaluator",
       "url": "https://docs.livingprooflabs.com/livingproof-evaluator-scenario/",
       "scope": "Generic Gherkin step vocabulary and runner over observation bindings"
+    },
+    {
+      "repository": "livingproof-worlds",
+      "title": "Test worlds",
+      "url": "https://docs.livingprooflabs.com/livingproof-worlds/",
+      "scope": "Versioned, engine-neutral robot test worlds"
     }
   ],
   "projects": [
@@ -134,7 +140,7 @@
     {
       "repository": "livingproof-worlds",
       "title": "Test worlds",
-      "summary": "Versioned, engine-neutral robot test worlds (latest release v1.1.1); hosted manual not yet published"
+      "summary": "Versioned, engine-neutral robot test worlds (latest release v1.1.1)"
     },
     {
       "repository": "livingproof-unitree-g1",
