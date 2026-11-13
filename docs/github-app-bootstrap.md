@@ -56,11 +56,14 @@ Configure these two environments in `.github`.
    approval prompt, including their ruleset-bypass checks.
 2. Create **`repository-administration`**. Restrict deployments to `main`, add
    the owner as a required reviewer, and add the same Client ID variable and
-   PEM secret. This environment gates only the manually dispatched write path.
+   PEM secret. This environment gates both manually dispatched preview and apply jobs.
 
 The tradeoff is intentional: the existing strict audit receives Administration write and
-Pages read to reveal managed ruleset data. The new normal preview requests
-Administration read and Pages read; unavailable protection details are unverified. The apply
+Pages read to reveal managed ruleset data. The protected normal preview requests
+a short-lived Administration write / Pages read token for the same visibility.
+Its planner disables REST writes and GraphQL mutations, although the token has
+write authority. Preview approval authorizes reads only. Unavailable protection
+details remain unverified, not evidence of existing bypass actors. The apply
 job requests Administration write and Pages write. The same App key is present
 in both environments, so the audit environment could mint broader tokens if
 trusted workflow code were changed. Its task is read-only, not its underlying
@@ -86,8 +89,8 @@ covers the exact disclosed creations/updates; no ruleset deletion is permitted.
 Inherited rulesets, existing bypass actors/exclusions and incompatible or
 unreadable state remain unresolved. If apply reveals previously unreadable
 ruleset details, it cannot add that unreviewed action; other reviewed changes
-can proceed. In particular, hidden bypass actors may prevent previewing an
-update with read authority. No broader token grant is included.
+can proceed. Missing bypass data remains unresolved even with write-level
+access; never infer that bypass actors exist from an omitted field.
 
 Only HTTPS repository exemptions are supported in the pinned manifest, using
 `repo` and `reason`; generic overrides are not implemented. The website

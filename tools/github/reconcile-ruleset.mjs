@@ -24,7 +24,8 @@ export function strengthenRuleset(existing, desired) {
   if (!existing) return payload(desired);
   validateRules(existing);
   if (existing.name !== desired.name || existing.target !== 'branch' || !['active', 'disabled', 'evaluate'].includes(existing.enforcement)) fail('Ruleset target or identity is incompatible; no write.');
-  if (!equal(existing.bypass_actors, [])) fail('Existing bypass actors are unreadable or require an explicit reviewed exception; no write.');
+  if (!Array.isArray(existing.bypass_actors)) fail('Ruleset bypass actors are unreadable, not known to exist. GitHub requires write-level ruleset access to disclose them; no write.');
+  if (existing.bypass_actors.length) fail('Existing bypass actors require an explicit reviewed exception; no write.');
   const ref = existing.conditions?.ref_name;
   if (!equal(Object.keys(existing.conditions ?? {}), ['ref_name']) || !ref || !Array.isArray(ref.include) || !ref.include.length || ref.include.some(v => typeof v !== 'string') || !equal(ref.exclude, [])) fail('Existing branch exclusions or incomplete conditions require separate review; no write.');
   const next = payload(existing);

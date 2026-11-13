@@ -9,7 +9,7 @@ import { annotateRulesets } from '../../tools/github/audit-rulesets.mjs';
 import { decide } from '../../tools/github/audit-status.mjs';
 import { runInventory, validateConfiguration, junit, writeSettings, main } from '../../tools/github/reconcile-inventory.mjs';
 import { rulesetPlan, applyRuleset } from '../../tools/github/reconcile-ruleset.mjs';
-import { GitHubApiError } from '../../tools/github/apply-repo-policy.mjs';
+import { GitHubApiError, createGitHubClient } from '../../tools/github/apply-repo-policy.mjs';
 const canonical = JSON.parse(readFileSync(new URL('../../config/github/repositories.json', import.meta.url)));
 const policy = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
 const revision = 'a'.repeat(40);
@@ -73,6 +73,34 @@ function fixture(names = canonical.repositories) {
 }
 
 describe('Inventory reconciliation safety', () => {
+
+test('write-capable preview credential cannot send REST writes or GraphQL mutations', () => {
+  let requests = 0;
+  const api = createGitHubClient({ token: 'simulated-administration-write-token', allowWrites: false,
+    fetchImpl: async () => { requests++; throw new Error('Unexpected transport'); } });
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    assert.throws(() => api.write(method, '/repos/Living-Proof-Labs/example/rulesets', {}), /Dry.run|dry.run/i);
+  }
+  assert.throws(() => api.graphql('mutation { updateRepository(input: {}) { clientMutationId } }'), /Dry.run|dry.run/i);
+  assert.equal(requests, 0);
+  const controller = readFileSync(new URL('../../tools/github/reconcile-inventory.mjs', import.meta.url), 'utf8');
+  assert.match(controller, /createGitHubClient\(\{ token, fetchImpl, allowWrites: !dryRun \}\)/);
+});
+
+test('omitted bypass evidence and actual actors have distinct unresolved diagnoses', async () => {
+  const missing = fixture(['first']);
+  delete missing.states.first.ruleset.bypass_actors;
+  const unknown = await missing.preview();
+  assert.match(JSON.stringify(unknown.repositories[0].failures), /unreadable, not known to exist/);
+  assert.doesNotMatch(JSON.stringify(unknown.repositories[0].failures), /Existing bypass actors require/);
+  const actors = fixture(['first']);
+  actors.states.first.ruleset.bypass_actors = [{ actor_id: 5, actor_type: 'Team', bypass_mode: 'always' }];
+  const present = await actors.preview();
+  assert.match(JSON.stringify(present.repositories[0].failures), /Existing bypass actors require/);
+  assert.equal(missing.writes.length, 0);
+  assert.equal(actors.writes.length, 0);
+});
+
 
 test('complete canonical inventory including Foxglove is assessed, with zero preview/compliant writes', async () => {
   const f = fixture(); const preview = await f.preview();

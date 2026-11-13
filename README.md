@@ -269,10 +269,9 @@ is deleted and inherited rulesets are never edited.
 
 Existing bypass actors, excluded branches, unknown ownership, incomplete
 protection fields and incompatible merge methods remain unresolved rather than
-silently weakening protection or erasing a possible exception. Preview read
-authority may not expose bypass actors: those updates remain unplanned, even if
-apply can read them later. Resolving that access boundary needs an explicit owner
-decision; this change does not broaden credentials. The supported repository
+silently weakening protection or erasing a possible exception. GitHub requires
+write-level ruleset access to disclose bypass actors even for a read. Missing
+bypass data is unverified, not evidence that bypass actors exist. The supported repository
 exception schema is **HTTPS exemptions only**, with `repo` and `reason` in the
 pinned policy. Generic repository overrides are not implemented. Manual-only
 settings remain explicitly unverified by this controller; dated legacy audit
@@ -284,8 +283,11 @@ Every inventory member has JSON and JUnit outcomes plus a job-summary table.
 Partial failures do not roll back successful writes or hide later repositories;
 apply exits unsuccessfully and requires a fresh preview to retry. Every apply
 attempt is followed by another complete read-only audit, with artifacts retained
-14 days. Preview uses Administration read and Pages read; inaccessible fields
-remain unresolved instead of requesting write authority for preview. A reviewer
+14 days. Preview uses a short-lived Administration write / Pages read token behind
+the protected `repository-administration` environment. The planner disables REST
+writes and GraphQL mutations; the token itself technically permits administration
+writes. Approving preview authorizes reads only, not a settings apply. Inaccessible
+fields still remain unresolved. A reviewer
 approves the disclosed verified subset as well as the unresolved entries.
 GitHub offers no atomic compare-and-swap for these endpoints, so an external
 change in the final read/write interval remains possible. Workflow concurrency
