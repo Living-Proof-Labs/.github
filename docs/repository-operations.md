@@ -103,8 +103,11 @@ task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-pla
 task github:settings:reconcile -- --apply --expected-plan artifacts/settings-plan.json
 ```
 
-Preview uses `repository-audit` with Administration read and Pages read; apply
-uses the protected `repository-administration` environment with write authority.
+Preview and apply both use the protected `repository-administration` environment.
+Preview requests a short-lived Administration write / Pages read token because
+GitHub withholds ruleset bypass actors without write-level access. Its planner
+disables REST writes and GraphQL mutations. Preview approval authorizes reads
+only; apply requires a separate approval of its saved plan and Pages write access.
 The shared App key can mint broader tokens, so trusted-main access remains a
 security boundary; see the [App guide](github-app-bootstrap.md).
 

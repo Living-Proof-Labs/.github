@@ -19,7 +19,7 @@ test('settings apply is manually dispatched, main-only, and environment-gated', 
   assert.ok(applyJob);
   assert.match(applyJob, /environment: repository-administration/);
   assert.ok(previewJob);
-  assert.doesNotMatch(previewJob, /environment: repository-administration/);
+  assert.match(previewJob, /environment: repository-administration/);
   assert.match(workflow, /actions\/create-github-app-token@[0-9a-f]{40}/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /permission-administration: write/);
@@ -47,7 +47,7 @@ test('daily strict audit is unattended while apply remains reviewer-gated', () =
   assert.ok(applyJob);
   assert.match(applyJob, /environment: repository-administration/);
   assert.ok(previewJob);
-  assert.doesNotMatch(previewJob, /environment: repository-administration/);
+  assert.match(previewJob, /environment: repository-administration/);
 });
 
 test('normal workflow reconciles full inventory through a saved plan with no scope checkboxes', () => {
@@ -56,8 +56,10 @@ test('normal workflow reconciles full inventory through a saved plan with no sco
   assert.match(applyJob, /--apply --expected-plan artifacts\/preview\/settings-plan.json/);
   assert.match(applyJob, /needs: preview/);
   assert.match(workflow, /ref: \$\{\{ github.sha \}\}/);
-  assert.match(previewJob, /permission-administration: read/);
+  assert.match(previewJob, /permission-administration: write/);
   assert.match(previewJob, /permission-pages: read/);
+  assert.doesNotMatch(previewJob, /permission-pages: write|--apply|skip-token-revoke: true/);
+  assert.match(previewJob, /if: github\.ref == 'refs\/heads\/main'/);
   assert.match(applyJob, /permission-pages: write/);
   assert.match(applyJob, /Strictly verify every registered repository\n        if: always\(\)/);
   assert.match(applyJob, /--dry-run --fail-on-drift/);

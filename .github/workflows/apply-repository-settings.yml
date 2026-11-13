@@ -22,7 +22,7 @@ jobs:
     name: Preview pinned policy
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: repository-audit
+    environment: repository-administration
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -40,7 +40,7 @@ jobs:
           client-id: ${{ vars.REPO_ADMIN_APP_CLIENT_ID }}
           private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          permission-administration: read
+          permission-administration: write
           permission-pages: read
       - run: task setup
       - name: Preview full inventory without writes
