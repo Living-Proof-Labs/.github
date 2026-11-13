@@ -124,8 +124,8 @@ repository-settings reference manifests are included too; their existence is
 not evidence that two separate live administration Apps should be created.
 Reconcile those references with the owner's existing administration App first.
 
-The manually dispatched **Bootstrap agent App identities** workflow runs only
-on `main`, with read-only repository permissions and serialized runs. It emits a
+The **Bootstrap agent App identities** workflow runs on relevant pushes to
+`main` and manual dispatch, with read-only repository permissions and serialized runs. It emits a
 sanitized plan artifact retained for 14 days. It cannot register or install Apps,
 generate keys, or accept new permissions. Its repository token usually cannot
 read private registrations or the organization's installation inventory; an

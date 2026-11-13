@@ -1,6 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 name: Bootstrap agent App identities
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/github/apps/**'
+      - 'config/github/agents.json'
+      - 'config/github/app-access.json'
+      - 'tools/github/bootstrap-apps.mjs'
+      - 'tools/github/manifest-directory.mjs'
+      - '.github/workflows/bootstrap-agent-apps.yml'
   workflow_dispatch:
 permissions:
   contents: read
