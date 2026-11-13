@@ -206,12 +206,47 @@ After confirmation it exclusively creates a mode-0700 directory containing
 mode-0600 `registration.html`, `state` and a nonsecret confirmation record.
 No App is created until the owner submits the browser form.
 
-Use that `state` with the existing loopback callback receiver below, saving the
-code and conversion response in the same private directory. Do not render another
-form (that would produce different state). Finish one App at a time. Recheck the
-owned registrations immediately before submitting and coordinate with other
-owners: GitHub provides no atomic create-if-absent transaction, and an old HTML
-form is not a durable authorization. Never reuse a stale form.
+Continue the same session with fixed filenames. Use the owner credential already
+approved for preparation; `gh auth token` must resolve to that same owner for
+conversion. GitHub does not support fine-grained PATs or App user/installation
+tokens for the conversion endpoint. Do not add broad credentials to Actions.
+
+```sh
+# Set this to the exact directory created by --prepare; do not create a new one.
+dir="/private/cody-registration"
+bash tools/with-node.sh node tools/github/registration-handoff.mjs --directory "$dir" --receive
+# While the receiver waits, open registration.html in a browser on this machine.
+# Review the private App manifest and confirm registration on GitHub.
+bash tools/with-node.sh node tools/github/registration-handoff.mjs --directory "$dir" --exchange
+bash tools/with-node.sh node tools/github/registration-handoff.mjs --directory "$dir" --verify
+```
+
+Finish within one hour of preparation. `--receive` accepts exactly one matching
+state/code callback. `--exchange` checks the same active organization owner and
+synchronizes an attempt marker and its parent directory before sending the
+one-time code. Unsupported directory synchronization stops before any POST. It never
+replays an attempted exchange, even after a timeout. The full bounded response
+stays private for recovery. `--verify` checks the returned numeric ID, slug,
+organization owner, permissions, events and RSA key against the current manifest,
+then uses that existing key for a read-only `GET /app` identity check. It writes
+only `identity-proposal.json`, with no keys, tokens, client or webhook secrets.
+Running without an action checks a saved response offline; it does not claim
+live verification. Reuse a saved proposal instead of rerunning conversion.
+
+Record the proposal's nonsecret identity through a PR. Store the App ID and PEM
+through the approved bot secret-card procedure below, then use the proposal's
+installation link in the owner's browser. Select **Living-Proof-Labs** and
+**Only select repositories** for Cody, Vera and Art. The specific repositories
+need an explicit owner decision; no scope is guessed or expanded by this tool.
+Record the installation ID, exact repositories and permission justifications in
+`app-access.json`, then run bootstrap and access audit. Registration verification
+does not imply installation or accepted access. Selected-repository membership
+remains unverified until complete authoritative scope evidence is supplied.
+
+Recheck owned registrations immediately before browser submission and coordinate
+with other owners. GitHub has no atomic create-if-absent transaction. An old form
+is not durable authorization; do not reuse stale forms. Private visibility,
+callback and webhook settings still need the owner's settings-page inspection.
 
 An existing local directory is a retry guard, not global state. If browser
 submission or conversion has an uncertain outcome, **do not** create a fresh
@@ -239,7 +274,7 @@ submits the form has to be on that same computer. The exchange runs
 `gh auth token`. Log `gh` in as an organization owner for that exchange. The
 shared `rivet-agent-lpl` login is the wrong account for it.
 
-The commands below use Rivet. For Cody or Vera, change the manifest path and
+The commands below use Rivet. For Cody, Vera or Art, change the manifest path and
 use a different directory. Write every output file outside the git checkout.
 The tools create those files mode `0600` and refuse to overwrite them.
 
@@ -273,32 +308,8 @@ bash tools/with-node.sh node tools/github/render-app-manifest-form.mjs \
 Cody's manifest is `config/github/apps/cody.manifest.json`. Vera's manifest is
 `config/github/apps/vera.manifest.json`.
 
-GitHub's manifest example puts `state` on the form's action URL. The helper
-writes `state` as a hidden field and leaves the action as
-`https://github.com/organizations/Living-Proof-Labs/settings/apps/new`
-with no query. Before you open the file, add the state from
-`${dir}/state` to that action:
-
-```sh
-python3 - "${dir}/form.html" "${dir}/state" <<'PY'
-import sys
-from pathlib import Path
-form = Path(sys.argv[1])
-state = Path(sys.argv[2]).read_text().strip()
-old = (
-    'action="https://github.com/organizations/'
-    'Living-Proof-Labs/settings/apps/new"'
-)
-new = old[:-1] + "?state=" + state + '"'
-text = form.read_text()
-if old not in text:
-    raise SystemExit("form action did not match")
-form.write_text(text.replace(old, new, 1))
-PY
-```
-
-The action is then
-`https://github.com/organizations/Living-Proof-Labs/settings/apps/new?state=STATE`.
+The generated form action includes URL-encoded `?state=STATE` and the manifest
+POST field. No manual HTML editing is needed.
 The receiver accepts the callback only when that `state` matches the state
 file. Open `form.html` only after the callback receiver in the next step is
 listening. On GitHub's confirmation page, review the manifest: the name is
@@ -398,7 +409,7 @@ repositories, from the owner's rollout. This is an access decision, not a
 requirement to run repository-policy administration as Rivet. Do not change
 installation scope merely to make a read succeed.
 
-For Cody and Vera, choose **Only select repositories** and limit each
+For Cody, Vera and Art, choose **Only select repositories** and limit each
 installation to the repositories where that bot works.
 
 The installation id is optional. It is the number at the end of the
