@@ -49,6 +49,24 @@
       "title": "Collaboration guidelines",
       "url": "https://docs.livingprooflabs.com/collaboration-guidelines/",
       "scope": "Shared contribution and engineering standards"
+    },
+    {
+      "repository": "livingproof-evaluator",
+      "title": "Evaluator contract",
+      "url": "https://docs.livingprooflabs.com/livingproof-evaluator/",
+      "scope": "Shared observable vocabulary, observation binding format and evaluator contract"
+    },
+    {
+      "repository": "livingproof-evaluator-run",
+      "title": "Run evaluator",
+      "url": "https://docs.livingprooflabs.com/livingproof-evaluator-run/",
+      "scope": "Planned evaluation of run infrastructure and evidence suitability; implementation not yet published"
+    },
+    {
+      "repository": "livingproof-booster-t1",
+      "title": "Booster T1",
+      "url": "https://docs.livingprooflabs.com/livingproof-booster-t1/",
+      "scope": "Robot package for the Booster T1 humanoid"
     }
   ],
   "projects": [
@@ -70,12 +88,12 @@
     {
       "repository": "livingproof-evaluator",
       "title": "Evaluator contract",
-      "summary": "Shared observable vocabulary, observation binding format and evaluator contract; hosted manual not yet published"
+      "summary": "Shared observable vocabulary, observation binding format and evaluator contract"
     },
     {
       "repository": "livingproof-evaluator-run",
       "title": "Run evaluator",
-      "summary": "Planned evaluation of run infrastructure and evidence suitability; implementation and hosted manual not yet published"
+      "summary": "Planned evaluation of run infrastructure and evidence suitability; implementation not yet published"
     },
     {
       "repository": "livingproof-evaluator-scenario",
@@ -125,7 +143,7 @@
     {
       "repository": "livingproof-booster-t1",
       "title": "Booster T1",
-      "summary": "Robot package: humanoid; hosted manual not yet published"
+      "summary": "Robot package: humanoid"
     },
     {
       "repository": "unitree-foxglove-sdk",
