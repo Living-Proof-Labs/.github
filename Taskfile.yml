@@ -76,3 +76,12 @@ tasks:
     desc: Preview or reconcile Pages only for one named repository using a saved plan
     cmds:
       - bash tools/with-node.sh node tools/github/setup-pages.mjs {{.CLI_ARGS}}
+  github:apps:bootstrap:
+    desc: Read-only identity discovery and owner handoff for every App manifest
+    cmds:
+      - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs {{.CLI_ARGS}}
+  github:apps:bootstrap:test:
+    desc: Publish bootstrap safety scenarios as JUnit
+    cmds:
+      - mkdir -p artifacts
+      - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/app-bootstrap.xml tests/github/bootstrap-apps.test.mjs

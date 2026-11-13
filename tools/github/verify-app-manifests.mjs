@@ -15,6 +15,11 @@ export const SETTINGS_MANIFESTS = [
 
 // Rivet permissions come from the reviewed access definition, not a second grant list.
 export const BOT_MANIFESTS = {
+  art: {
+    file: 'config/github/apps/art.manifest.json',
+    name: 'Living Proof Labs Art',
+    permissions: { contents: 'read', issues: 'write', metadata: 'read', pull_requests: 'write' }
+  },
   rivet: {
     file: 'config/github/apps/rivet.manifest.json',
     name: 'Rivet Agent - Living Proof Labs',

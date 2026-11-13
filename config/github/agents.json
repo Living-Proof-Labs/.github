@@ -35,6 +35,17 @@
         "app_slug": null,
         "app_id": null
       }
+    },
+    {
+      "id": "art",
+      "role": "Style and product guidance",
+      "manifest": "config/github/apps/art.manifest.json",
+      "github_identity": {
+        "commit_name": null,
+        "commit_email": null,
+        "app_slug": null,
+        "app_id": null
+      }
     }
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "name": "Living Proof Labs Art",
+  "description": "Style and product guidance for Living Proof Labs. Reads source and design documents, proposes granular issues, and comments on or reviews pull requests.",
+  "url": "https://github.com/Living-Proof-Labs/.github",
+  "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
+  "public": false,
+  "default_permissions": {
+    "contents": "read",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+  },
+  "default_events": []
+}
