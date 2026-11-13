@@ -24,7 +24,7 @@ export function registrationForm(manifest, organization, state) {
   const destination = organization
     ? `https://github.com/organizations/${encodeURIComponent(organization)}/settings/apps/new`
     : 'https://github.com/settings/apps/new';
-  return `<!doctype html>\n<title>GitHub App manifest registration</title>\n<form method="post" action="${escape(destination)}">\n  <input type="hidden" name="manifest" value="${escape(JSON.stringify(manifest))}">\n  <input type="hidden" name="state" value="${escape(state)}">\n  <button type="submit">Register this GitHub App with GitHub</button>\n</form>\n<p>Review the manifest before submitting. This form performs the owner-consent browser step only.</p>\n`;
+  return `<!doctype html>\n<title>GitHub App manifest registration</title>\n<form method="post" action="${escape(`${destination}?state=${encodeURIComponent(state)}`)}">\n  <input type="hidden" name="manifest" value="${escape(JSON.stringify(manifest))}">\n  <input type="hidden" name="state" value="${escape(state)}">\n  <button type="submit">Register this GitHub App with GitHub</button>\n</form>\n<p>Review the manifest before submitting. This form performs the owner-consent browser step only.</p>\n`;
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
