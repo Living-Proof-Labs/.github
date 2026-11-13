@@ -53,7 +53,11 @@ export async function continueSession(directory, action, { root = process.cwd(),
   const { config, app, confirmation } = loadSession(directory, root);
   const age = now - Date.parse(confirmation.confirmed_at);
   if (app.identity || age < 0 || age >= 3600000) throw new Error('Session expired or identity already recorded; inspect existing App, never recreate.');
-  if (action === '--receive') return receive(path.join(directory, 'code'), path.join(directory, 'state'), 3600000 - age);
+  if (action === '--receive') {
+    const stateFile = path.join(directory, 'state');
+    if (!/^[A-Za-z0-9_-]{43}$/.test(privateFile(stateFile).trim())) throw new Error('Invalid private callback state.');
+    return receive(path.join(directory, 'code'), stateFile, 3600000 - age);
+  }
   if (action !== '--exchange') throw new Error('Invalid action.');
   const membership = await read(`/user/memberships/orgs/${config.owner}`, bearer);
   if (membership.state !== 'active' || membership.role !== 'admin' || membership.organization?.login?.toLowerCase() !== config.owner.toLowerCase() || membership.user?.login?.toLowerCase() !== confirmation.confirmed_by.toLowerCase()) throw new Error('Use the same approved owner identity as preparation.');

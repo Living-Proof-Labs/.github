@@ -76,3 +76,8 @@ test('conversion transport bounds responses and handles timeout, abort and denie
   if(mode==='success')assert.equal(String(await convert('code','existing',requestImpl)),'{}');else await assert.rejects(convert('code','existing',requestImpl),error=>!error.message.includes('secret-canary'));
  }
 });
+
+test('session refuses unsafe state before starting callback receiver',async t=>{
+ const {dir}=fixture(t);chmodSync(path.join(dir,'state'),0o644);let calls=0;
+ await assert.rejects(continueSession(dir,'--receive',{receive:()=>{calls++;}}));assert.equal(calls,0);
+});
