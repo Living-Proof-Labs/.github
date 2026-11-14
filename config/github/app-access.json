@@ -37,6 +37,59 @@
       "repository_selection": "all",
       "repositories": [],
       "scope_reason": "Owner selected all current and future repositories for engineering delivery; this records intent, not proof of accepted live access."
+    },
+    {
+      "agent": "cody",
+      "app_id": 5754786,
+      "app_slug": "cody-agent-living-proof-labs",
+      "installation_id": 181820269,
+      "manifest": "config/github/apps/cody.manifest.json",
+      "permissions": {
+        "actions": "read",
+        "checks": "read",
+        "contents": "write",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "workflows": "write",
+        "organization_projects": "write"
+      },
+      "justifications": {
+        "actions": "Read continuous integration workflows and runs.",
+        "checks": "Inspect verification checks.",
+        "contents": "Open branches and reviewable code changes.",
+        "issues": "File and coordinate work in issues.",
+        "metadata": "Required repository identity access.",
+        "pull_requests": "Open, comment on, and update pull requests. Merge authority remains with Rivet after required checks pass.",
+        "statuses": "Read legacy commit status checks.",
+        "workflows": "Maintain reviewed workflow files.",
+        "organization_projects": "Move and update Cody's own cards on the Living Proof Labs Delivery organization project board, including using Blocked to request help."
+      },
+      "repository_selection": "selected",
+      "repositories": [
+        "Living-Proof-Labs/.github",
+        "Living-Proof-Labs/capability-verifier",
+        "Living-Proof-Labs/collaboration-guidelines",
+        "Living-Proof-Labs/living-proof-labs.github.io",
+        "Living-Proof-Labs/livingproof",
+        "Living-Proof-Labs/livingproof-booster-t1",
+        "Living-Proof-Labs/livingproof-capability-report",
+        "Living-Proof-Labs/livingproof-common",
+        "Living-Proof-Labs/livingproof-evaluator",
+        "Living-Proof-Labs/livingproof-evaluator-run",
+        "Living-Proof-Labs/livingproof-evaluator-scenario",
+        "Living-Proof-Labs/livingproof-sim-gazebo",
+        "Living-Proof-Labs/livingproof-sim-mujoco",
+        "Living-Proof-Labs/livingproof-unitree-g1",
+        "Living-Proof-Labs/livingproof-unitree-go1",
+        "Living-Proof-Labs/livingproof-verification",
+        "Living-Proof-Labs/livingproof-worlds",
+        "Living-Proof-Labs/robot-capability-specs",
+        "Living-Proof-Labs/unitree-foxglove-sdk",
+        "Living-Proof-Labs/website"
+      ],
+      "scope_reason": "Owner-documented policy is Only select repositories for Cody, limited to the repositories where the developer bot works. This lists the current Living Proof Labs repositories as that working set and records intent, not proof of accepted live membership. Rivet cannot read organization installations (Administration read is out of scope), so the owner must confirm the live selection and this list."
     }
   ]
 }

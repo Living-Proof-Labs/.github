@@ -203,7 +203,15 @@ Name: `Cody Agent - Living Proof Labs` (30 characters).
 | issues | write |
 | metadata | read |
 | pull_requests | write |
+| statuses | read |
 | workflows | write |
+| organization_projects | write |
+
+Cody now has a reviewed installation policy in
+[`config/github/app-access.json`](../config/github/app-access.json).
+`pull_requests: write` is for opening and updating pull requests; merge authority
+remains with Rivet after required checks pass. The App does not request
+Administration.
 
 ### Vera
 
@@ -675,12 +683,17 @@ a key anywhere.
 
 `config/github/app-access.json` is the reviewed desired state for existing Apps.
 Registration discovery automatically reads every `config/github/apps/*.manifest.json`.
-Rivet currently has the only reviewed installation policy; other Apps explicitly
-report missing installation policy rather than inheriting Rivet’s grants.
+Rivet and Cody have reviewed installation policies; Vera and Art explicitly
+report missing installation policy rather than inheriting those grants.
 It records registration and installation identifiers, exact permissions with
 justifications, and repository selection. Rivet's entry retrospectively records
-the owner's requested rollout, not independently verified accepted grants.
-The manifest and validator must match it. Keel identity work remains separate.
+the owner's requested all-repository rollout, not independently verified accepted
+grants. Cody's entry records installation `181820269` from his working App login,
+selected-repository mode per the owner-documented install policy, and the current
+organization repositories as that working set. That list records intent, not
+independently verified live membership; selected-scope membership cannot currently
+pass the audit. The manifest and validator must match each policy. Keel identity
+work remains separate.
 
 ```sh
 bash tools/task.sh github:apps:check

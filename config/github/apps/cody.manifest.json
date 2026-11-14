@@ -11,7 +11,9 @@
     "issues": "write",
     "metadata": "read",
     "pull_requests": "write",
-    "workflows": "write"
+    "statuses": "read",
+    "workflows": "write",
+    "organization_projects": "write"
   },
   "default_events": []
 }

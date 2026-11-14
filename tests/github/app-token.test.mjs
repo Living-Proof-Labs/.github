@@ -81,8 +81,11 @@ test('versioned manifests match the least-privilege bot sets', () => {
     const permissions = BOT_MANIFESTS[bot].permissions;
     assert.equal(Object.hasOwn(permissions, 'administration'), false);
     assert.equal(Object.hasOwn(permissions, 'pages'), false);
-    assert.equal(Object.hasOwn(permissions, 'statuses'), false);
   }
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.vera.permissions, 'statuses'), false);
+  assert.equal(BOT_MANIFESTS.cody.permissions.statuses, 'read');
+  assert.equal(BOT_MANIFESTS.cody.permissions.organization_projects, 'write');
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.cody.permissions, 'deployments'), false);
   const rivet = BOT_MANIFESTS.rivet.permissions;
   assert.equal(rivet.administration, undefined);
   assert.equal(rivet.pages, 'write');
