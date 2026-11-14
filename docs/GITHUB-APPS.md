@@ -5,7 +5,7 @@
 
 This is the organization owner's procedure for registering one private GitHub
 App each for Rivet, Cody, Vera, and Art, then storing the App id and private key
-on that bot's secret card in Grok Bot. Keel has no manifest in this set yet.
+on that bot's secret card in Grok Bot. Keel has no App in this set and must not be recreated.
 
 The manifests, [`scripts/app-token`](../scripts/app-token), and
 `task github:app-token:help` are in this repository,
@@ -21,7 +21,8 @@ this guide from the repository root so `scripts/app-token`,
 agents that have GitHub Apps. It records each role and App manifest path.
 Keel is not in that directory. The manifests do not record a numeric App id, the
 GitHub App slug GitHub assigns at registration, or a git commit identity, so
-those fields are null in the directory.
+unrecorded fields remain null. Cody now has a reviewed registration ID and slug;
+that record alone does not prove working authentication or installation.
 
 The settings-audit credential stays separate. It uses
 `REPO_ADMIN_APP_CLIENT_ID` and `REPO_ADMIN_APP_PRIVATE_KEY` on the
@@ -33,6 +34,97 @@ the client id. The steps below do not register
 Rivet's engineering App does not request Administration. Repository-policy
 changes belong to the dedicated settings credential, not the engineering App.
 The [access audit](#audit-existing-app-access) records and checks that boundary.
+
+## Browser registration without credential exchange
+
+Use `task github:apps:browser` to list every registration manifest and stored
+identity. This path derives GitHub's supported prefilled registration URL from
+the same manifests used by audit. It does not use the manifest POST/conversion
+handshake described later in this guide, and does not obtain or save credentials.
+No CLI token or callback receiver is required. An authorized organization-owner
+browser session is required to inspect inventory and submit GitHub's form.
+
+```sh
+task github:apps:browser -- --help
+task github:apps:browser -- --prepare vera --directory /absolute/private/vera-browser-session
+```
+
+Use a new directory outside the checkout whose parent already exists. The command
+requires an interactive terminal and exact confirmation after inspecting the
+complete owner-visible App inventory, including renamed and uninstalled Apps.
+Stop for incomplete access, ambiguous identity, or an App already serving that
+role. A 404 or failed audit is never absence. Coordinate with other owners.
+Recorded identities, including Cody and Rivet, cannot be prepared for creation.
+
+Open the resulting `registration_url` in the authorized owner browser. Review all
+fields and permissions against `required_readback` before submitting. Private
+organization-only visibility, disabled webhooks, no OAuth callbacks, no OAuth
+on installation, and disabled device flow are required. Device flow has no
+documented query parameter, so check it explicitly. The manifest's loopback
+`redirect_url` belongs to the alternative conversion flow and is deliberately
+not mapped to an OAuth callback. No image assets are stored in this repository;
+set each App icon manually after confirming its agent-image mapping.
+
+A generated URL is reusable; it is not a one-time server-side lock. The script
+refuses reuse of a local session directory, but cannot prevent another owner or
+browser tab from submitting. After any uncertain submission, inspect settings
+and adopt the existing registration rather than creating another App.
+
+After creation, read back the numeric App ID, assigned slug, homepage, visibility,
+description, all permissions/events and disabled features from owner settings. Do not infer
+the slug from the name. Save only these nonsecret fields to a local JSON file:
+
+```json
+{
+  "schema_version": 1,
+  "agent": "vera",
+  "owner": "Living-Proof-Labs",
+  "manifest_sha256": "COPY_FROM_PREPARED_SESSION",
+  "source": "owner-settings-readback",
+  "app_id": 123,
+  "app_slug": "COPY_EXACT_REGISTERED_SLUG",
+  "name": "Vera Agent - Living Proof Labs",
+  "description": "Verification for Living Proof Labs. Reads code and continuous integration, comments and reviews pull requests, and files issues for verification failures.",
+  "url": "https://github.com/Living-Proof-Labs/.github",
+  "public": false,
+  "webhook_active": false,
+  "request_oauth_on_install": false,
+  "device_flow_enabled": false,
+  "callback_urls": [],
+  "permissions": {"actions":"read","checks":"read","contents":"read","issues":"write","metadata":"read","pull_requests":"write"},
+  "events": []
+}
+```
+
+Replace example ID, slug and digest with observed values, then run:
+
+```sh
+task github:apps:browser -- --adopt vera --readback /absolute/private/vera-readback.json
+```
+
+The script rejects unexpected fields (including credential fields), mismatched
+settings and conflicting recorded identities. It prints a nonsecret proposal;
+review and commit only the ID (as a string) and slug under `github_identity` in
+`config/github/agents.json`. It does not rewrite configuration automatically.
+This is an owner-readback assertion, not independent authenticated verification.
+Authentication and installation remain explicitly unverified. Repeated matching
+adoption is a no-op proposal; conflicts require investigation, never replacement.
+
+Cody's pilot registration was read back as **Cody Agent - Living Proof Labs**,
+App ID **5754786**, slug **cody-agent-living-proof-labs**, with exactly its manifest
+permissions and private/disabled-feature settings. No key was generated and no
+installation was made during that registration. Aaron will generate its key
+in GitHub and deliver it directly to Cody's Grok secret card. Keep key material
+out of scripts, chat, logs and repositories. Key generation/delivery and selected
+repository installation grants are separate authorized steps. Do not claim a
+usable agent identity until App authentication and approved installation access
+have been verified. Preserve Rivet. Register Vera and Art only after this tested
+script is merged, using their own manifests and fresh owner inventory inspection.
+
+GitHub documents this supported browser flow in
+[registering a GitHub App using URL parameters](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-using-url-parameters).
+The legacy manifest-conversion commands below remain an alternative that returns
+secrets; they are not part of this no-secret browser procedure.
 
 ## Checkout
 
