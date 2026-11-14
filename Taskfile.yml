@@ -85,7 +85,7 @@ tasks:
     cmds:
       - mkdir -p artifacts
       # Capture only the planner process, not Task's own failure annotations.
-      - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs > artifacts/app-bootstrap-plan.json
+      - bash tools/with-node.sh node tools/github/bootstrap-apps.mjs {{.CLI_ARGS}} > artifacts/app-bootstrap-plan.json
   github:apps:bootstrap:test:
     desc: Publish bootstrap safety scenarios as JUnit
     cmds:

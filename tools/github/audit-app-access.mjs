@@ -67,7 +67,31 @@ export async function githubRead(endpoint, token, fetchImpl = fetch) {
   const url = new URL(endpoint, 'https://api.github.com');
   if (url.origin !== 'https://api.github.com' || url.username || url.password) throw new Error('Invalid GitHub origin.');
   const response = await fetchImpl(url.href, {method:'GET',redirect:'error',signal:AbortSignal.timeout(30000),headers:{Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2026-03-10','User-Agent':'living-proof-labs-access-audit',...(token ? {Authorization:`Bearer ${token}`} : {})}});
-  if (!response.ok) { const error = new Error('GitHub read failed.'); error.httpStatus = response.status; throw error; }
+  if (!response.ok) {
+    const error = new Error('GitHub read failed.');
+    error.httpStatus = response.status;
+    error.rateLimited = response.headers?.get('x-ratelimit-remaining') === '0' || Boolean(response.headers?.get('retry-after'));
+    error.visibilityLimited = response.status === 404;
+    // Unknown 403s fail closed, including secondary rate limits without headers.
+    // Inspect only a bounded error payload and never return or log its content.
+    if (response.status === 403 && !error.rateLimited && response.body?.getReader) {
+      const reader = response.body.getReader();
+      try {
+        const chunks = []; let size = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          size += value.byteLength;
+          if (size > 8192) throw new Error('Oversized error response.');
+          chunks.push(Buffer.from(value));
+        }
+        const message = JSON.parse(Buffer.concat(chunks).toString('utf8')).message;
+        error.visibilityLimited = ['Resource not accessible by integration', 'Resource not accessible by personal access token'].includes(message);
+      } catch { /* Unclassified response remains an execution failure. */ }
+      finally { await reader.cancel().catch(() => {}); }
+    }
+    throw error;
+  }
   return response.json();
 }
 

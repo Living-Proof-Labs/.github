@@ -9,6 +9,8 @@ on:
       - 'config/github/app-access.json'
       - 'tools/github/bootstrap-apps.mjs'
       - 'tools/github/manifest-directory.mjs'
+      - 'tools/github/audit-app-access.mjs'
+      - 'Taskfile.yml'
       - '.github/workflows/bootstrap-agent-apps.yml'
   workflow_dispatch:
 permissions:
@@ -33,14 +35,14 @@ jobs:
       - run: task setup
       - run: task github:apps:check
       - name: Read identities and report owner handoffs
-        run: task github:apps:bootstrap:report
+        run: task github:apps:bootstrap:report -- --allow-incomplete-visibility
         env:
           GH_TOKEN: ${{ github.token }}
       - if: always()
         name: Explain evidence limits
         run: |
           echo '## Agent App bootstrap' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Read-only plan. Unknown, inaccessible and 404 responses never authorize creation. Review the plan artifact and docs/GITHUB-APPS.md. Registration and installation need an owner; no keys or consent forms are uploaded. Art uses the proposed design-review scope.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Read-only plan. Unknown, inaccessible and 404 responses never authorize creation. Review the plan artifact and docs/GITHUB-APPS.md. Registration and installation need an owner; no keys or consent forms are uploaded. This informational job tolerates only typed incomplete visibility (recognized access-denial 403 or ambiguous 404); a successful job is not verified App access. Authentication failures, rate limits, malformed evidence, conflicts, drift and other execution errors still fail. The strict access audit remains failing on incomplete evidence.' >> "$GITHUB_STEP_SUMMARY"
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

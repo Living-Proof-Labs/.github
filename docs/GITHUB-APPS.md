@@ -296,6 +296,8 @@ sanitized plan artifact retained for 14 days. It cannot register or install Apps
 generate keys, or accept new permissions. Its repository token usually cannot
 read private registrations or the organization's installation inventory; an
 unverified result is expected in that case, never permission to create an App.
+The workflow tolerates only [typed incomplete visibility](#informational-bootstrap-visibility);
+its success does not establish identity or access compliance.
 Run the same task locally with existing authorized `GH_TOKEN` read access to
 improve evidence. Do not introduce a broad owner token into Actions for this.
 
@@ -942,3 +944,30 @@ Those actions and live end-to-end identity verification remain pending approval.
 References: [pinned token action](https://github.com/actions/create-github-app-token/tree/64ab729a6294000f5aa4a4bc0b73d1f32bc45510),
 [environment approval](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),
 and [environment secret timing](https://docs.github.com/en/actions/reference/security/secrets).
+
+
+### Informational bootstrap visibility
+
+The default-token bootstrap workflow uses
+`task github:apps:bootstrap:report -- --allow-incomplete-visibility`.
+The JSON artifact remains read-only and explicitly records `incomplete-visibility`
+when GitHub returns a recognized access-denial 403 or an ambiguous 404 for
+registration or installation reads. Neither
+response proves absence or authorizes creation. A successful informational job
+means the report ran, not that identities or grants were verified.
+
+The planner's `outcome` distinguishes `complete`, `incomplete-visibility`,
+`owner-action-required` and `failure`; `sources` contains safe endpoint/status
+metadata without response bodies. Stored identity mismatches are `conflict`,
+separate from unreadable registrations. Authentication errors (401), rate limits,
+server/network errors, malformed evidence, conflicting identities, permission
+or installation drift and required adoption still fail this workflow. Rate-limit
+403 responses identified by Retry-After or exhausted-rate headers also fail.
+Other 403s fail unless a bounded response contains one of the recognized
+GitHub inaccessible-resource messages; unknown responses and secondary rate
+limits never become successful visibility reports.
+
+Without the opt-in flag, bootstrap continues to fail on incomplete evidence.
+`github:apps:audit` remains strict and cannot pass missing visibility. No new
+credential or broader workflow permission is introduced. Obtain separately
+authorized authoritative evidence for closure of the App access work.

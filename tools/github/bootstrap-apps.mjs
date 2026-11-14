@@ -31,16 +31,24 @@ export function validateConfig(config, manifests) {
 // registered. No REST response, including 404, is treated as proof of absence.
 export async function plan(config, manifests, read) {
   validateConfig(config, manifests);
+  const sources = [];
+  const failure = (endpoint, error) => {
+    // A 404 is intentionally ambiguous: hidden and absent are indistinguishable.
+    const incomplete = (error.httpStatus === 404 || (error.httpStatus === 403 && error.visibilityLimited === true)) && !error.rateLimited;
+    const item = { endpoint, status: incomplete ? 'incomplete-visibility' : 'execution-error', http_status: Number.isInteger(error.httpStatus) ? error.httpStatus : null };
+    sources.push(item);
+    return item.status;
+  };
   let installations = [], discovery = 'complete';
   try {
     installations = await collectInstallations(config.owner, read);
     if (installations.some(item => !id(item.id) || !id(item.app_id) || !slug(item.app_slug) || item.target_type !== 'Organization' || !sameOwner(item.account?.login, config.owner))) throw new Error('Invalid installation identity.');
-  } catch { installations = []; discovery = 'unverified'; }
+  } catch (error) { installations = []; discovery = 'unverified'; failure(`/orgs/${config.owner}/installations`, error); }
   const cache = new Map();
   async function registration(appSlug) {
     if (!cache.has(appSlug)) {
       try { cache.set(appSlug, { value: await read(`/apps/${appSlug}`) }); }
-      catch { cache.set(appSlug, { unavailable: true }); }
+      catch (error) { cache.set(appSlug, { unavailable: failure(`/apps/${appSlug}`, error) }); }
     }
     return cache.get(appSlug);
   }
@@ -49,24 +57,29 @@ export async function plan(config, manifests, read) {
     const manifest = manifests[app.agent];
     const result = { agent: app.agent, status: 'unverified', reason: 'Owner must inspect registered Apps; API discovery cannot prove absence.', manifest_sha256: createHash('sha256').update(JSON.stringify(manifest)).digest('hex') };
     if (app.identity) {
-      const { value: found } = await registration(app.identity.app_slug);
-      if (!found || found.id !== app.identity.app_id || found.slug !== app.identity.app_slug || found.owner?.type !== 'Organization' || !sameOwner(found.owner?.login, config.owner)) {
-        result.reason = 'Stored identity is inaccessible or mismatched. Resolve it; never create a replacement.';
-        results.push(result); continue;
-      }
       result.identity = { ...app.identity };
-      result.status = 'verified';
-      result.reason = 'Stored registration identity verified; no changes.';
-      if (found.name !== manifest.name || comparePermissions(manifest.default_permissions, found.permissions).status !== 'compliant' || !Array.isArray(found.events) || found.events.length) {
-        result.status = 'drift'; result.reason = 'Review registration name, permissions or events with the owner; no changes applied.';
+      const { value: found, unavailable } = await registration(app.identity.app_slug);
+      if (unavailable) {
+        result.reason_code = unavailable;
+        result.reason = 'Stored identity could not be read. It remains unverified; do not create a replacement.';
+      } else if (!found || found.id !== app.identity.app_id || found.slug !== app.identity.app_slug || found.owner?.type !== 'Organization' || !sameOwner(found.owner?.login, config.owner)) {
+        result.status = 'conflict'; result.reason_code = 'identity-mismatch';
+        result.reason = 'Stored identity mismatched or malformed. Resolve it; never create a replacement.';
+      } else {
+        result.status = 'verified';
+        result.reason = 'Stored registration identity verified; no changes.';
+        if (found.name !== manifest.name || comparePermissions(manifest.default_permissions, found.permissions).status !== 'compliant' || !Array.isArray(found.events) || found.events.length) {
+          result.status = 'drift'; result.reason = 'Review registration name, permissions or events with the owner; no changes applied.';
+        }
       }
     } else {
       const candidates = [];
       const slugs = new Set([...app.candidate_slugs, ...installations.map(item => item.app_slug)]);
-      let conflict = false;
+      let conflict = false, unavailableCandidates = false;
       for (const candidate of slugs) {
-        const { value: found } = await registration(candidate);
-        if (!found) continue;
+        const { value: found, unavailable } = await registration(candidate);
+        if (unavailable) { unavailableCandidates = true; continue; }
+        if (!found) { conflict = true; continue; }
         // Configured slugs belong to this role; a conflicting identity is never
         // ignored just because another candidate looks suitable.
         if (!id(found.id) || found.slug !== candidate || !slug(found.slug)) { conflict = true; continue; }
@@ -85,6 +98,8 @@ export async function plan(config, manifests, read) {
         if (comparePermissions(manifest.default_permissions, found.permissions).status !== 'compliant' || !Array.isArray(found.events) || found.events.length) {
           result.status = 'drift'; result.reason = 'Existing registration discovered with scope drift. Preserve its identity and review differences; no changes applied.';
         }
+      } else if (unavailableCandidates) {
+        result.reason_code = 'incomplete-visibility';
       }
     }
     // Installation access/acceptance is a separate owner action, never implied
@@ -93,13 +108,24 @@ export async function plan(config, manifests, read) {
     result.installation = discovery !== 'complete' ? 'unverified' : matches.length === 0 ? 'not-observed' : matches.length !== 1 ? 'ambiguous' : matches[0].app_slug !== result.identity.app_slug || matches[0].suspended_at !== null || comparePermissions(manifest.default_permissions, matches[0].permissions).status !== 'compliant' ? 'review-required' : 'permissions-verified';
     results.push(result);
   }
-  return { schema_version: 1, mode: 'read-only', discovery, results };
+  const report = { schema_version: 1, mode: 'read-only', discovery, sources, results };
+  const hardFailure = sources.some(item => item.status === 'execution-error') || results.some(item => ['conflict', 'ambiguous', 'drift'].includes(item.status) || ['ambiguous', 'review-required'].includes(item.installation));
+  const complete = discovery === 'complete' && results.every(item => item.status === 'verified' && item.installation === 'permissions-verified');
+  const ownerAction = results.some(item => item.status === 'adopt' || item.installation === 'not-observed' || (item.status === 'unverified' && item.reason_code !== 'incomplete-visibility' && item.reason_code !== 'execution-error'));
+  report.outcome = hardFailure ? 'failure' : complete ? 'complete' : ownerAction ? 'owner-action-required' : 'incomplete-visibility';
+  return report;
 }
 
-export const usage = `Usage: node tools/github/bootstrap-apps.mjs [--check-config | --prepare AGENT --directory NEW_DIRECTORY | --help]
+export function planExitCode(report, allowIncompleteVisibility = false) {
+  return report.outcome === 'complete' || (allowIncompleteVisibility && report.outcome === 'incomplete-visibility') ? 0 : 1;
+}
+
+export const usage = `Usage: node tools/github/bootstrap-apps.mjs [--check-config | --allow-incomplete-visibility | --prepare AGENT --directory NEW_DIRECTORY | --help]
 Default: read-only plan for the manifest directory; JSON on stdout.
 Use existing GH_TOKEN or GITHUB_TOKEN for authorized API reads. Never prints API
-bodies or credentials. Exit 1 means adoption, drift or owner evidence is needed.
+bodies or credentials. Exit 1 means adoption, drift, errors or owner evidence is needed.
+--allow-incomplete-visibility tolerates only recognized access-denial 403 or ambiguous 404 visibility gaps for informational
+workflow reports. The JSON remains explicitly incomplete; this is not an audit pass.
 --prepare AGENT (the manifest filename stem) requires an interactive owner session and a NEW private
 local directory outside the checkout. It verifies active organization ownership,
 reruns discovery, then asks for a current inspection of ALL owned registrations.
@@ -124,7 +150,7 @@ export async function prepare({ config, manifests, agent, directory, read, confi
   const result = report.results.find(item => item.agent === agent);
   // Inaccessible discovery remains unknown, not absent. Only direct, fresh
   // owner inspection can supply the missing authoritative registration evidence.
-  if (result.status !== 'unverified' || result.identity) throw new Error('Existing or conflicting identity must be resolved before registration.');
+  if (report.outcome === 'failure' || result.status !== 'unverified' || result.identity) throw new Error('Existing or conflicting identity must be resolved before registration.');
   const phrase = `ABSENT ${config.owner}/${agent} ${result.manifest_sha256}`;
   const answer = await confirm(`Signed in as ${membership.user.login}. Inspect https://github.com/organizations/${config.owner}/settings/apps now, including renamed and uninstalled Apps. Coordinate with other owners. If access is incomplete or an App may already serve this role, STOP. Only if the complete owned registration list confirms absence of ${manifests[agent].name}, type exactly:\n${phrase}\n`);
   if (answer !== phrase) throw new Error('Owner did not confirm absence.');
@@ -151,10 +177,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
         try { await prepare({ config, manifests, agent: args[1], directory: path.resolve(args[3]), read, interactive: Boolean(process.stdin.isTTY && process.stdout.isTTY) && !process.env.CI, confirm: question => terminal.question(question) }); }
         finally { terminal.close(); }
         console.log('Owner-confirmed local form prepared. Start the loopback callback receiver before opening registration.html. See docs/GITHUB-APPS.md; never upload these files.');
-      } else if (args.length === 0) {
+      } else if (args.length === 0 || (args.length === 1 && args[0] === '--allow-incomplete-visibility')) {
         const report = await plan(config, manifests, read);
         console.log(JSON.stringify(report, null, 2));
-        process.exitCode = report.results.every(item => item.status === 'verified' && item.installation === 'permissions-verified') ? 0 : 1;
+        process.exitCode = planExitCode(report, args[0] === '--allow-incomplete-visibility');
       } else throw new Error('Invalid arguments.');
     }
   } catch { console.error('Bootstrap incomplete. Check owner access, configuration and --help. No credentials or API bodies logged.'); process.exitCode = 1; }
