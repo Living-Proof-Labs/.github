@@ -32,8 +32,8 @@
       "github_identity": {
         "commit_name": null,
         "commit_email": null,
-        "app_slug": null,
-        "app_id": null
+        "app_slug": "vera-agent-living-proof-labs",
+        "app_id": "5754857"
       }
     },
     {
@@ -43,8 +43,8 @@
       "github_identity": {
         "commit_name": null,
         "commit_email": null,
-        "app_slug": null,
-        "app_id": null
+        "app_slug": "art-agent-living-proof-labs",
+        "app_id": "5754862"
       }
     }
   ]
