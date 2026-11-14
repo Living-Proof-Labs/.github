@@ -1,5 +1,5 @@
 {
-  "name": "Living Proof Labs Cody",
+  "name": "Cody Agent - Living Proof Labs",
   "description": "Software engineer for Living Proof Labs. Opens branches and pull requests, comments on pull requests, files issues, edits workflow files, and reads continuous integration.",
   "url": "https://github.com/Living-Proof-Labs/.github",
   "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",

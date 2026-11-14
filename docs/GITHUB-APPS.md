@@ -82,7 +82,7 @@ Name: `Rivet Agent - Living Proof Labs`.
 
 Manifest:
 [`config/github/apps/cody.manifest.json`](../config/github/apps/cody.manifest.json).
-Name: `Living Proof Labs Cody` (22 characters).
+Name: `Cody Agent - Living Proof Labs` (30 characters).
 
 | Permission | Access |
 | --- | --- |
@@ -98,7 +98,7 @@ Name: `Living Proof Labs Cody` (22 characters).
 
 Manifest:
 [`config/github/apps/vera.manifest.json`](../config/github/apps/vera.manifest.json).
-Name: `Living Proof Labs Vera` (22 characters).
+Name: `Vera Agent - Living Proof Labs` (30 characters).
 
 | Permission | Access |
 | --- | --- |
@@ -166,6 +166,10 @@ GitHub's public registration response also does not prove private visibility,
 callback configuration or webhook URL: owners must inspect those settings.
 
 ### Art's proposed scope
+
+Name: `Art Agent - Living Proof Labs` (29 characters). All four registration
+names follow `<Name> Agent - Living Proof Labs`. These manifest names apply
+to new registrations; they do not rename or recreate an existing App.
 
 [`art.manifest.json`](../config/github/apps/art.manifest.json) represents
 **Style and product guidance**: Contents and Metadata read; Issues and Pull
@@ -313,9 +317,10 @@ POST field. No manual HTML editing is needed.
 The receiver accepts the callback only when that `state` matches the state
 file. Open `form.html` only after the callback receiver in the next step is
 listening. On GitHub's confirmation page, review the manifest: the name is
-`Rivet Agent - Living Proof Labs`, `Living Proof Labs Cody`, or
-`Living Proof Labs Vera`; webhooks are off (`default_events` is empty and the
-manifest sets no webhook). Then submit the form.
+`Rivet Agent - Living Proof Labs`, `Cody Agent - Living Proof Labs`,
+`Vera Agent - Living Proof Labs`, or `Art Agent - Living Proof Labs`. Webhooks
+are off (`default_events` is empty and the manifest sets no webhook). Then
+submit the form.
 
 ### 2. Receive the callback and exchange the code
 

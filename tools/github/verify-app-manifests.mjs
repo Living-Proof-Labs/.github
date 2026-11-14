@@ -17,7 +17,7 @@ export const SETTINGS_MANIFESTS = [
 export const BOT_MANIFESTS = {
   art: {
     file: 'config/github/apps/art.manifest.json',
-    name: 'Living Proof Labs Art',
+    name: 'Art Agent - Living Proof Labs',
     permissions: { contents: 'read', issues: 'write', metadata: 'read', pull_requests: 'write' }
   },
   rivet: {
@@ -27,7 +27,7 @@ export const BOT_MANIFESTS = {
   },
   cody: {
     file: 'config/github/apps/cody.manifest.json',
-    name: 'Living Proof Labs Cody',
+    name: 'Cody Agent - Living Proof Labs',
     permissions: {
       actions: 'read',
       checks: 'read',
@@ -40,7 +40,7 @@ export const BOT_MANIFESTS = {
   },
   vera: {
     file: 'config/github/apps/vera.manifest.json',
-    name: 'Living Proof Labs Vera',
+    name: 'Vera Agent - Living Proof Labs',
     permissions: {
       actions: 'read',
       checks: 'read',
