@@ -66,30 +66,9 @@
         "workflows": "Maintain reviewed workflow files.",
         "organization_projects": "Move and update Cody's own cards on the Living Proof Labs Delivery organization project board, including using Blocked to request help."
       },
-      "repository_selection": "selected",
-      "repositories": [
-        "Living-Proof-Labs/.github",
-        "Living-Proof-Labs/capability-verifier",
-        "Living-Proof-Labs/collaboration-guidelines",
-        "Living-Proof-Labs/living-proof-labs.github.io",
-        "Living-Proof-Labs/livingproof",
-        "Living-Proof-Labs/livingproof-booster-t1",
-        "Living-Proof-Labs/livingproof-capability-report",
-        "Living-Proof-Labs/livingproof-common",
-        "Living-Proof-Labs/livingproof-evaluator",
-        "Living-Proof-Labs/livingproof-evaluator-run",
-        "Living-Proof-Labs/livingproof-evaluator-scenario",
-        "Living-Proof-Labs/livingproof-sim-gazebo",
-        "Living-Proof-Labs/livingproof-sim-mujoco",
-        "Living-Proof-Labs/livingproof-unitree-g1",
-        "Living-Proof-Labs/livingproof-unitree-go1",
-        "Living-Proof-Labs/livingproof-verification",
-        "Living-Proof-Labs/livingproof-worlds",
-        "Living-Proof-Labs/robot-capability-specs",
-        "Living-Proof-Labs/unitree-foxglove-sdk",
-        "Living-Proof-Labs/website"
-      ],
-      "scope_reason": "Owner-documented policy is Only select repositories for Cody, limited to the repositories where the developer bot works. This lists the current Living Proof Labs repositories as that working set and records intent, not proof of accepted live membership. Rivet cannot read organization installations (Administration read is out of scope), so the owner must confirm the live selection and this list."
+      "repository_selection": "all",
+      "repositories": [],
+      "scope_reason": "Owner explicitly confirmed all current and future organization repositories on 2026-11-14. This records approved scope, not proof of accepted operation permissions or a completed live audit."
     },
     {
       "agent": "vera",
@@ -147,7 +126,7 @@
       },
       "repository_selection": "all",
       "repositories": [],
-      "scope_reason": "Art-reported installation is all current and future repositories (installation 181823499). This records intent, not proof of accepted live access."
+      "scope_reason": "Owner explicitly confirmed all current and future organization repositories on 2026-11-14. This records approved scope, not proof of accepted operation permissions or a completed live audit."
     }
   ]
 }
