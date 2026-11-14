@@ -178,7 +178,10 @@
     {
       "repository": "unitree-foxglove-sdk",
       "title": "Unitree Foxglove SDK",
-      "summary": "Robot and visualization example; hosted manual not yet published"
+      "summary": "Deprecated pending removal",
+      "documentation": {
+        "label": "Deprecated pending removal"
+      }
     },
     {
       "repository": "collaboration-guidelines",
@@ -188,17 +191,29 @@
     {
       "repository": ".github",
       "title": "Organization directory",
-      "summary": "This documentation source and the repository inventory"
+      "summary": "This documentation source and the repository inventory",
+      "documentation": {
+        "label": "This site",
+        "url": "https://docs.livingprooflabs.com/"
+      }
     },
     {
       "repository": "living-proof-labs.github.io",
       "title": "Documentation site publisher",
-      "summary": "Builds and deploys docs.livingprooflabs.com"
+      "summary": "Builds and deploys docs.livingprooflabs.com",
+      "documentation": {
+        "label": "Maintainer guide",
+        "url": "https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/README.md"
+      }
     },
     {
       "repository": "website",
       "title": "Website",
-      "summary": "Living Proof Labs website"
+      "summary": "Living Proof Labs website",
+      "documentation": {
+        "label": "Website",
+        "url": "https://livingprooflabs.com/"
+      }
     }
   ]
 }

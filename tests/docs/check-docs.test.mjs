@@ -123,3 +123,20 @@ test('an extra directory table row fails', () => {
   edit(dir, 'docs/index.md', (t) => t.replace(/^(\| Website \|.*\n)/m, '$1| Extra | X. | [extra](https://github.com/Living-Proof-Labs/extra) | Not yet published |\n'));
   assert.ok(check(dir).some((e) => e.includes('project directory has extra row extra')));
 });
+
+for (const [label, replacement] of [['Deprecated pending removal', 'Not yet published'], ['This site', 'Manual'], ['Maintainer guide', 'Manual']]) {
+  test(`directory preserves the declared ${label} destination`, () => {
+    const dir = copy();
+    edit(dir, 'docs/index.md', (text) => text.replace(label, replacement));
+    assert.ok(check(dir).some((error) => error.includes('manual must be')));
+  });
+}
+
+test('directory documentation links require HTTPS', () => {
+  const dir = copy();
+  json(dir, 'docs/directory.json', (d) => {
+    d.projects.find((p) => p.repository === 'website').documentation.url = 'http://example.com/';
+    return d;
+  });
+  assert.ok(check(dir).some((error) => error.includes('invalid documentation destination for website')));
+});
