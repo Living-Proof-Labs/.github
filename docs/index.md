@@ -207,11 +207,11 @@ fresh clone to a rendered report. Then find the project for your part of the wor
 | Unitree G1 | Robot package for the Unitree G1 humanoid. | [livingproof-unitree-g1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1) | [Manual](https://docs.livingprooflabs.com/livingproof-unitree-g1/) |
 | Unitree Go1 | Robot package for the Unitree Go1 quadruped. | [livingproof-unitree-go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1) | [Manual](https://docs.livingprooflabs.com/livingproof-unitree-go1/) |
 | Booster T1 | Robot package for the Booster T1 humanoid. | [livingproof-booster-t1](https://github.com/Living-Proof-Labs/livingproof-booster-t1) | [Manual](https://docs.livingprooflabs.com/livingproof-booster-t1/) |
-| Unitree Foxglove SDK | Robot visualization example. | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk) | Not yet published |
+| Unitree Foxglove SDK | Robot visualization example. | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk) | Deprecated pending removal |
 | Collaboration guidelines | Shared contribution and engineering standards for every project. | [collaboration-guidelines](https://github.com/Living-Proof-Labs/collaboration-guidelines) | [Manual](https://docs.livingprooflabs.com/collaboration-guidelines/) |
-| Organization directory | This documentation source and the repository inventory. | [.github](https://github.com/Living-Proof-Labs/.github) | Not yet published |
-| Documentation site publisher | Builds and deploys docs.livingprooflabs.com. | [living-proof-labs.github.io](https://github.com/Living-Proof-Labs/living-proof-labs.github.io) | Not yet published |
-| Website | The Living Proof Labs website. | [website](https://github.com/Living-Proof-Labs/website) | Not yet published |
+| Organization directory | This documentation source and the repository inventory. | [.github](https://github.com/Living-Proof-Labs/.github) | [This site](https://docs.livingprooflabs.com/) |
+| Documentation site publisher | Builds and deploys docs.livingprooflabs.com. | [living-proof-labs.github.io](https://github.com/Living-Proof-Labs/living-proof-labs.github.io) | [Maintainer guide](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/README.md) |
+| Website | The Living Proof Labs website. | [website](https://github.com/Living-Proof-Labs/website) | [Website](https://livingprooflabs.com/) |
 
 Each manual is published independently. Its source can be newer than its package
 release; check Version and source before installation.

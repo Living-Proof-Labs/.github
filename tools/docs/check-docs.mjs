@@ -119,6 +119,10 @@ export function check(root) {
       if (!inventory.has(row.repository)) {
         errors.push(`${site.directory}: ${kind} entry ${row.repository} is not in config/github/repositories.json`);
       }
+      if (row.documentation && (kind !== 'projects' || !row.documentation.label ||
+          (row.documentation.url ? !/^https:\/\//.test(row.documentation.url) : row.documentation.label !== 'Deprecated pending removal'))) {
+        errors.push(`${site.directory}: invalid documentation destination for ${row.repository}`);
+      }
       if (kind === 'manuals' && !/^https:\/\//.test(row.url || '')) errors.push(`${site.directory}: manual ${row.repository} needs an https url`);
     }
   }
@@ -144,8 +148,12 @@ export function check(root) {
       if (!listed.includes(repo)) return;
       if (!(r[2] || '').includes(`](${owner}${repo})`)) errors.push(`${home.source}: row ${repo} must link ${owner}${repo}`);
       const url = manuals.get(repo);
-      const want = url ? `](${url})` : 'Not yet published';
-      if (!(r[3] || '').includes(want)) errors.push(`${home.source}: row ${repo} manual must be ${url || 'Not yet published'}`);
+      const destination = directory.projects.find((p) => p.repository === repo)?.documentation;
+      if (url && destination) errors.push(`${site.directory}: ${repo} has both a manual and a documentation destination`);
+      const want = destination
+        ? (destination.url ? `[${destination.label}](${destination.url})` : destination.label)
+        : (url ? `](${url})` : 'Not yet published');
+      if (!(r[3] || '').includes(want)) errors.push(`${home.source}: row ${repo} manual must be ${destination ? want : (url || 'Not yet published')}`);
     });
   }
 
