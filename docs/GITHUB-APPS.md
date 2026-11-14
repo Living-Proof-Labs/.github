@@ -21,7 +21,7 @@ this guide from the repository root so `scripts/app-token`,
 agents that have GitHub Apps. It records each role and App manifest path.
 Keel is not in that directory. The manifests do not record a numeric App id, the
 GitHub App slug GitHub assigns at registration, or a git commit identity, so
-unrecorded fields remain null. Cody now has a reviewed registration ID and slug;
+unrecorded fields remain null. Cody, Vera and Art now have reviewed registration IDs and slugs;
 that record alone does not prove working authentication or installation.
 
 The settings-audit credential stays separate. It uses
@@ -118,8 +118,26 @@ in GitHub and deliver it directly to Cody's Grok secret card. Keep key material
 out of scripts, chat, logs and repositories. Key generation/delivery and selected
 repository installation grants are separate authorized steps. Do not claim a
 usable agent identity until App authentication and approved installation access
-have been verified. Preserve Rivet. Register Vera and Art only after this tested
-script is merged, using their own manifests and fresh owner inventory inspection.
+have been verified. Preserve Rivet.
+
+After PR #89 merged as `9951eb991fed2d6790916835b578aca725bd205f`, the
+merged script was used with fresh owner inventory inspection to register Vera
+and Art. Their saved owner settings matched the names, descriptions, homepage,
+permissions and disabled features in their manifests. Both remained private;
+no keys or installations were created. The merged adoption validator accepted
+both readbacks, with authentication and installation explicitly unverified.
+
+| Agent | App ID | Registered slug |
+| --- | --- | --- |
+| Cody | 5754786 | cody-agent-living-proof-labs |
+| Vera | 5754857 | vera-agent-living-proof-labs |
+| Art | 5754862 | art-agent-living-proof-labs |
+
+The preparation examples above describe the creation procedure; these recorded
+Apps now refuse preparation. Use adoption for existing registrations and add a
+new reviewed manifest before preparing any future agent. Keys must be generated
+and delivered through each agent's approved secret destination; selected
+repository installation scope still needs an explicit decision.
 
 GitHub documents this supported browser flow in
 [registering a GitHub App using URL parameters](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-using-url-parameters).

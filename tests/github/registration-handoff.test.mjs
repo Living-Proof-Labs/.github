@@ -1,14 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, chmodSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { generateKeyPairSync, createHash } from 'node:crypto';
-import { handoff, continueSession } from '../../tools/github/registration-handoff.mjs';
+import { handoff as realHandoff, continueSession as realContinueSession } from '../../tools/github/registration-handoff.mjs';
 import { exchangeOnce } from '../../tools/github/exchange-app-manifest-code.mjs';
 import { acceptCallback, matchesState } from '../../tools/github/receive-app-manifest-code.mjs';
 import { registrationForm } from '../../tools/github/render-app-manifest-form.mjs';
+// Keep unregistered-session fixtures independent of recorded live identities.
+const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'handoff-fixture-root-'));
+cpSync('config', path.join(fixtureRoot, 'config'), {recursive:true});
+const agentsFile = path.join(fixtureRoot, 'config/github/agents.json');
+const fixtureAgents = JSON.parse(readFileSync(agentsFile));
+Object.assign(fixtureAgents.agents.find(agent => agent.id === 'vera').github_identity, {app_id:null,app_slug:null});
+writeFileSync(agentsFile, JSON.stringify(fixtureAgents));
+after(() => rmSync(fixtureRoot, {recursive:true,force:true}));
+const handoff = (directory, options = {}) => realHandoff(directory, {root:fixtureRoot,...options});
+const continueSession = (directory, action, options = {}) => realContinueSession(directory, action, {root:fixtureRoot,...options});
 const manifest = JSON.parse(readFileSync('config/github/apps/vera.manifest.json'));
 const pem = generateKeyPairSync('rsa', {modulusLength:2048}).privateKey.export({type:'pkcs8',format:'pem'});
 const registration = () => ({id:123,slug:'living-proof-labs-vera',name:manifest.name,owner:{login:'Living-Proof-Labs',type:'Organization'},permissions:manifest.default_permissions,events:[],pem,client_secret:'SECRET_CANARY',webhook_secret:'WEBHOOK_CANARY'});
