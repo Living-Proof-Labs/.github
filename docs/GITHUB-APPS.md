@@ -77,6 +77,7 @@ Name: `Rivet Agent - Living Proof Labs`.
 | statuses | read |
 | deployments | read |
 | workflows | write |
+| organization_projects | write |
 
 ### Cody
 
