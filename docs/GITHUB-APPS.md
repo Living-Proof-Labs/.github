@@ -115,7 +115,7 @@ App ID **5754786**, slug **cody-agent-living-proof-labs**, with exactly its mani
 permissions and private/disabled-feature settings. No key was generated and no
 installation was made during that registration. Aaron will generate its key
 in GitHub and deliver it directly to Cody's Grok secret card. Keep key material
-out of scripts, chat, logs and repositories. Key generation/delivery and selected
+out of scripts, chat, logs and repositories. Key generation/delivery and
 repository installation grants are separate authorized steps. Do not claim a
 usable agent identity until App authentication and approved installation access
 have been verified. Preserve Rivet.
@@ -136,8 +136,9 @@ both readbacks, with authentication and installation explicitly unverified.
 The preparation examples above describe the creation procedure; these recorded
 Apps now refuse preparation. Use adoption for existing registrations and add a
 new reviewed manifest before preparing any future agent. Keys must be generated
-and delivered through each agent's approved secret destination; selected
-repository installation scope still needs an explicit decision.
+and delivered through each agent's approved secret destination. Aaron confirmed
+all current and future organization repositories for Cody and Art on 2026-11-14;
+operation permissions remain a separate approval and verification step.
 
 GitHub documents this supported browser flow in
 [registering a GitHub App using URL parameters](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-using-url-parameters).
@@ -393,8 +394,8 @@ live verification. Reuse a saved proposal instead of rerunning conversion.
 Record the proposal's nonsecret identity through a PR. Store the App ID and PEM
 through the approved bot secret-card procedure below, then use the proposal's
 installation link in the owner's browser. Select **Living-Proof-Labs**. Choose
-**Only select repositories** for Cody; the specific repositories
-need an explicit owner decision; no scope is guessed or expanded by this tool.
+**All repositories** for the four recorded agents, following the reviewed
+installation policy; no scope is guessed or expanded by this tool.
 Record the installation ID, exact repositories and permission justifications in
 `app-access.json`, then run bootstrap and access audit. Registration verification
 does not imply installation or accepted access. Selected-repository membership
@@ -562,13 +563,12 @@ Install each App only on Living-Proof-Labs:
 5. Click **Install App**, then **Install** next to Living-Proof-Labs.
 
 GitHub then offers **All repositories** or **Only select repositories**.
-The reviewed Rivet, Vera and Art desired states record **All repositories**,
-including future repositories, from the reported installations. For Rivet this
-is an access decision, not a requirement to run repository-policy administration
+The reviewed Rivet, Cody, Vera and Art desired states record **All repositories**,
+including future repositories. Aaron explicitly confirmed this scope for Cody
+and Art on 2026-11-14. Repository coverage does not authorize additional operation
+permissions. For Rivet this is an access decision, not a requirement to run
+repository-policy administration
 as Rivet. Do not change installation scope merely to make a read succeed.
-
-For Cody, choose **Only select repositories** and limit the
-installation to the repositories where that bot works.
 
 The installation id is optional. It is the number at the end of the
 installation URL,
@@ -719,15 +719,28 @@ a key anywhere.
 Registration discovery automatically reads every `config/github/apps/*.manifest.json`.
 Rivet, Cody, Vera and Art have reviewed installation policies.
 It records registration and installation identifiers, exact permissions with
-justifications, and repository selection. Rivet's, Vera's and Art's entries
-record all-repository rollouts (Vera installation `181822506`, Art installation
-`181823499`), not independently verified accepted grants. Cody's entry records
-installation `181820269` from his working App login, selected-repository mode
-per the owner-documented install policy, and the current organization
-repositories as that working set. That list records intent, not independently
-verified live membership; selected-scope membership cannot currently pass the
-audit. The manifest and validator must match each policy. Keel identity work
-remains separate.
+justifications, and repository selection. All four entries record all-repository
+coverage. Cody's installation is `181820269`, Vera's is `181822506`, and Art's
+is `181823499`. Aaron confirmed Cody and Art's all-current-and-future-repository
+scope on 2026-11-14. This records approved scope, not independently verified
+accepted operation grants. The manifest and validator must match each policy.
+
+Owner installation settings read on 2026-11-14 showed all-repository coverage
+for Cody, Vera and Art, but these desired permission additions remained absent:
+
+| Agent | Additional desired grants | Functional need |
+| --- | --- | --- |
+| Cody | Commit statuses read; organization Projects write | Read legacy check results; update own delivery cards and request help through Blocked |
+| Vera | Checks write; Contents write; Commit statuses read; organization Projects write | Publish verification checks; contribute automated tests; read legacy results; advance verification cards |
+| Art | Checks read; Contents write; Commit statuses read; organization Projects write | Inspect verification; propose specs and design files through branches and pull requests; read legacy results; update own delivery cards |
+
+These are desired grants from PRs #91 and #93, not proof of owner acceptance.
+Updating this policy changes no live permissions. Obtain explicit approval for
+additional grants, update the App registration and accept its installation
+permission update, then run a fresh read-only audit bound to the merged policy
+revision. Bot-authored comments prove working identities, not permission parity.
+Keep issue #57 open until that evidence is complete. Preserve Rivet; do not
+recreate the deleted Keel App.
 
 ```sh
 bash tools/task.sh github:apps:check
