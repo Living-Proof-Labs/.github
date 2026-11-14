@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Apply the pinned Living Proof Labs repository policy with GH_TOKEN.
+ * Apply the local Living Proof Labs repository policy with GH_TOKEN.
  *
  * The token may be a personal access token or a GitHub App installation token.
  * Repository discovery uses GET /orgs/{org}/repos. This command never calls
  * /user. It never writes the token to disk, argv, or logs.
  *
- * Policy bytes come from the commit and blob SHA pinned in
- * config/github/repository-policy.json, unless --policy points at a local
- * file. --dry-run prints current -> desired and performs no write calls.
+ * Policy bytes come from this checkout's config/github/repository-policy.json,
+ * unless --policy points at another local file. --dry-run prints current -> desired
+ * and performs no write calls.
  * --apply writes only the fields that differ.
  *
  * pages.https_enforced is applied when the policy sets that boolean, except for
@@ -110,7 +110,7 @@ Living-Proof-Labs. Pass --repo to limit that list to one name.
 
 --dry-run  Print each difference as current -> desired. No write API calls.
 --apply    Write only settings whose current value differs from the policy.
---policy   Use a local policy JSON file instead of the pinned blob.
+--policy   Use another local policy JSON file instead of the checked-in policy.
 --org      Organization login. Default: Living-Proof-Labs; must match inventory.
 --inventory FILE  Use only these registered repositories, never organization discovery.
 --https-only  Isolate HTTPS changes; missing or unreadable sites fail without creation.
@@ -119,9 +119,8 @@ Living-Proof-Labs. Pass --repo to limit that list to one name.
 --expected-plan FILE  Refuse all writes if the HTTPS plan changed since preview.
 --repo     Repository name (not owner/name) that the organization list must include.
 
-Without --policy, the pin in config/github/repository-policy.json selects a
-commit of collaboration-guidelines. The file is downloaded without GH_TOKEN
-and rejected unless its git blob SHA matches the pin.
+Without --policy, read config/github/repository-policy.json from this checkout.
+No policy or tool is downloaded from another repository.
 
 GH_TOKEN is a classic PAT, a fine-grained PAT, or a GitHub App installation
 token. It is read from the environment only and is never stored or logged.
@@ -130,7 +129,7 @@ Do not put the token in an argument.
 A repository in pages.https_enforced_exempt is reported as exempt (reason)
 and Enforce HTTPS is not written for it. The list must be non-empty and
 pages.https_enforced must be true. A repository with no Pages site is left
-unchanged. The v7.10.0 pin exempts website.`;
+unchanged. The checked-in policy exempts website.`;
 }
 
 export function parseArgs(argv) {
@@ -214,48 +213,6 @@ export function assertOrgScopedPath(resource) {
   }
 }
 
-export function validatePin(pin) {
-  if (!pin || typeof pin !== 'object' || Array.isArray(pin)) throw new Error('Policy pin is not a JSON object.');
-  if (typeof pin.repository !== 'string' || !/^[\w.-]+\/[\w.-]+$/.test(pin.repository)) {
-    throw new Error('Policy pin repository must be owner/name.');
-  }
-  if (typeof pin.commit !== 'string' || !/^[0-9a-f]{40}$/.test(pin.commit)) {
-    throw new Error('Policy pin commit must be a 40-character commit id.');
-  }
-  if (typeof pin.policy_path !== 'string' || pin.policy_path.split('/').some((part) => part === '' || part === '.' || part === '..')) {
-    throw new Error('Policy pin path is invalid.');
-  }
-  if (typeof pin.policy_blob_sha !== 'string' || !/^[0-9a-f]{40}$/.test(pin.policy_blob_sha)) {
-    throw new Error('Policy pin blob SHA must be 40 hexadecimal characters.');
-  }
-  return pin;
-}
-
-export async function fetchPinnedPolicy(pin, fetchImpl) {
-  const checked = validatePin(pin);
-  const url = `https://raw.githubusercontent.com/${checked.repository}/${checked.commit}/${checked.policy_path}`;
-  let response;
-  try {
-    response = await fetchImpl(url, {
-      redirect: 'error',
-      headers: { Accept: 'application/vnd.github.raw', 'User-Agent': USER_AGENT }
-    });
-  } catch (error) {
-    throw new Error(`Could not download the pinned policy from ${checked.repository}@${checked.commit}: ${sanitize(error.message, '')}`);
-  }
-  if (!response.ok) throw new Error(`Could not download the pinned policy (HTTP ${response.status}).`);
-  const bytes = Buffer.from(await response.arrayBuffer());
-  const actual = gitBlobSha(bytes);
-  if (actual !== checked.policy_blob_sha) {
-    throw new Error(`Pinned policy blob SHA ${checked.policy_blob_sha} does not match the downloaded file (${actual}). Refusing to continue.`);
-  }
-  try {
-    return JSON.parse(bytes.toString('utf8'));
-  } catch {
-    throw new Error('Pinned policy is not JSON.');
-  }
-}
-
 export function validatePolicy(policy) {
   if (!policy || typeof policy !== 'object' || Array.isArray(policy)) throw new Error('Policy must be a JSON object.');
   if (policy.schema_version !== 1) throw new Error(`Unsupported policy schema version: ${policy.schema_version}`);
@@ -297,7 +254,7 @@ function validateRuleset(ruleset) {
 
 export function policyNotices(policy) {
   if (!policy.pages || !Object.hasOwn(policy.pages, 'https_enforced')) {
-    return ['pinned policy does not set pages.https_enforced, so Enforce HTTPS is not written. Add boolean pages.https_enforced in collaboration-guidelines, then repin commit and policy_blob_sha in config/github/repository-policy.json.'];
+    return ['policy does not set pages.https_enforced, so Enforce HTTPS is not written. Review boolean pages.https_enforced in the local config/github/repository-policy.json.'];
   }
   return [];
 }
@@ -734,7 +691,7 @@ export async function runHttps({ policy, org, repo, dryRun, api, listed, expecte
     repositories.push(item);
     const decision = pagesHttpsEnforced(policy, name);
     if (decision.report) { item.skipped.push(decision.report); continue; }
-    if (!decision.enforce) { item.failures.push({ setting: 'pages.https_enforced', message: 'pinned policy has no HTTPS value' }); continue; }
+    if (!decision.enforce) { item.failures.push({ setting: 'pages.https_enforced', message: 'policy has no HTTPS value' }); continue; }
     const repository = await readResource(api, `/repos/${org}/${name}`);
     if (repository.error) { item.failures.push({ setting: 'repository', message: repository.error }); continue; }
     if (repository.value?.archived === true) { item.skipped.push('archived; no writes'); continue; }
@@ -814,7 +771,7 @@ export function renderReport(report, { dryRun, org, policySource }) {
   return `${lines.join('\n')}\n`;
 }
 
-function readPolicyFile(policyPath) {
+export function readPolicyFile(policyPath = path.join(repositoryRoot(), 'config/github/repository-policy.json')) {
   let text;
   try {
     text = readFileSync(policyPath, 'utf8');
@@ -825,20 +782,6 @@ function readPolicyFile(policyPath) {
     return JSON.parse(text);
   } catch {
     throw new UsageError(`Policy file is not JSON: ${policyPath}`);
-  }
-}
-
-function readPin(pinPath) {
-  let text;
-  try {
-    text = readFileSync(pinPath, 'utf8');
-  } catch {
-    throw new Error(`Could not read policy pin: ${pinPath}`);
-  }
-  try {
-    return validatePin(JSON.parse(text));
-  } catch (error) {
-    throw new Error(`Policy pin is invalid: ${error.message}`);
   }
 }
 
@@ -860,17 +803,9 @@ export async function main(argv, dependencies = {}) {
       io.stderr.write(`${sanitize(error.message, tokenForErrors)}\n`);
       return 1;
     }
-    const pinPath = dependencies.pinPath ?? path.join(repositoryRoot(), 'config/github/repository-policy.json');
-    let policy;
-    let policySource;
-    if (options.policyPath) {
-      policy = readPolicyFile(options.policyPath);
-      policySource = `file ${options.policyPath} (local file, blob SHA not checked)`;
-    } else {
-      const pin = readPin(pinPath);
-      policy = await fetchPinnedPolicy(pin, fetchImpl);
-      policySource = `${pin.repository}@${pin.commit} ${pin.policy_path} blob ${pin.policy_blob_sha}`;
-    }
+    const policyPath = options.policyPath ?? dependencies.policyPath ?? path.join(repositoryRoot(), 'config/github/repository-policy.json');
+    const policy = readPolicyFile(policyPath);
+    const policySource = `file ${policyPath}`;
     validatePolicy(policy);
     const api = createGitHubClient({ token, fetchImpl, allowWrites: options.apply === true });
     const inventory = options.inventoryPath ? JSON.parse(readFileSync(options.inventoryPath, 'utf8')) : undefined;

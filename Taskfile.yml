@@ -44,7 +44,7 @@ tasks:
     cmds:
       - bash tools/github/repository-settings.sh --fail-on-drift --junit artifacts/repository-settings.xml
   github:policy:apply:
-    desc: Preview or apply the pinned repository policy. Pass -- --dry-run or -- --apply
+    desc: Preview or apply the local repository policy. Pass -- --dry-run or -- --apply
     cmds:
       - bash scripts/apply-repo-policy {{.CLI_ARGS}}
   github:apps:check:
@@ -99,4 +99,4 @@ tasks:
     desc: Publish inventory reconciliation safety scenarios as JUnit
     cmds:
       - mkdir -p artifacts
-      - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/settings-scenarios.xml tests/github/reconcile-inventory.test.mjs tests/github/apply-workflow.test.mjs
+      - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/settings-scenarios.xml tests/github/reconcile-inventory.test.mjs tests/github/apply-workflow.test.mjs tests/github/repository-settings.test.mjs tests/github/local-settings.test.mjs

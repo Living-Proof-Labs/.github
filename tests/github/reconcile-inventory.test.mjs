@@ -311,10 +311,9 @@ test('a final Pages audit detects drift after an earlier successful readback', a
   const report = await f.apply(preview.plan);
   assert.equal(report.failures, 1); assert.match(JSON.stringify(report.repositories[0].failures), /drift remains/);
 });
-test('saved source fixture matches the checked-in released policy blob pin', async () => {
+test('saved migration fixture matches the checked-in policy', async () => {
   const { gitBlobSha } = await import('../../tools/github/apply-repo-policy.mjs');
-  const pin = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
-  assert.equal(gitBlobSha(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url))), pin.policy_blob_sha);
+  assert.equal(gitBlobSha(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url))), gitBlobSha(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url))));
 });
 
 test('newly visible rulesets cannot authorize unreviewed actions but allow reviewed general settings', async () => {
@@ -352,7 +351,6 @@ test('CLI preview and apply retain parseable complete reports with mocked transp
   const fetchImpl = async (url, init) => {
     const u = new URL(url); requests.push({ url: String(url), method: init.method ?? 'GET' });
     assert.equal(init.redirect, 'error');
-    if (u.hostname === 'raw.githubusercontent.com') return new Response(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
     assert.equal(u.origin, 'https://api.github.com');
     try {
       let value;

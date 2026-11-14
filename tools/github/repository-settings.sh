@@ -23,33 +23,9 @@ legacy_apply=false
 for argument in "$@"; do
   if [ "$argument" = --apply ]; then legacy_apply=true; fi
 done
-policy=$("${node[@]}" -e 'const fs=require("fs"); console.log(JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1]))))' "$policy_file")
-repository=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).repository)' "$policy")
-tag=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tag)' "$policy")
-tool_path=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tool_path)' "$policy")
-expected_sha=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).tool_blob_sha)' "$policy")
-policy_path=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).policy_path)' "$policy")
-expected_policy_sha=$("${node[@]}" -e 'console.log(JSON.parse(process.argv[1]).policy_blob_sha)' "$policy")
 work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
-fetch_pinned_file() {
-  local remote_path=$1 expected=$2 output=$3 actual url
-  # The provider is public. Fetch it anonymously so the administration-only
-  # installation token never needs Contents permission; verify the Git blob
-  # identity locally before executing either downloaded file.
-  url="https://raw.githubusercontent.com/$repository/$tag/$remote_path"
-  curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 "$url" > "$output"
-  actual=$(git hash-object "$output")
-  if [ "$actual" != "$expected" ]; then
-    echo "Released policy identity differs from the pinned blob; refusing to execute." >&2
-    exit 1
-  fi
-}
-tool_file="$work_dir/$tool_path"
-released_policy_file="$work_dir/$policy_path"
-mkdir -p "$(dirname "$tool_file")" "$(dirname "$released_policy_file")"
-fetch_pinned_file "$tool_path" "$expected_sha" "$tool_file"
-fetch_pinned_file "$policy_path" "$expected_policy_sha" "$released_policy_file"
+tool_file="$root/tools/github/repository-settings.mjs"
 audit_output="$work_dir/audit-output.txt"
 raw_output="$work_dir/audit-raw.txt"
 raw_error="$work_dir/audit-raw.err"
@@ -69,17 +45,17 @@ if [ "$tool_status" -ne 0 ]; then
 fi
 # Compare pages.https_enforced for sites the audit could read. A repository
 # with no Pages site is required Pages drift. An unreadable value is incomplete, not a
-# pass. v7.10.0 exempts website; that line is not drift.
-"${node[@]}" "$root/tools/github/audit-pages-https.mjs" "$released_policy_file" "$audit_output" > /dev/null
+# pass. The local policy exempts website; that line is not drift.
+"${node[@]}" "$root/tools/github/audit-pages-https.mjs" "$policy_file" "$audit_output" > /dev/null
 # Use exactly the reconciliation resolver for protection: stronger rules pass;
 # weaker rules drift; unreadable/conflicting evidence remains unknown. This
 # changes neither general comparisons nor dated manual evidence.
 if [ "$legacy_apply" = false ]; then
-  "${node[@]}" "$root/tools/github/audit-rulesets.mjs" "$released_policy_file" "$inventory_file" "$audit_output"
+  "${node[@]}" "$root/tools/github/audit-rulesets.mjs" "$policy_file" "$inventory_file" "$audit_output"
 fi
 cat "$audit_output"
 if [ -n "$result_file" ]; then
-  "${node[@]}" tools/github/audit-junit.mjs "$released_policy_file" "$audit_output" "$result_file" "$manual_evidence_file"
+  "${node[@]}" tools/github/audit-junit.mjs "$policy_file" "$audit_output" "$result_file" "$manual_evidence_file"
 fi
 # Exit status and summary: missing Pages is drift; inaccessible is unverified. pages.https_enforced: unverified is incomplete (see audit-status.mjs).
 strict_flag=()

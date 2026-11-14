@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { createGitHubClient, fetchPinnedPolicy, requireToken, repositoryRoot, runHttps, GitHubApiError } from './apply-repo-policy.mjs';
+import { createGitHubClient, readPolicyFile, requireToken, repositoryRoot, runHttps, GitHubApiError } from './apply-repo-policy.mjs';
 import { validateInventory } from './verify-inventory.mjs';
 import { pagesHttpsEnforced, validatePages } from './pages-https.mjs';
 import { redactSecrets } from './redact-secrets.mjs';
@@ -13,12 +13,12 @@ import { redactSecrets } from './redact-secrets.mjs';
 export const help = `Usage: node tools/github/setup-pages.mjs --repo NAME (--dry-run --plan-output FILE | --apply --expected-plan FILE)
 
 Configure Actions-based Pages for one public, active, inventoried repository.
-unitree-foxglove-sdk is excluded. Reads the canonical inventory and pinned policy.
+unitree-foxglove-sdk is excluded. Reads the canonical inventory and local policy.
 Preview saves the observed state and intended changes. Apply requires that exact
 preview, checks state again before each write, and verifies the result.
 Only POST/PUT /repos/Living-Proof-Labs/NAME/pages are allowed: build_type=workflow
 and https_enforced=true. Existing custom domains are preserved. HTTPS exemptions
-come from the pinned policy. No credentials or permissions are provisioned.
+come from the local policy. No credentials or permissions are provisioned.
 GH_TOKEN is read only from the environment. Certificate/access failures fail;
 review a fresh preview before retrying a partially completed operation.
 This configures Pages; it does not dispatch or verify a documentation deployment.
@@ -166,7 +166,7 @@ export async function main(argv, { env = process.env, fetchImpl = globalThis.fet
     const inventory = read('config/github/repositories.json');
     scope(inventory, options['--repo']);
     const token = requireToken(env);
-    const policy = await fetchPinnedPolicy(read('config/github/repository-policy.json'), fetchImpl);
+    const policy = readPolicyFile();
     const report = await runPages({ api: createGitHubClient({ token, fetchImpl, allowWrites: Boolean(options['--apply']) }),
       inventory, repo: options['--repo'], policy, dryRun: Boolean(options['--dry-run']),
       expectedPlan: options['--expected-plan'] ? JSON.parse(readFileSync(options['--expected-plan'], 'utf8')) : undefined });

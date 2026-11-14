@@ -13,10 +13,9 @@ evidence, and understandable reports.
 
 ## Organization operations
 
-This repository is the operator entry point for the organization inventory and
-repository-settings policy. The generic policy/tool is a released dependency of
-`collaboration-guidelines`; this repository supplies the inventory and
-organization-specific operating choices.
+This repository owns the organization inventory, desired repository settings,
+and every settings audit and apply tool. Review policy and implementation changes
+together here; no settings source is downloaded from collaboration-guidelines.
 
 ### Quick start
 
@@ -27,8 +26,8 @@ organization-specific operating choices.
 | Validate this checkout | `bash tools/task.sh verify` | Checks inventory and tests |
 | Inspect settings drift | `task github:settings:report` | Read-only report; does not fail for existing drift |
 | Enforce settings policy | `task github:settings:check` | Read-only audit that fails for drift or unverified state |
-| Preview the pinned policy | `scripts/apply-repo-policy --dry-run` | Prints current -> desired for every org repository; no writes |
-| Apply the pinned policy | `scripts/apply-repo-policy --apply` | Writes only settings that differ; requires `GH_TOKEN` |
+| Preview the local policy | `scripts/apply-repo-policy --dry-run` | Prints current -> desired for every org repository; no writes |
+| Apply the local policy | `scripts/apply-repo-policy --apply` | Writes only settings that differ; requires `GH_TOKEN` |
 
 If Task is not installed, run `bash tools/setup.sh` once, then use
 `bash tools/task.sh <task>`. The local setup uses no `sudo`, does not modify
@@ -61,7 +60,7 @@ Existing token access must already permit the requested Pages operation; this
 command does not provision access or change the settings workflow.
 
 The saved plan binds repository identity, Pages configuration (including custom
-domain and source), the pinned policy, and inventory. Any mismatch prevents
+domain and source), the local policy, and inventory. Any mismatch prevents
 writes. State is read again immediately before each write, and setup and HTTPS
 are verified afterward. GitHub's Pages API does not provide an atomic
 compare-and-swap here: concurrent external changes in the final read/write
@@ -76,7 +75,7 @@ not dispatch workflows, merge changes, or claim a successful content deployment.
 
 ## Apply repository policy
 
-`scripts/apply-repo-policy` compares the collaboration-guidelines repository
+`scripts/apply-repo-policy` compares the local repository
 policy with every repository returned by `GET /orgs/Living-Proof-Labs/repos`
 and can write the settings that differ. `task github:policy:apply -- --dry-run`
 is the same command. It is separate from the reviewed GitHub App workflow in
@@ -89,7 +88,7 @@ Run `bash tools/setup.sh` once so the wrapper can find the pinned Node. Export
 `GH_TOKEN` to a classic personal access token, a fine-grained personal access
 token, or a GitHub App installation token. The command reads that variable and
 does not accept the token as an argument. It never writes, caches, logs, or
-echoes the token, and it does not send the token when it downloads the policy.
+echoes the token. Policy loading reads this checkout without network access.
 A later helper may print an installation token; this command only consumes
 `GH_TOKEN`.
 
@@ -102,18 +101,15 @@ a failure, not a clean run.
 
 ### Where the policy comes from
 
-By default the command reads the pin in
-[`config/github/repository-policy.json`](config/github/repository-policy.json):
-the `commit` and `policy_blob_sha` of `config/github/repository-policy.json` in
-collaboration-guidelines. It downloads that commit over HTTPS and refuses to
-continue unless the git blob SHA matches. The tag is recorded in the pin and
-is not the fetch ref, because a moved tag would change the policy without a
-review in this repository. That is the same commit-and-blob pin the settings
-audit already uses.
+The desired settings are checked in at
+[`config/github/repository-policy.json`](config/github/repository-policy.json).
+The audit tool, controllers and tests are also local. Every desired setting and
+its implementation must be reviewed in this repository. No cross-repository
+commit or blob fetch pin is used. The protected workflow binds its saved preview
+to the source revision, implementation, policy and inventory before applying it.
 
-`--policy FILE` reads a local JSON file and does not check a blob SHA. Use it
-to review a policy revision before this repository's pin moves. A normal apply
-uses the pin.
+`--policy FILE` reads another local JSON file for an explicit policy preview.
+Normal operation uses the checked-in file.
 
 ### Preview and apply
 
@@ -153,9 +149,7 @@ the repository already has a Pages site, a difference becomes
 (`https_enforced` and, when it also differs, `build_type`). The custom domain
 is not sent.
 
-The pinned policy blob `b5f31a288ae719c0f9e632f5ec359f33839f0850`
-(collaboration-guidelines `v7.10.0`, commit
-`122db54d0763dc39f81133ec06e35dab2b24d41b`) sets `pages.build_type` to
+The local policy sets `pages.build_type` to
 `workflow` and `pages.https_enforced` to `true`. It exempts `website`
 (`HTTPS terminated at Cloudflare`), so `--apply` does not send Enforce HTTPS
 for that repository. Other existing Pages sites are updated when Enforce HTTPS
@@ -194,7 +188,7 @@ GitHub identity, and App manifest path. An agent without an App is not listed.
 
 Useful references:
 
-- [Pinned repository policy](config/github/repository-policy.json)
+- [Local repository policy](config/github/repository-policy.json)
 - [Manual UI-setting evidence](config/github/manual-settings-evidence.json)
 - [Repository operations guide](docs/repository-operations.md)
 - [Manual GitHub App setup](docs/github-app-bootstrap.md)
@@ -251,7 +245,7 @@ blocks that repository while the rest continue. Every write has a fresh state
 check and readback. Already compliant repositories receive no writes.
 
 General preferences, sponsorships, known immutable-release state and Pages setup
-with HTTPS are reconciled. Exceptions must be reviewed in the pinned policy
+with HTTPS are reconciled. Exceptions must be reviewed in the local policy
 manifest with a repository and nonempty reason; unknown or duplicate repository
 exceptions fail before requests. The existing `website` Cloudflare exemption
 leaves HTTPS unmanaged; it never disables it. Required missing Pages is drift;
@@ -273,7 +267,7 @@ silently weakening protection or erasing a possible exception. GitHub requires
 write-level ruleset access to disclose bypass actors even for a read. Missing
 bypass data is unverified, not evidence that bypass actors exist. The supported repository
 exception schema is **HTTPS exemptions only**, with `repo` and `reason` in the
-pinned policy. Generic repository overrides are not implemented. Manual-only
+local policy. Generic repository overrides are not implemented. Manual-only
 settings remain explicitly unverified by this controller; dated legacy audit
 evidence is not a fresh measurement. The strict main/scheduled audit uses the
 same non-weakening ruleset resolver, so preserved stronger protections pass

@@ -37,8 +37,8 @@ and its relevant procedures at that same tag. A link alone does not load them.
 
 This repository owns the single organization repository inventory. Validate it
 with `task setup` and `task verify`; the workflow runs the same commands. The
-inventory may reference only released, pinned policy artifacts. Do not invent a
-tag, pin a moving branch, or duplicate a project list in the policy provider.
+settings policy and its tools live in this repository and are reviewed together.
+Do not download executable settings policy or duplicate the repository inventory.
 Profile publication uses GitHub's existing default-branch behavior; do not
 change settings or publishing services.
 
