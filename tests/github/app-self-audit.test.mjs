@@ -57,7 +57,8 @@ test('documented command exits with sanitized unverified report when key unavail
 
 test('manifest-only target is explicit unverified evidence, not silently excluded or sent credentials',async()=>{
  let calls=0;
- const report=await auditAsApp(config,'art',{readerFactory:()=>{calls++;throw Error('must not authenticate');}});
+ const policy=structuredClone(config);policy.apps=policy.apps.filter(app=>app.agent!=='art');
+ const report=await auditAsApp(policy,'art',{readerFactory:()=>{calls++;throw Error('must not authenticate');}});
  assert.equal(calls,0);assert.deepEqual(report.audited_agents,['art']);
  assert.ok(report.excluded_agents.includes('cody'));assert.ok(report.excluded_agents.includes('vera'));assert.ok(report.excluded_agents.includes('rivet'));
  assert.equal(report.results[0].status,'unverified');assert.equal(report.status,'incomplete-or-drift');

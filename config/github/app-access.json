@@ -120,6 +120,34 @@
       "repository_selection": "all",
       "repositories": [],
       "scope_reason": "Parent-reported installation is all current and future repositories (installation 181822506). This records intent, not proof of accepted live access."
+    },
+    {
+      "agent": "art",
+      "app_id": 5754862,
+      "app_slug": "art-agent-living-proof-labs",
+      "installation_id": 181823499,
+      "manifest": "config/github/apps/art.manifest.json",
+      "permissions": {
+        "checks": "read",
+        "contents": "write",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "organization_projects": "write"
+      },
+      "justifications": {
+        "checks": "Read verification checks when reviewing design and product changes.",
+        "contents": "Commit specs and design files on branches and open pull requests. Merge authority remains with Rivet after required checks pass.",
+        "issues": "File and coordinate design and product work in issues.",
+        "metadata": "Required repository identity access.",
+        "pull_requests": "Open, comment on, and update pull requests for specs and design files. Merge authority remains with Rivet after required checks pass.",
+        "statuses": "Read legacy commit status checks.",
+        "organization_projects": "Move and update Art's own cards on the Living Proof Labs Delivery organization project board, including using Blocked to request help."
+      },
+      "repository_selection": "all",
+      "repositories": [],
+      "scope_reason": "Art-reported installation is all current and future repositories (installation 181823499). This records intent, not proof of accepted live access."
     }
   ]
 }

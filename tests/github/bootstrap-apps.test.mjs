@@ -76,7 +76,7 @@ test('scope validation rejects permission expansion, events, webhook, public and
   for(const mutate of [m=>m.default_permissions.administration='write',m=>m.default_permissions.contents='read',m=>m.default_events=['push'],m=>m.hook_attributes={url:'https://attacker.invalid'},m=>m.public=true,m=>m.redirect_url='https://attacker.invalid']) {
     const f=fixture();mutate(f.manifests.cody);assert.throws(()=>validateConfig(f.config,f.manifests));
   }
-  assert.deepEqual(enrolled.manifests.art.default_permissions,{contents:'read',issues:'write',metadata:'read',pull_requests:'write'});
+  assert.deepEqual(enrolled.manifests.art.default_permissions,{checks:'read',contents:'write',issues:'write',metadata:'read',pull_requests:'write',statuses:'read',organization_projects:'write'});
 });
 test('fixed-origin GET transport rejects redirects and never uses mutating requests',async()=>{
   await githubRead('/apps/example','SENTINEL',async(url,options)=>{assert.equal(url,'https://api.github.com/apps/example');assert.equal(options.method,'GET');assert.equal(options.redirect,'error');return {ok:true,json:async()=>({})};});
@@ -122,9 +122,12 @@ test('audit automatically covers every manifest and explicitly reports missing i
   const policy=JSON.parse(readFileSync('config/github/app-access.json','utf8'));
   const report=await auditManifestDirectory(policy,{read:reader(),revision:'fixture',configDigest:'fixture',now:()=> '2026-11-13T00:00:00Z'});
   assert.deepEqual(report.registrations.results.map(app=>app.agent),enrolled.config.apps.map(app=>app.agent));
-  assert.deepEqual(report.missing_installation_policy, ['art']);
-  for (const agent of ['cody', 'rivet', 'vera']) assert.equal(report.missing_installation_policy.includes(agent), false);
+  assert.deepEqual(report.missing_installation_policy, []);
+  for (const agent of ['art', 'cody', 'rivet', 'vera']) assert.equal(report.missing_installation_policy.includes(agent), false);
   assert.equal(report.status,'incomplete-or-drift');
+  const withoutArt = {...policy, apps: policy.apps.filter(app => app.agent !== 'art')};
+  const missing = await auditManifestDirectory(withoutArt,{read:reader(),revision:'fixture',configDigest:'fixture',now:()=> '2026-11-13T00:00:00Z'});
+  assert.deepEqual(missing.missing_installation_policy, ['art']);
 });
 
 test('settings reference manifests are validated examples, never bootstrap targets', async t => {

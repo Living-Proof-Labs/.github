@@ -13,14 +13,14 @@ export const SETTINGS_MANIFESTS = [
   ['config/github/app-reference-manifests/repository-settings-apply.manifest.json', 'write']
 ];
 
-// Rivet, Cody and Vera permissions come from the reviewed access definition, not a second grant list.
+// Rivet, Cody, Vera and Art permissions come from the reviewed access definition, not a second grant list.
 const reviewedAccess = JSON.parse(readFileSync(new URL('../../config/github/app-access.json', import.meta.url), 'utf8'));
 const reviewedPermissions = agent => reviewedAccess.apps.find(app => app.agent === agent).permissions;
 export const BOT_MANIFESTS = {
   art: {
     file: 'config/github/apps/art.manifest.json',
     name: 'Art Agent - Living Proof Labs',
-    permissions: { contents: 'read', issues: 'write', metadata: 'read', pull_requests: 'write' }
+    permissions: reviewedPermissions('art')
   },
   rivet: {
     file: 'config/github/apps/rivet.manifest.json',
