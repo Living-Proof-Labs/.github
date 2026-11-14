@@ -13,8 +13,8 @@ const manifest = enrolled.manifests.cody;
 function fixture() {
   return { config: {schema_version:1, owner:'Living-Proof-Labs', apps:[structuredClone(enrolled.config.apps.find(app=>app.agent==='cody'))]}, manifests: {cody:structuredClone(manifest)} };
 }
-const registration = (overrides={}) => ({id:42, slug:'living-proof-labs-cody', name:manifest.name, owner:{login:'Living-Proof-Labs', type:'Organization'}, permissions:manifest.default_permissions, events:[], ...overrides});
-const installation = (overrides={}) => ({id:12, app_id:42, app_slug:'living-proof-labs-cody', target_type:'Organization', account:{login:'Living-Proof-Labs'}, suspended_at:null, permissions:manifest.default_permissions, ...overrides});
+const registration = (overrides={}) => ({id:42, slug:'cody-agent-living-proof-labs', name:manifest.name, owner:{login:'Living-Proof-Labs', type:'Organization'}, permissions:manifest.default_permissions, events:[], ...overrides});
+const installation = (overrides={}) => ({id:12, app_id:42, app_slug:'cody-agent-living-proof-labs', target_type:'Organization', account:{login:'Living-Proof-Labs'}, suspended_at:null, permissions:manifest.default_permissions, ...overrides});
 function reader({registrations={}, installations=[], failList=false}={}) {
   return async endpoint => {
     if (endpoint.startsWith('/user/')) return {state:'active',role:'admin',organization:{login:'Living-Proof-Labs'},user:{login:'owner'}};
@@ -29,13 +29,13 @@ function reader({registrations={}, installations=[], failList=false}={}) {
 const run = (f, read) => plan(f.config, f.manifests, read);
 
 test('repeated verified identity runs are identical and only read', async()=>{
-  const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'living-proof-labs-cody'};
-  const read=reader({registrations:{'living-proof-labs-cody':registration()},installations:[installation()]});
+  const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  const read=reader({registrations:{'cody-agent-living-proof-labs':registration()},installations:[installation()]});
   const first=await run(f,read); assert.deepEqual(await run(f,read),first);
   assert.equal(first.results[0].status,'verified'); assert.equal(first.results[0].installation,'permissions-verified');
 });
 test('discovery adopts an existing registration and a persisted identity becomes a no-op', async()=>{
-  const f=fixture(), read=reader({registrations:{'living-proof-labs-cody':registration()}});
+  const f=fixture(), read=reader({registrations:{'cody-agent-living-proof-labs':registration()}});
   const first=(await run(f,read)).results[0]; assert.equal(first.status,'adopt');
   f.config.apps[0].identity=first.identity; assert.equal((await run(f,read)).results[0].status,'verified');
 });
@@ -57,20 +57,20 @@ test('empty, inaccessible, malformed and incomplete installation lists do not au
 });
 test('identity mismatch, wrong owner and missing registration never fall back to creating',async()=>{
   for(const found of [registration({id:7}),registration({slug:'other'}),registration({owner:{login:'Other',type:'Organization'}}),registration({owner:{login:'Living-Proof-Labs',type:'User'}}),null]) {
-    const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'living-proof-labs-cody'};
-    assert.equal((await run(f,reader({registrations:{'living-proof-labs-cody':found}}))).results[0].status,'unverified');
+    const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+    assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':found}}))).results[0].status,'unverified');
   }
 });
 test('multiple matching Apps or occupied candidate slug require owner resolution',async()=>{
   const f=fixture();
-  assert.equal((await run(f,reader({registrations:{'living-proof-labs-cody':registration(),renamed:registration({id:43,slug:'renamed'})},installations:[installation({id:13,app_id:43,app_slug:'renamed'})]}))).results[0].status,'ambiguous');
-  assert.equal((await run(f,reader({registrations:{'living-proof-labs-cody':registration({name:'Someone else'})}}))).results[0].status,'ambiguous');
+  assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration(),renamed:registration({id:43,slug:'renamed'})},installations:[installation({id:13,app_id:43,app_slug:'renamed'})]}))).results[0].status,'ambiguous');
+  assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration({name:'Someone else'})}}))).results[0].status,'ambiguous');
 });
 test('permission and event drift preserve identity; installation acceptance remains separate',async()=>{
-  const f=fixture();f.config.apps[0].identity={app_id:42,app_slug:'living-proof-labs-cody'};
-  for(const overrides of [{permissions:{metadata:'read'}},{events:['push']},{permissions:{...manifest.default_permissions,administration:'write'}}]) assert.equal((await run(f,reader({registrations:{'living-proof-labs-cody':registration(overrides)}}))).results[0].status,'drift');
-  assert.equal((await run(f,reader({registrations:{'living-proof-labs-cody':registration()},installations:[installation({permissions:{metadata:'read'}})]}))).results[0].installation,'review-required');
-  assert.equal((await run(f,reader({registrations:{'living-proof-labs-cody':registration()},failList:true}))).results[0].installation,'unverified');
+  const f=fixture();f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  for(const overrides of [{permissions:{metadata:'read'}},{events:['push']},{permissions:{...manifest.default_permissions,administration:'write'}}]) assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration(overrides)}}))).results[0].status,'drift');
+  assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration()},installations:[installation({permissions:{metadata:'read'}})]}))).results[0].installation,'review-required');
+  assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration()},failList:true}))).results[0].installation,'unverified');
 });
 test('scope validation rejects permission expansion, events, webhook, public and callback changes',()=>{
   for(const mutate of [m=>m.default_permissions.administration='write',m=>m.default_permissions.contents='read',m=>m.default_events=['push'],m=>m.hook_attributes={url:'https://attacker.invalid'},m=>m.public=true,m=>m.redirect_url='https://attacker.invalid']) {
@@ -90,7 +90,7 @@ test('only fresh interactive owner confirmation creates a private local form; re
   assert.equal(statSync(directory).mode&0o777,0o700);
   for(const name of ['registration.html','state','owner-confirmation.json']) assert.equal(statSync(path.join(directory,name)).mode&0o777,0o600);
   const html=readFileSync(path.join(directory,'registration.html'),'utf8');
-  assert.match(html,/organizations\/Living-Proof-Labs\/settings\/apps\/new/);assert.match(html,/Living Proof Labs Cody/);assert.doesNotMatch(html,/SECRET_SENTINEL/);
+  assert.match(html,/organizations\/Living-Proof-Labs\/settings\/apps\/new/);assert.match(html,/Cody Agent - Living Proof Labs/);assert.doesNotMatch(html,/SECRET_SENTINEL/);
   await assert.rejects(prepare(options));assert.equal(readFileSync(path.join(directory,'registration.html'),'utf8'),html);
 });
 test('noninteractive, nonowner, rejected confirmation, bound identity and discovered Apps cannot prepare',async t=>{
@@ -99,8 +99,8 @@ test('noninteractive, nonowner, rejected confirmation, bound identity and discov
   await assert.rejects(prepare(options));
   await assert.rejects(prepare({...options,interactive:false}));
   await assert.rejects(prepare({...options,read:async()=>({state:'active',role:'member'})}));
-  await assert.rejects(prepare({...options,read:reader({registrations:{'living-proof-labs-cody':registration()}})}));
-  f.config.apps[0].identity={app_id:42,app_slug:'living-proof-labs-cody'};await assert.rejects(prepare(options));
+  await assert.rejects(prepare({...options,read:reader({registrations:{'cody-agent-living-proof-labs':registration()}})}));
+  f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};await assert.rejects(prepare(options));
   assert.deepEqual(readdirSync(base),[]);
 });
 test('local preparation rejects destinations inside checkout, including symlink aliases',async t=>{

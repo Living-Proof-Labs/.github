@@ -1,5 +1,5 @@
 {
-  "name": "Living Proof Labs Vera",
+  "name": "Vera Agent - Living Proof Labs",
   "description": "Verification for Living Proof Labs. Reads code and continuous integration, comments and reviews pull requests, and files issues for verification failures.",
   "url": "https://github.com/Living-Proof-Labs/.github",
   "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
