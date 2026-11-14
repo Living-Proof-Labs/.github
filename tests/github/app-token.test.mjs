@@ -77,11 +77,21 @@ test('versioned manifests match the least-privilege bot sets', () => {
     assert.equal(manifest.public, false);
     assert.equal(Object.hasOwn(manifest, 'hook_attributes'), false);
   }
-  for (const bot of ['cody', 'vera']) {
+  for (const bot of ['art', 'cody', 'vera']) {
     const permissions = BOT_MANIFESTS[bot].permissions;
     assert.equal(Object.hasOwn(permissions, 'administration'), false);
     assert.equal(Object.hasOwn(permissions, 'pages'), false);
+    assert.equal(Object.hasOwn(permissions, 'workflows'), bot === 'cody');
+    assert.equal(Object.hasOwn(permissions, 'deployments'), false);
   }
+  assert.equal(BOT_MANIFESTS.art.permissions.contents, 'write');
+  assert.equal(BOT_MANIFESTS.art.permissions.issues, 'write');
+  assert.equal(BOT_MANIFESTS.art.permissions.pull_requests, 'write');
+  assert.equal(BOT_MANIFESTS.art.permissions.organization_projects, 'write');
+  assert.equal(BOT_MANIFESTS.art.permissions.metadata, 'read');
+  assert.equal(BOT_MANIFESTS.art.permissions.statuses, 'read');
+  assert.equal(BOT_MANIFESTS.art.permissions.checks, 'read');
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.art.permissions, 'actions'), false);
   assert.equal(BOT_MANIFESTS.cody.permissions.statuses, 'read');
   assert.equal(BOT_MANIFESTS.cody.permissions.organization_projects, 'write');
   assert.equal(Object.hasOwn(BOT_MANIFESTS.cody.permissions, 'deployments'), false);

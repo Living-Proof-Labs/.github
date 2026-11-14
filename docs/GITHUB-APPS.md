@@ -239,6 +239,30 @@ items through Verifying and Verifying after Merge. `pull_requests: write` does
 not include merge authority, which remains with Rivet after required checks
 pass. The App does not request Administration.
 
+### Art
+
+Manifest:
+[`config/github/apps/art.manifest.json`](../config/github/apps/art.manifest.json).
+Name: `Art Agent - Living Proof Labs` (29 characters).
+
+| Permission | Access |
+| --- | --- |
+| checks | read |
+| contents | write |
+| issues | write |
+| metadata | read |
+| pull_requests | write |
+| statuses | read |
+| organization_projects | write |
+
+Art now has a reviewed installation policy in
+[`config/github/app-access.json`](../config/github/app-access.json).
+`contents: write` is so Art can commit specs and design files on branches and
+open pull requests. `organization_projects: write` is for moving Art's own
+cards, including using Blocked to request help. `pull_requests: write` does
+not include merge authority, which remains with Rivet after required checks
+pass. The App does not request Administration, Workflows, Pages or Deployments.
+
 GitHub App names are unique across GitHub and are limited to 34 characters.
 The bot names above are inside that limit. Keep the manifest name on the
 confirmation page. If GitHub reports that a name is already taken, stop and
@@ -297,20 +321,19 @@ callback configuration or webhook URL: owners must inspect those settings.
 
 ### Art's proposed scope
 
-Name: `Art Agent - Living Proof Labs` (29 characters). All four registration
-names follow `<Name> Agent - Living Proof Labs`. These manifest names apply
-to new registrations; they do not rename or recreate an existing App.
-
-[`art.manifest.json`](../config/github/apps/art.manifest.json) represents
-**Style and product guidance**: Contents and Metadata read; Issues and Pull
-requests write. This lets Art read source/designs, create granular design issues,
-and comment on or review changes. It grants no Contents write, Actions, Checks,
-Workflows, Pages or Administration. Whether Art should directly edit design files
-is unresolved; this proposal leaves implementation to Cody. Any later expansion
-needs a reviewed manifest change and owner acceptance, not an automatic grant.
-Private registration, no events and the existing loopback callback are retained.
-The token helper accepts `art` using the existing `ART_GITHUB_APP_ID` /
-`ART_GITHUB_APP_PRIVATE_KEY` convention; no credentials are provisioned by this change.
+The earlier proposal left Contents write unresolved and left implementation to
+Cody. That question is now resolved: Art's reviewed installation policy grants
+Contents write so Art can commit specs and design files on branches and open
+pull requests, with no merge authority. See [Art](#art) and
+[`config/github/app-access.json`](../config/github/app-access.json). Any later
+expansion still needs a reviewed manifest change and owner acceptance, not an
+automatic grant. Name: `Art Agent - Living Proof Labs` (29 characters). All
+four registration names follow `<Name> Agent - Living Proof Labs`. These
+manifest names apply to new registrations; they do not rename or recreate an
+existing App. Private registration, no events and the existing loopback
+callback are retained. The token helper accepts `art` using the existing
+`ART_GITHUB_APP_ID` / `ART_GITHUB_APP_PRIVATE_KEY` convention; no credentials
+are provisioned by this change.
 
 ### Owner-confirmed absence handoff
 
@@ -370,7 +393,7 @@ live verification. Reuse a saved proposal instead of rerunning conversion.
 Record the proposal's nonsecret identity through a PR. Store the App ID and PEM
 through the approved bot secret-card procedure below, then use the proposal's
 installation link in the owner's browser. Select **Living-Proof-Labs**. Choose
-**Only select repositories** for Cody and Art; the specific repositories
+**Only select repositories** for Cody; the specific repositories
 need an explicit owner decision; no scope is guessed or expanded by this tool.
 Record the installation ID, exact repositories and permission justifications in
 `app-access.json`, then run bootstrap and access audit. Registration verification
@@ -539,12 +562,12 @@ Install each App only on Living-Proof-Labs:
 5. Click **Install App**, then **Install** next to Living-Proof-Labs.
 
 GitHub then offers **All repositories** or **Only select repositories**.
-The reviewed Rivet and Vera desired states record **All repositories**,
-including future repositories, from the owner's rollout. For Rivet this is an
-access decision, not a requirement to run repository-policy administration as
-Rivet. Do not change installation scope merely to make a read succeed.
+The reviewed Rivet, Vera and Art desired states record **All repositories**,
+including future repositories, from the reported installations. For Rivet this
+is an access decision, not a requirement to run repository-policy administration
+as Rivet. Do not change installation scope merely to make a read succeed.
 
-For Cody and Art, choose **Only select repositories** and limit each
+For Cody, choose **Only select repositories** and limit the
 installation to the repositories where that bot works.
 
 The installation id is optional. It is the number at the end of the
@@ -694,17 +717,17 @@ a key anywhere.
 
 `config/github/app-access.json` is the reviewed desired state for existing Apps.
 Registration discovery automatically reads every `config/github/apps/*.manifest.json`.
-Rivet, Cody and Vera have reviewed installation policies; Art explicitly
-reports missing installation policy rather than inheriting those grants.
+Rivet, Cody, Vera and Art have reviewed installation policies.
 It records registration and installation identifiers, exact permissions with
-justifications, and repository selection. Rivet's and Vera's entries record
-all-repository rollouts (Vera installation `181822506`), not independently
-verified accepted grants. Cody's entry records installation `181820269` from his
-working App login, selected-repository mode per the owner-documented install
-policy, and the current organization repositories as that working set. That list
-records intent, not independently verified live membership; selected-scope
-membership cannot currently pass the audit. The manifest and validator must
-match each policy. Keel identity work remains separate.
+justifications, and repository selection. Rivet's, Vera's and Art's entries
+record all-repository rollouts (Vera installation `181822506`, Art installation
+`181823499`), not independently verified accepted grants. Cody's entry records
+installation `181820269` from his working App login, selected-repository mode
+per the owner-documented install policy, and the current organization
+repositories as that working set. That list records intent, not independently
+verified live membership; selected-scope membership cannot currently pass the
+audit. The manifest and validator must match each policy. Keel identity work
+remains separate.
 
 ```sh
 bash tools/task.sh github:apps:check

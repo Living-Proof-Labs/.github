@@ -5,10 +5,13 @@
   "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
   "public": false,
   "default_permissions": {
-    "contents": "read",
+    "checks": "read",
+    "contents": "write",
     "issues": "write",
     "metadata": "read",
-    "pull_requests": "write"
+    "pull_requests": "write",
+    "statuses": "read",
+    "organization_projects": "write"
   },
   "default_events": []
 }
