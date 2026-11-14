@@ -147,7 +147,8 @@ requests narrower Pages access in audit tokens. Its Administration-write audit
 requirement and shared-key exposure are described above. Registering separate
 Apps would be a separate design and owner-approved credential change.
 
-`rivet.manifest.json`, `cody.manifest.json`, and `vera.manifest.json` are
+`rivet.manifest.json`, `cody.manifest.json`, `vera.manifest.json`, `art.manifest.json`, and
+`keel.manifest.json` are
 private Apps, one per bot, for the same organization
 manifest flow (`task github:apps:form:help`). Webhooks stay off. Only the
 Rivet manifest requests Pages write; no engineering App requests Administration. Minting a bot

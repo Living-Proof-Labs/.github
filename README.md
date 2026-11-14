@@ -183,7 +183,7 @@ for settings changes; do not broaden Rivet to run this command.
 sole inventory of Living Proof Labs repositories. Register a project there by
 pull request, then run the validation command above.
 [`config/github/agents.json`](config/github/agents.json) is the directory of
-agents that have GitHub Apps. It names Rivet, Cody, and Vera, with each role,
+agents that have GitHub Apps. It names Rivet, Cody, Vera, and Keel, with each role,
 GitHub identity, and App manifest path. An agent without an App is not listed.
 
 Useful references:
@@ -318,6 +318,7 @@ GitHub Apps, with each role, identity, and manifest path.
 | Cody | [`cody.manifest.json`](config/github/apps/cody.manifest.json) | Software engineer |
 | Vera | [`vera.manifest.json`](config/github/apps/vera.manifest.json) | Verification |
 | Art | [`art.manifest.json`](config/github/apps/art.manifest.json) | Style and product guidance |
+| Keel | [`keel.manifest.json`](config/github/apps/keel.manifest.json) | Repository review and coordination |
 
 Use the [repeatable discovery and owner handoff](docs/GITHUB-APPS.md#repeatable-bootstrap-and-discovery)
 before registering anything. Both bootstrap and audit automatically enroll all
@@ -350,6 +351,7 @@ scripts/app-token rivet >/dev/null && printf 'Rivet authentication OK\n'
 | rivet | `RIVET_GITHUB_APP_ID` | `RIVET_GITHUB_APP_PRIVATE_KEY` | `RIVET_GITHUB_APP_INSTALLATION_ID` |
 | cody | `CODY_GITHUB_APP_ID` | `CODY_GITHUB_APP_PRIVATE_KEY` | `CODY_GITHUB_APP_INSTALLATION_ID` |
 | vera | `VERA_GITHUB_APP_ID` | `VERA_GITHUB_APP_PRIVATE_KEY` | `VERA_GITHUB_APP_INSTALLATION_ID` |
+| keel | `KEEL_GITHUB_APP_ID` | `KEEL_GITHUB_APP_PRIVATE_KEY` | `KEEL_GITHUB_APP_INSTALLATION_ID` |
 
 Put the PEM text in the private-key variable. A file path is rejected. A
 value stored with literal `\n` sequences is accepted. When the installation

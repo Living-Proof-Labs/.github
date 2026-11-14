@@ -4,8 +4,8 @@
 # Bot GitHub Apps
 
 This is the organization owner's procedure for registering one private GitHub
-App each for Rivet, Cody, Vera, and Art, then storing the App id and private key
-on that bot's secret card in Grok Bot. Keel has no manifest in this set yet.
+App each for Rivet, Cody, Vera, Art, and Keel, then storing the App id and private key
+on that bot's secret card in Grok Bot.
 
 The manifests, [`scripts/app-token`](../scripts/app-token), and
 `task github:app-token:help` are in this repository,
@@ -19,9 +19,10 @@ this guide from the repository root so `scripts/app-token`,
 
 [`config/github/agents.json`](../config/github/agents.json) is the directory of
 agents that have GitHub Apps. It records each role and App manifest path.
-Keel is not in that directory. The manifests do not record a numeric App id, the
+The manifests do not record a numeric App id, the
 GitHub App slug GitHub assigns at registration, or a git commit identity, so
-those fields are null in the directory.
+those fields remain null until registration is verified. Keel's verified App id
+and slug are recorded; its git commit identity remains unset.
 
 The settings-audit credential stays separate. It uses
 `REPO_ADMIN_APP_CLIENT_ID` and `REPO_ADMIN_APP_PRIVATE_KEY` on the
@@ -108,6 +109,34 @@ Name: `Vera Agent - Living Proof Labs` (30 characters).
 | issues | write |
 | metadata | read |
 | pull_requests | write |
+
+### Keel
+
+Manifest:
+[`config/github/apps/keel.manifest.json`](../config/github/apps/keel.manifest.json).
+Name: `Living Proof Labs Keel` (22 characters).
+
+| Permission | Access |
+| --- | --- |
+| actions | read |
+| checks | read |
+| contents | write |
+| issues | write |
+| metadata | read |
+| pull_requests | write |
+
+Contents write supports source branches for pull requests. Keel does not
+request administration, Pages, workflow changes, or organization permissions.
+Install only on explicitly selected repositories. Keep credentials outside
+this repository.
+
+Keel was registered on 2026-11-12 as
+[`living-proof-labs-keel`](https://github.com/apps/living-proof-labs-keel),
+App id `5722183`, using the browser form and the permissions above.
+The manifest callback is a bootstrap exchange endpoint, not an OAuth redirect;
+manual registration leaves OAuth redirects empty and user authorization off.
+Key generation and installation remain pending until a secure Keel credential
+store is available. No private key was generated during registration.
 
 GitHub App names are unique across GitHub and are limited to 34 characters.
 The bot names above are inside that limit. Keep the manifest name on the
@@ -240,7 +269,7 @@ live verification. Reuse a saved proposal instead of rerunning conversion.
 Record the proposal's nonsecret identity through a PR. Store the App ID and PEM
 through the approved bot secret-card procedure below, then use the proposal's
 installation link in the owner's browser. Select **Living-Proof-Labs** and
-**Only select repositories** for Cody, Vera and Art. The specific repositories
+**Only select repositories** for Cody, Vera, Art and Keel. The specific repositories
 need an explicit owner decision; no scope is guessed or expanded by this tool.
 Record the installation ID, exact repositories and permission justifications in
 `app-access.json`, then run bootstrap and access audit. Registration verification
@@ -278,7 +307,7 @@ submits the form has to be on that same computer. The exchange runs
 `gh auth token`. Log `gh` in as an organization owner for that exchange. The
 shared `rivet-agent-lpl` login is the wrong account for it.
 
-The commands below use Rivet. For Cody, Vera or Art, change the manifest path and
+The commands below use Rivet. For Cody, Vera, Art, or Keel, change the manifest path and
 use a different directory. Write every output file outside the git checkout.
 The tools create those files mode `0600` and refuse to overwrite them.
 
@@ -318,7 +347,7 @@ The receiver accepts the callback only when that `state` matches the state
 file. Open `form.html` only after the callback receiver in the next step is
 listening. On GitHub's confirmation page, review the manifest: the name is
 `Rivet Agent - Living Proof Labs`, `Cody Agent - Living Proof Labs`,
-`Vera Agent - Living Proof Labs`, or `Art Agent - Living Proof Labs`. Webhooks
+`Vera Agent - Living Proof Labs`, `Art Agent - Living Proof Labs`, or `Living Proof Labs Keel`. Webhooks
 are off (`default_events` is empty and the manifest sets no webhook). Then
 submit the form.
 
@@ -414,7 +443,7 @@ repositories, from the owner's rollout. This is an access decision, not a
 requirement to run repository-policy administration as Rivet. Do not change
 installation scope merely to make a read succeed.
 
-For Cody, Vera and Art, choose **Only select repositories** and limit each
+For Cody, Vera, Art, and Keel, choose **Only select repositories** and limit each
 installation to the repositories where that bot works.
 
 The installation id is optional. It is the number at the end of the
@@ -463,6 +492,7 @@ text, and, optionally, the installation id:
 | rivet | `RIVET_GITHUB_APP_ID` | `RIVET_GITHUB_APP_PRIVATE_KEY` | `RIVET_GITHUB_APP_INSTALLATION_ID` |
 | cody | `CODY_GITHUB_APP_ID` | `CODY_GITHUB_APP_PRIVATE_KEY` | `CODY_GITHUB_APP_INSTALLATION_ID` |
 | vera | `VERA_GITHUB_APP_ID` | `VERA_GITHUB_APP_PRIVATE_KEY` | `VERA_GITHUB_APP_INSTALLATION_ID` |
+| keel | `KEEL_GITHUB_APP_ID` | `KEEL_GITHUB_APP_PRIVATE_KEY` | `KEEL_GITHUB_APP_INSTALLATION_ID` |
 
 Aaron sets these variables on that bot's secret card in Grok Bot. The bot
 does not type them. When the bot runs, the card supplies the variables.

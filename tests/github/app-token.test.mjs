@@ -77,7 +77,7 @@ test('versioned manifests match the least-privilege bot sets', () => {
     assert.equal(manifest.public, false);
     assert.equal(Object.hasOwn(manifest, 'hook_attributes'), false);
   }
-  for (const bot of ['cody', 'vera']) {
+  for (const bot of ['cody', 'vera', 'keel']) {
     const permissions = BOT_MANIFESTS[bot].permissions;
     assert.equal(Object.hasOwn(permissions, 'administration'), false);
     assert.equal(Object.hasOwn(permissions, 'pages'), false);
@@ -99,7 +99,8 @@ test('versioned manifests match the least-privilege bot sets', () => {
   assert.equal(BOT_MANIFESTS.cody.permissions.actions, 'read');
   assert.equal(BOT_MANIFESTS.vera.permissions.actions, 'read');
   assert.equal(BOT_MANIFESTS.vera.permissions.contents, 'read');
-  assert.equal(Object.hasOwn(BOT_MANIFESTS, 'keel'), false);
+  assert.equal(BOT_MANIFESTS.keel.permissions.contents, 'write');
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.keel.permissions, 'workflows'), false);
   assert.throws(() => validateBotManifest('cody', {
     ...JSON.parse(readFileSync(path.join(root, BOT_MANIFESTS.cody.file), 'utf8')),
     default_permissions: { ...BOT_MANIFESTS.cody.permissions, administration: 'read' }
@@ -326,7 +327,7 @@ test('missing configuration and unknown bots fail before a request', async () =>
   assert.equal(leaked.err().includes('BEGIN'), false);
   assert.equal(await main(['nope'], rivetEnv(), capture()), 1);
   assert.throws(() => loadBotConfig('rivet', rivetEnv({ GITHUB_APP_ORG: '../evil' })), /organization/);
-  assert.throws(() => loadBotConfig('keel', { KEEL_GITHUB_APP_ID: '1', KEEL_GITHUB_APP_PRIVATE_KEY: privateKey }), /Unknown bot "keel"/);
+  assert.equal(loadBotConfig('keel', { KEEL_GITHUB_APP_ID: '1', KEEL_GITHUB_APP_PRIVATE_KEY: privateKey }).appId, '1');
 });
 
 test('help names the environment variables and the example command', async () => {
@@ -334,7 +335,7 @@ test('help names the environment variables and the example command', async () =>
   assert.equal(await main(['--help'], {}, io), 0);
   assert.match(io.out(), /<BOT>_GITHUB_APP_PRIVATE_KEY/);
   assert.match(io.out(), /GH_TOKEN=\$\(scripts\/app-token rivet\)/);
-  assert.equal(io.out().toLowerCase().includes('keel'), false);
+  assert.match(io.out(), /filename stem of a valid config\/github\/apps\/\*\.manifest\.json/);
   assert.equal(io.err(), '');
   const empty = capture();
   assert.equal(await main([], rivetEnv(), empty), 1);

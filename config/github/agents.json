@@ -46,6 +46,17 @@
         "app_slug": null,
         "app_id": null
       }
+    },
+    {
+      "id": "keel",
+      "role": "Repository review and coordination",
+      "manifest": "config/github/apps/keel.manifest.json",
+      "github_identity": {
+        "commit_name": null,
+        "commit_email": null,
+        "app_slug": "living-proof-labs-keel",
+        "app_id": "5722183"
+      }
     }
   ]
 }

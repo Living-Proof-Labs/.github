@@ -66,13 +66,19 @@ test('the committed agent directory matches the App manifests in this repository
     rivet: 'Head of Engineering and Delivery',
     cody: 'Software engineer',
     vera: 'Verification',
-    art: 'Style and product guidance'
+    art: 'Style and product guidance',
+    keel: 'Repository review and coordination'
   };
   for (const agent of committed.agents) {
     assert.equal(agent.role, roles[agent.id]);
     assert.equal(agent.manifest, BOT_MANIFESTS[agent.id].file);
     assert.equal(existsSync(path.join(root, agent.manifest)), true);
-    assert.deepEqual(Object.keys(agent.github_identity).sort(), ['app_id', 'app_slug', 'commit_email', 'commit_name']);
+    assert.deepEqual(agent.github_identity, {
+      commit_name: null,
+      commit_email: null,
+      app_slug: agent.id === 'keel' ? 'living-proof-labs-keel' : null,
+      app_id: agent.id === 'keel' ? '5722183' : null
+    });
   }
 });
 
