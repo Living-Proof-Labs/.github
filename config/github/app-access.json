@@ -90,6 +90,36 @@
         "Living-Proof-Labs/website"
       ],
       "scope_reason": "Owner-documented policy is Only select repositories for Cody, limited to the repositories where the developer bot works. This lists the current Living Proof Labs repositories as that working set and records intent, not proof of accepted live membership. Rivet cannot read organization installations (Administration read is out of scope), so the owner must confirm the live selection and this list."
+    },
+    {
+      "agent": "vera",
+      "app_id": 5754857,
+      "app_slug": "vera-agent-living-proof-labs",
+      "installation_id": 181822506,
+      "manifest": "config/github/apps/vera.manifest.json",
+      "permissions": {
+        "actions": "read",
+        "checks": "write",
+        "contents": "write",
+        "issues": "write",
+        "metadata": "read",
+        "pull_requests": "write",
+        "statuses": "read",
+        "organization_projects": "write"
+      },
+      "justifications": {
+        "actions": "Read continuous integration workflows and runs.",
+        "checks": "Post verification results as checks.",
+        "contents": "Push automated tests into pull requests when the developer has not, per the team rule that any check Vera does by hand that could be automated must become an automated test in the same PR.",
+        "issues": "File issues for verification failures.",
+        "metadata": "Required repository identity access.",
+        "pull_requests": "Comment on, review, and update pull requests, including pushing verification tests. Merge authority remains with Rivet after required checks pass.",
+        "statuses": "Read legacy commit status checks.",
+        "organization_projects": "Move items through Verifying and Verifying after Merge on the Living Proof Labs Delivery organization project board."
+      },
+      "repository_selection": "all",
+      "repositories": [],
+      "scope_reason": "Parent-reported installation is all current and future repositories (installation 181822506). This records intent, not proof of accepted live access."
     }
   ]
 }

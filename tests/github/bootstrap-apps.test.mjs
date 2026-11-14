@@ -122,9 +122,8 @@ test('audit automatically covers every manifest and explicitly reports missing i
   const policy=JSON.parse(readFileSync('config/github/app-access.json','utf8'));
   const report=await auditManifestDirectory(policy,{read:reader(),revision:'fixture',configDigest:'fixture',now:()=> '2026-11-13T00:00:00Z'});
   assert.deepEqual(report.registrations.results.map(app=>app.agent),enrolled.config.apps.map(app=>app.agent));
-  for(const agent of ['art','vera']) assert.ok(report.missing_installation_policy.includes(agent));
-  assert.equal(report.missing_installation_policy.includes('cody'), false);
-  assert.equal(report.missing_installation_policy.includes('rivet'), false);
+  assert.deepEqual(report.missing_installation_policy, ['art']);
+  for (const agent of ['cody', 'rivet', 'vera']) assert.equal(report.missing_installation_policy.includes(agent), false);
   assert.equal(report.status,'incomplete-or-drift');
 });
 
