@@ -100,3 +100,7 @@ tasks:
     cmds:
       - mkdir -p artifacts
       - bash tools/with-node.sh node --test --test-reporter=junit --test-reporter-destination=artifacts/settings-scenarios.xml tests/github/reconcile-inventory.test.mjs tests/github/apply-workflow.test.mjs tests/github/repository-settings.test.mjs tests/github/local-settings.test.mjs
+  github:apps:browser:
+    desc: Prepare owner browser registration or validate nonsecret settings readback
+    cmds:
+      - bash tools/with-node.sh node tools/github/browser-app-registration.mjs {{.CLI_ARGS}}

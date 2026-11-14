@@ -9,14 +9,14 @@ import { handoff, continueSession } from '../../tools/github/registration-handof
 import { exchangeOnce } from '../../tools/github/exchange-app-manifest-code.mjs';
 import { acceptCallback, matchesState } from '../../tools/github/receive-app-manifest-code.mjs';
 import { registrationForm } from '../../tools/github/render-app-manifest-form.mjs';
-const manifest = JSON.parse(readFileSync('config/github/apps/cody.manifest.json'));
+const manifest = JSON.parse(readFileSync('config/github/apps/vera.manifest.json'));
 const pem = generateKeyPairSync('rsa', {modulusLength:2048}).privateKey.export({type:'pkcs8',format:'pem'});
-const registration = () => ({id:123,slug:'living-proof-labs-cody',name:manifest.name,owner:{login:'Living-Proof-Labs',type:'Organization'},permissions:manifest.default_permissions,events:[],pem,client_secret:'SECRET_CANARY',webhook_secret:'WEBHOOK_CANARY'});
+const registration = () => ({id:123,slug:'living-proof-labs-vera',name:manifest.name,owner:{login:'Living-Proof-Labs',type:'Organization'},permissions:manifest.default_permissions,events:[],pem,client_secret:'SECRET_CANARY',webhook_secret:'WEBHOOK_CANARY'});
 const membership = {state:'active',role:'admin',organization:{login:'Living-Proof-Labs'},user:{login:'owner'}};
 function fixture(t, overrides = {}) {
  const dir=mkdtempSync(path.join(tmpdir(),'registration-session-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
  const save=(name,value)=>writeFileSync(path.join(dir,name),typeof value==='string'?value:JSON.stringify(value),{mode:0o600});
- save('owner-confirmation.json',{agent:'cody',owner:'Living-Proof-Labs',confirmed_by:'owner',confirmed_at:new Date().toISOString(),manifest_sha256:createHash('sha256').update(JSON.stringify(manifest)).digest('hex'),source:'interactive-owner-registration-inventory-inspection',...overrides});
+ save('owner-confirmation.json',{agent:'vera',owner:'Living-Proof-Labs',confirmed_by:'owner',confirmed_at:new Date().toISOString(),manifest_sha256:createHash('sha256').update(JSON.stringify(manifest)).digest('hex'),source:'interactive-owner-registration-inventory-inspection',...overrides});
  save('state','a'.repeat(43));save('code','temporary_code');save('registration',registration());return {dir,save};
 }
 test('generated action carries encoded state; callback rejects empty, duplicate and wrong state',()=>{

@@ -11,7 +11,7 @@ import { githubRead } from '../../tools/github/audit-app-access.mjs';
 const enrolled = loadManifestDirectory();
 const manifest = enrolled.manifests.cody;
 function fixture() {
-  return { config: {schema_version:1, owner:'Living-Proof-Labs', apps:[structuredClone(enrolled.config.apps.find(app=>app.agent==='cody'))]}, manifests: {cody:structuredClone(manifest)} };
+  return { config: {schema_version:1, owner:'Living-Proof-Labs', apps:[{...structuredClone(enrolled.config.apps.find(app=>app.agent==='cody')), identity:null}]}, manifests: {cody:structuredClone(manifest)} };
 }
 const registration = (overrides={}) => ({id:42, slug:'cody-agent-living-proof-labs', name:manifest.name, owner:{login:'Living-Proof-Labs', type:'Organization'}, permissions:manifest.default_permissions, events:[], ...overrides});
 const installation = (overrides={}) => ({id:12, app_id:42, app_slug:'cody-agent-living-proof-labs', target_type:'Organization', account:{login:'Living-Proof-Labs'}, suspended_at:null, permissions:manifest.default_permissions, ...overrides});
