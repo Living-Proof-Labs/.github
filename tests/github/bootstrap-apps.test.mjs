@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, statSync, symlinkSync, readdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { plan, prepare, validateConfig } from '../../tools/github/bootstrap-apps.mjs';
+import { plan, prepare, validateConfig, planExitCode } from '../../tools/github/bootstrap-apps.mjs';
 import { loadManifestDirectory } from '../../tools/github/manifest-directory.mjs';
 import { githubRead } from '../../tools/github/audit-app-access.mjs';
 const enrolled = loadManifestDirectory();
@@ -47,7 +47,7 @@ test('installation discovery finds a non-default slug, but never equates install
   assert.equal(result.results[0].identity,undefined);
 });
 for(const status of [401,403,404,429,500]) test(`HTTP ${status} never proves absence or prints the API error body`,async()=>{
-  const report=await run(fixture(),async()=>{throw Object.assign(new Error('SECRET_SENTINEL'),{httpStatus:status});});
+  const report=await run(fixture(),async()=>{throw Object.assign(new Error('SECRET_SENTINEL'),{httpStatus:status,visibilityLimited:status===403});});
   assert.equal(report.results[0].status,'unverified'); assert.equal(report.discovery,'unverified'); assert.doesNotMatch(JSON.stringify(report),/SECRET_SENTINEL/);
 });
 test('empty, inaccessible, malformed and incomplete installation lists do not authorize creation',async()=>{
@@ -58,7 +58,7 @@ test('empty, inaccessible, malformed and incomplete installation lists do not au
 test('identity mismatch, wrong owner and missing registration never fall back to creating',async()=>{
   for(const found of [registration({id:7}),registration({slug:'other'}),registration({owner:{login:'Other',type:'Organization'}}),registration({owner:{login:'Living-Proof-Labs',type:'User'}}),null]) {
     const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
-    assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':found}}))).results[0].status,'unverified');
+    assert.equal((await run(f,reader({registrations:{'cody-agent-living-proof-labs':found}}))).results[0].status,found ? 'conflict' : 'unverified');
   }
 });
 test('multiple matching Apps or occupied candidate slug require owner resolution',async()=>{
@@ -150,7 +150,7 @@ test('the workflow report task keeps failing-plan artifacts pure JSON under GitH
   mkdirSync(bin, { recursive: true });
   writeFileSync(path.join(bin, 'node'), `#!/bin/sh\nexec '${process.execPath}' "$@"\n`, { mode: 0o700 });
   const mock = path.join(temporary, 'deny-network.mjs');
-  writeFileSync(mock, "globalThis.fetch = async () => ({ok:false,status:403});\n");
+  writeFileSync(mock, "globalThis.fetch = async () => new Response(JSON.stringify({message:'Resource not accessible by integration'}),{status:403});\n");
   const workflow = readFileSync(path.join(root, '.github/workflows/bootstrap-agent-apps.yml'), 'utf8');
   assert.match(workflow, /run: task github:apps:bootstrap:report/);
   assert.doesNotMatch(workflow, /task github:apps:bootstrap[^\n]*>/);
@@ -169,4 +169,107 @@ test('the workflow report task keeps failing-plan artifacts pure JSON under GitH
   assert.ok(report.results.every(app => app.status === 'unverified'));
   assert.doesNotMatch(artifact, /::error|task: Failed/);
   assert.match(result.stdout + result.stderr, /Failed to run task/);
+  for(const [mockSource, expected] of [
+    ["globalThis.fetch = async () => new Response(JSON.stringify({message:'Resource not accessible by integration'}),{status:403});",0],
+    ["globalThis.fetch = async () => ({ok:false,status:404});",0],
+    ["globalThis.fetch = async () => ({ok:false,status:401});",1],
+    ["globalThis.fetch = async () => ({ok:false,status:500});",1],
+    ["globalThis.fetch = async () => ({ok:true,json:async()=>({})});",1],
+    ["globalThis.fetch = async () => {throw Error('SECRET');};",1]
+  ]) {
+    writeFileSync(mock,mockSource);
+    const informational=spawnSync(task,['github:apps:bootstrap:report','--','--allow-incomplete-visibility'],{cwd:temporary,env:{PATH:process.env.PATH,CI:'true',GITHUB_ACTIONS:'true',NODE_OPTIONS:`--import=${mock}`},encoding:'utf8'});
+    assert.equal(informational.status===0,expected===0);
+    const artifact=readFileSync(path.join(temporary,'artifacts/app-bootstrap-plan.json'),'utf8');
+    const report=JSON.parse(artifact);
+    assert.equal(report.outcome,expected===0?'incomplete-visibility':'failure');
+    assert.doesNotMatch(artifact,/SECRET|::error|task: Failed/);
+  }
+  // Configuration errors must still fail; no valid evidence artifact is fabricated.
+  writeFileSync(path.join(temporary,'config/github/agents.json'),'invalid json');
+  const invalid=spawnSync(task,['github:apps:bootstrap:report','--','--allow-incomplete-visibility'],{cwd:temporary,env:{PATH:process.env.PATH,NODE_OPTIONS:`--import=${mock}`},encoding:'utf8'});
+  assert.notEqual(invalid.status,0);
+
+});
+
+for (const status of [403, 404]) test(`only HTTP ${status} visibility can be informational; strict plan still fails`, async () => {
+  const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  const report=await run(f,async()=>{throw Object.assign(new Error('SECRET'),{httpStatus:status,visibilityLimited:status===403});});
+  assert.equal(report.outcome,'incomplete-visibility');
+  assert.equal(report.results[0].reason_code,'incomplete-visibility');
+  assert.equal(planExitCode(report),1); assert.equal(planExitCode(report,true),0);
+  assert.doesNotMatch(JSON.stringify(report),/SECRET|absent/);
+});
+for (const error of [new Error('SECRET'), Object.assign(new Error('SECRET'),{httpStatus:401}), Object.assign(new Error('SECRET'),{httpStatus:429}), Object.assign(new Error('SECRET'),{httpStatus:500}), Object.assign(new Error('SECRET'),{httpStatus:403,rateLimited:true})]) test(`execution error ${error.httpStatus ?? 'network'} cannot be informational`, async () => {
+  const report=await run(fixture(),async()=>{throw error;});
+  assert.equal(report.outcome,'failure'); assert.equal(planExitCode(report,true),1);
+  assert.doesNotMatch(JSON.stringify(report),/SECRET/);
+});
+test('malformed pagination fails even with hidden registrations',async()=>{
+  for(const response of [{},null,{total_count:2,installations:[installation()]},{total_count:1,installations:[installation({app_id:null})]}]) {
+    const report=await run(fixture(),async endpoint=>{if(endpoint.startsWith('/orgs/')) return response; throw Object.assign(Error(),{httpStatus:404});});
+    assert.equal(report.outcome,'failure');assert.equal(planExitCode(report,true),1);
+  }
+});
+test('known conflicts and drift override incomplete installation visibility',async()=>{
+  for(const found of [null,{},registration({id:7}),registration({permissions:{metadata:'read'}}),registration({events:['push']})]) {
+    const f=fixture(); f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+    const report=await run(f,async endpoint=>{if(endpoint.startsWith('/apps/')) return found; throw Object.assign(Error(),{httpStatus:403,visibilityLimited:true});});
+    assert.equal(report.outcome,'failure');assert.equal(planExitCode(report,true),1);
+  }
+});
+test('missing, suspended and mismatched installations never pass informational mode',async()=>{
+  const f=fixture();f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  for(const installations of [[],[installation({suspended_at:'today'})],[installation({permissions:{}})],[installation(),installation({id:13})]]) {
+    const report=await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration()},installations}));
+    assert.equal(planExitCode(report,true),1);
+  }
+});
+test('adoption needs owner action; verified registration with denied installation list is incomplete',async()=>{
+  const f=fixture();
+  let report=await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration()},installations:[installation()]}));
+  assert.equal(report.outcome,'owner-action-required');assert.equal(planExitCode(report,true),1);
+  f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  report=await run(f,async endpoint=>{if(endpoint.startsWith('/apps/')) return registration();throw Object.assign(Error(),{httpStatus:403,visibilityLimited:true});});
+  assert.equal(report.outcome,'incomplete-visibility');assert.equal(planExitCode(report,true),0);
+  report=await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration()},installations:[installation()]}));
+  assert.equal(report.outcome,'complete');assert.equal(planExitCode(report),0);
+});
+test('rate-limit headers mark forbidden reads as execution errors without response body disclosure',async()=>{
+  for(const headers of [new Map([['x-ratelimit-remaining','0']]),new Map([['retry-after','60']])]) {
+    await assert.rejects(githubRead('/apps/example','secret',async()=>({ok:false,status:403,headers})),error=>error.rateLimited===true);
+  }
+});
+test('execution failures block owner preparation before confirmation',async t=>{
+  let confirmed=false;
+  await assert.rejects(prepare({...fixture(),agent:'cody',directory:path.join(local(t),'registration'),interactive:true,read:reader({failList:true}),confirm:async()=>{confirmed=true;return '';}}));
+  assert.equal(confirmed,false);
+});
+
+test('hidden registration cannot mask observable installation drift',async()=>{
+  const f=fixture();f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  const report=await run(f,reader({installations:[installation({permissions:{metadata:'read'}})]}));
+  assert.equal(report.results[0].reason_code,'incomplete-visibility');
+  assert.equal(report.results[0].installation,'review-required');
+  assert.equal(report.outcome,'failure');assert.equal(planExitCode(report,true),1);
+});
+test('one conflicting App makes a mixed visibility fleet fail',async()=>{
+  const f=fixture();f.config.apps[0].identity={app_id:42,app_slug:'cody-agent-living-proof-labs'};
+  f.config.apps.push(structuredClone(enrolled.config.apps.find(app=>app.agent==='art')));
+  f.manifests.art=structuredClone(enrolled.manifests.art);
+  const report=await run(f,reader({registrations:{'cody-agent-living-proof-labs':registration({id:7})}}));
+  assert.equal(report.results[1].reason_code,'incomplete-visibility');
+  assert.equal(report.outcome,'failure');assert.equal(planExitCode(report,true),1);
+});
+
+for(const message of ['You have exceeded a secondary rate limit.', 'API rate limit exceeded', 'Unexpected forbidden response', 'SECRET_SENTINEL']) test(`unclassified403 remains failing: ${message}`,async()=>{
+  const report=await run(fixture(),endpoint=>githubRead(endpoint,'secret',async()=>new Response(JSON.stringify({message}),{status:403,headers:{'x-ratelimit-remaining':'100'}})));
+  assert.equal(report.outcome,'failure');assert.equal(planExitCode(report,true),1);
+  assert.doesNotMatch(JSON.stringify(report),/SECRET_SENTINEL|secondary rate limit/);
+});
+test('bounded access-denial classification rejects malformed and oversized bodies',async()=>{
+  for(const body of ['invalid',JSON.stringify({message:'Resource not accessible by integration',padding:'x'.repeat(9000)})]) {
+    await assert.rejects(githubRead('/apps/example','secret',async()=>new Response(body,{status:403})),error=>error.visibilityLimited===false);
+  }
+  await assert.rejects(githubRead('/apps/example','secret',async()=>new Response(JSON.stringify({message:'Resource not accessible by integration'}),{status:403})),error=>error.visibilityLimited===true);
 });
