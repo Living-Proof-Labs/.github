@@ -14,7 +14,8 @@
     "pull_requests": "write",
     "statuses": "read",
     "deployments": "read",
-    "workflows": "write"
+    "workflows": "write",
+    "organization_projects": "write"
   },
   "default_events": []
 }

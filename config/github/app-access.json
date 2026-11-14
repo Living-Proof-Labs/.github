@@ -18,7 +18,8 @@
         "pull_requests": "write",
         "statuses": "read",
         "deployments": "read",
-        "workflows": "write"
+        "workflows": "write",
+        "organization_projects": "write"
       },
       "justifications": {
         "actions": "Run and retry delivery workflows.",
@@ -30,7 +31,8 @@
         "pull_requests": "Review and deliver pull requests.",
         "statuses": "Read legacy commit status checks.",
         "deployments": "Inspect delivery status.",
-        "workflows": "Maintain reviewed workflow files."
+        "workflows": "Maintain reviewed workflow files.",
+        "organization_projects": "Maintain the Living Proof Labs Delivery organization project board, including the Ready to Merge handoff and an hourly board check."
       },
       "repository_selection": "all",
       "repositories": [],
