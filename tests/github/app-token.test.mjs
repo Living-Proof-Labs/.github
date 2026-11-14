@@ -81,8 +81,16 @@ test('versioned manifests match the least-privilege bot sets', () => {
     const permissions = BOT_MANIFESTS[bot].permissions;
     assert.equal(Object.hasOwn(permissions, 'administration'), false);
     assert.equal(Object.hasOwn(permissions, 'pages'), false);
-    assert.equal(Object.hasOwn(permissions, 'statuses'), false);
   }
+  assert.equal(BOT_MANIFESTS.cody.permissions.statuses, 'read');
+  assert.equal(BOT_MANIFESTS.cody.permissions.organization_projects, 'write');
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.cody.permissions, 'deployments'), false);
+  assert.equal(BOT_MANIFESTS.vera.permissions.statuses, 'read');
+  assert.equal(BOT_MANIFESTS.vera.permissions.checks, 'write');
+  assert.equal(BOT_MANIFESTS.vera.permissions.contents, 'write');
+  assert.equal(BOT_MANIFESTS.vera.permissions.organization_projects, 'write');
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.vera.permissions, 'deployments'), false);
+  assert.equal(Object.hasOwn(BOT_MANIFESTS.vera.permissions, 'workflows'), false);
   const rivet = BOT_MANIFESTS.rivet.permissions;
   assert.equal(rivet.administration, undefined);
   assert.equal(rivet.pages, 'write');
@@ -98,7 +106,7 @@ test('versioned manifests match the least-privilege bot sets', () => {
   assert.equal(BOT_MANIFESTS.cody.permissions.workflows, 'write');
   assert.equal(BOT_MANIFESTS.cody.permissions.actions, 'read');
   assert.equal(BOT_MANIFESTS.vera.permissions.actions, 'read');
-  assert.equal(BOT_MANIFESTS.vera.permissions.contents, 'read');
+  assert.equal(BOT_MANIFESTS.vera.permissions.issues, 'write');
   assert.equal(Object.hasOwn(BOT_MANIFESTS, 'keel'), false);
   assert.throws(() => validateBotManifest('cody', {
     ...JSON.parse(readFileSync(path.join(root, BOT_MANIFESTS.cody.file), 'utf8')),

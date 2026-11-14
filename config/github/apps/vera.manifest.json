@@ -6,11 +6,13 @@
   "public": false,
   "default_permissions": {
     "actions": "read",
-    "checks": "read",
-    "contents": "read",
+    "checks": "write",
+    "contents": "write",
     "issues": "write",
     "metadata": "read",
-    "pull_requests": "write"
+    "pull_requests": "write",
+    "statuses": "read",
+    "organization_projects": "write"
   },
   "default_events": []
 }

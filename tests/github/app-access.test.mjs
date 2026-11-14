@@ -39,7 +39,7 @@ test('short, duplicate, changing and denied pages cannot pass',async()=>{
 });
 test('audit reports provenance and redacts failures; only GET endpoints requested',async()=>{
  const endpoints=[];const result=await audit(config,{revision:'abc',configDigest:'def',now:()=> '2026-11-12T00:00:00Z',read:async endpoint=>{endpoints.push(endpoint);throw Error('secret-token');}});
- assert.equal(result.status,'incomplete-or-drift');assert.equal(result.configuration_revision,'abc');assert.equal(result.configuration_sha256,'def');assert.equal(result.observed_at,'2026-11-12T00:00:00Z');assert.ok(!JSON.stringify(result).includes('secret-token'));assert.equal(endpoints.length,2);
+ assert.equal(result.status,'incomplete-or-drift');assert.equal(result.configuration_revision,'abc');assert.equal(result.configuration_sha256,'def');assert.equal(result.observed_at,'2026-11-12T00:00:00Z');assert.ok(!JSON.stringify(result).includes('secret-token'));assert.equal(endpoints.length,1+config.apps.length);
 });
 test('suspended installation does not pass',()=>{const inst=installation();inst.suspended_at='2026-11-12';assert.notEqual(compareApp(config,desired,registration(),inst).status,'compliant');});
 test('read transport fixes destination, forbids redirect and writes',async()=>{

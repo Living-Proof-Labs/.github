@@ -16,6 +16,10 @@ function fixture(t) {
   const agents = JSON.parse(readFileSync(file));
   Object.assign(agents.agents.find(a => a.id === 'cody').github_identity, { app_id: null, app_slug: null });
   writeFileSync(file, JSON.stringify(agents));
+  const accessFile = path.join(root, 'config/github/app-access.json');
+  const access = JSON.parse(readFileSync(accessFile));
+  access.apps = access.apps.filter(app => app.agent !== 'cody');
+  writeFileSync(accessFile, JSON.stringify(access));
   const manifest = loadManifestDirectory(root).manifests.cody;
   const evidence = { schema_version: 1, agent: 'cody', owner: 'Living-Proof-Labs', manifest_sha256: manifestDigest(manifest), source: 'owner-settings-readback', app_id: 5754786, app_slug: 'cody-agent-living-proof-labs', name: manifest.name, description: manifest.description, url: manifest.url, public: false, webhook_active: false, request_oauth_on_install: false, device_flow_enabled: false, callback_urls: [], permissions: manifest.default_permissions, events: [] };
   return { base, root, manifest, evidence, directory: path.join(base, 'session') };
