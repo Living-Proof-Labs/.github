@@ -311,9 +311,9 @@ test('a final Pages audit detects drift after an earlier successful readback', a
   const report = await f.apply(preview.plan);
   assert.equal(report.failures, 1); assert.match(JSON.stringify(report.repositories[0].failures), /drift remains/);
 });
-test('saved migration fixture matches the checked-in policy', async () => {
-  const { gitBlobSha } = await import('../../tools/github/apply-repo-policy.mjs');
-  assert.equal(gitBlobSha(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url))), gitBlobSha(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url))));
+test('saved migration fixture retains unchanged policy fields outside enrollment', () => {
+  const { required_checks_by_repository, ...unchanged } = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  assert.deepEqual(unchanged, policy);
 });
 
 test('newly visible rulesets cannot authorize unreviewed actions but allow reviewed general settings', async () => {
@@ -345,6 +345,9 @@ test('write transport rejects unrelated paths, fields, methods and GraphQL befor
 
 test('CLI preview and apply retain parseable complete reports with mocked transport only', async () => {
   const f = fixture(); f.states.livingproof.repo.has_wiki = true;
+  // The real CLI reads the enrolled policy; begin with that rule already compliant.
+  const enrolled = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url))).required_checks_by_repository;
+  f.states['.github'].ruleset.rules.push({ type: 'required_status_checks', parameters: enrolled['.github'] });
   const directory = mkdtempSync(path.join(tmpdir(), 'inventory-cli-'));
   const planFile = path.join(directory, 'plan.json'), reportFile = path.join(directory, 'report.json'), xmlFile = path.join(directory, 'result.xml');
   let stdout = '', stderr = ''; const requests = [];

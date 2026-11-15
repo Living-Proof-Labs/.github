@@ -10,14 +10,16 @@ import { runInventory } from '../../tools/github/reconcile-inventory.mjs';
 import { readPolicyFile } from '../../tools/github/apply-repo-policy.mjs';
 import { policy, inventory, fixtureApi } from './local-settings-transport.mjs';
 const root = path.resolve(import.meta.dirname, '../..');
+const baselinePolicy = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/settings-migration-plans.json', import.meta.url)));
 describe('Local settings ownership', () => {
 for (const mode of ['compliant', 'drift']) test(`local policy preserves old complete ${mode} plans for every registered repository`, async () => {
-  const report = await runInventory({ api: fixtureApi(mode), inventory, policy, revision: 'a'.repeat(40), dryRun: true });
+  const report = await runInventory({ api: fixtureApi(mode, baselinePolicy), inventory, policy: baselinePolicy, revision: 'a'.repeat(40), dryRun: true });
   const digest = createHash('sha256').update(JSON.stringify(report.plan.repositories)).digest('hex');
   assert.equal(digest, baseline[mode].repositories_sha256);
   assert.equal(report.plan.repositories.length, baseline[mode].repository_count);
-  assert.deepEqual(readPolicyFile(), JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url))));
+  const { required_checks_by_repository, ...unchanged } = readPolicyFile();
+  assert.deepEqual(unchanged, baselinePolicy);
 });
 test('documented audit and preview CLIs use only local settings sources and mocked GitHub reads', t => {
   const directory = mkdtempSync(path.join(tmpdir(), 'local-settings-'));
@@ -27,7 +29,7 @@ test('documented audit and preview CLIs use only local settings sources and mock
   writeFileSync(path.join(directory, 'gh'), `#!/usr/bin/env node\nimport { response } from ${JSON.stringify(transport)};\nconst args = process.argv.slice(2);\nif (args[0] !== 'api') throw new Error('Only gh api allowed');\nlet value;\nif (args[1] === 'graphql') {\n const vars = {}; let query;\n for (let i=2; i<args.length; i+=2) { const n=args[i+1].indexOf('='); const key=args[i+1].slice(0,n), val=args[i+1].slice(n+1); if(key==='query') query=val; else vars[key]=val; }\n value=response('/graphql',{method:'POST',body:{query,variables:vars}});\n} else { if(args[1]!=='--method'||args[2]!=='GET') throw new Error('Writes forbidden'); value=response(args[3]); }\nconsole.log(JSON.stringify(value));\n`, { mode: 0o755 });
   writeFileSync(path.join(directory, 'curl'), '#!/bin/sh\necho "Unexpected source download" >&2\nexit 99\n', { mode: 0o755 });
   const env = { ...process.env, PATH: `${directory}:${process.env.PATH}`, GH_TOKEN: 'mock-only-settings-token', NODE_OPTIONS: `--import=${transport}`, SETTINGS_MOCK_NETWORK: '1', SETTINGS_REQUEST_LOG: log };
-  for (const args of [['tools/task.sh', 'github:settings:check'], ['scripts/apply-repo-policy', '--dry-run']]) {
+  for (const args of [['tools/task.sh', 'github:settings:check'], ['tools/task.sh', 'github:settings:reconcile', '--', '--dry-run']]) {
     const result = spawnSync('bash', args, { cwd: root, env, encoding: 'utf8' });
     assert.equal(result.status, 0, result.stdout + result.stderr);
     assert.doesNotMatch(result.stdout + result.stderr, /mock-only-settings-token|raw.githubusercontent/);
@@ -38,4 +40,58 @@ test('documented audit and preview CLIs use only local settings sources and mock
   assert.match(requests, /GET.*\/repos\/Living-Proof-Labs\//);
 });
 
+});
+
+
+describe('Directory-only required-check enrollment', () => {
+  test('exact desired context, producer and enforcement; no other policy changed', () => {
+    const { required_checks_by_repository, ...rest } = readPolicyFile();
+    assert.deepEqual(rest, baselinePolicy);
+    assert.deepEqual(required_checks_by_repository, { '.github': {
+      required_status_checks: [{ context: 'Repository verification gate', integration_id: 15368 }],
+      strict_required_status_checks_policy: true, do_not_enforce_on_create: false
+    }});
+  });
+  test('full-inventory precise preview adds one rule only and performs no writes', async () => {
+    const oldPlan = await runInventory({api: fixtureApi('compliant', baselinePolicy), inventory, policy: baselinePolicy, revision:'a'.repeat(40), dryRun:true});
+    const newPlan = await runInventory({api: fixtureApi('compliant', baselinePolicy), inventory, policy, revision:'a'.repeat(40), dryRun:true});
+    assert.equal(newPlan.failures, 0);
+    assert.equal(newPlan.plan.repositories.length,20);
+    for (let i=0;i<20;i++) {
+      const old = structuredClone(oldPlan.plan.repositories[i]), next = structuredClone(newPlan.plan.repositories[i]);
+      // Every nested Pages plan binds the entire policy, even with no Pages change.
+      assert.notEqual(next.pages.policy, old.pages.policy);
+      delete next.pages.policy; delete old.pages.policy;
+      if (next.name !== '.github') { assert.deepEqual(next, old); continue; }
+      const {ruleset, ...other} = next;
+      const {ruleset: oldRuleset, ...oldOther} = old;
+      assert.deepEqual(other,oldOther); assert.deepEqual(ruleset.before,oldRuleset.before);
+      assert.equal(ruleset.write.method,'PUT'); assert.equal(ruleset.write.path,'/repos/Living-Proof-Labs/.github/rulesets/1');
+      assert.deepEqual(ruleset.write.body.rules.slice(0,-1),baselinePolicy.main_ruleset.rules);
+      assert.deepEqual(ruleset.write.body.rules.at(-1), {type:'required_status_checks',parameters:policy.required_checks_by_repository['.github']});
+    }
+    assert.equal(newPlan.plan.repositories.filter(r=>r.ruleset.write).length,1);
+  });
+  test('existing stronger rules survive; unavailable bypass evidence cannot become a live plan', async () => {
+    const api = fixtureApi('compliant',baselinePolicy), get=api.get;
+    api.get=async resource=>{
+      const value=await get(resource);
+      if (resource.endsWith('/.github/rulesets/1')) {
+        value.rules[2].parameters.required_approving_review_count=2;
+        value.rules.push({type:'required_signatures'});
+        value.rules.push({type:'required_status_checks',parameters:{required_status_checks:[{context:'Existing trusted gate',integration_id:42}],strict_required_status_checks_policy:true,do_not_enforce_on_create:false}});
+      }
+      return value;
+    };
+    const preview=await runInventory({api,inventory,policy,revision:'a'.repeat(40),dryRun:true});
+    const rules=preview.plan.repositories[0].ruleset.write.body.rules;
+    assert.equal(rules[2].parameters.required_approving_review_count,2);
+    assert.ok(rules.some(r=>r.type==='required_signatures'));
+    assert.deepEqual(rules.find(r=>r.type==='required_status_checks').parameters.required_status_checks,[{context:'Existing trusted gate',integration_id:42},...policy.required_checks_by_repository['.github'].required_status_checks]);
+    api.get=async resource=>{const value=await get(resource);if(resource.endsWith('/.github/rulesets/1'))delete value.bypass_actors;return value;};
+    const incomplete=await runInventory({api,inventory,policy,revision:'a'.repeat(40),dryRun:true});
+    assert.match(incomplete.plan.repositories[0].rulesetError,/bypass actors are unreadable/);
+    assert.equal(incomplete.plan.repositories[0].ruleset,undefined);
+    assert.ok(incomplete.failures>0);
+  });
 });
