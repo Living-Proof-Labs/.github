@@ -10,7 +10,9 @@ automated workflows, and future customer-owned verification projects.
 This page describes the delivered architecture (as of November 2026) and its
 tracked migrations. It is not a claim that every integration or hardware
 deployment is complete: physical robots are not supported, and Gazebo is not yet
-connected.
+connected. The evaluator contract and the deterministic scenario evaluator are
+published packages. Vocabulary, recording, bindings, and human or agent
+evaluation remain tracked migrations.
 
 ## Start here
 
@@ -69,7 +71,9 @@ results; it does not copy the execution, evaluation, or rendering engines.
 | Verification consumer | One selected baseline, verification lock, run/series selection, and publication settings | Delivered as [`livingproof-verification`](https://github.com/Living-Proof-Labs/livingproof-verification), which publishes the [robot reports](https://docs.livingprooflabs.com/livingproof-verification/); [verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) (verifier-owned lock) is still open |
 | Robot repository | Robot manifest, adapter, assets, feature flags, simulator compatibility, and contract tests | Does not own the cross-robot verification baseline after the manifest migration |
 | `livingproof` | Discovery, installation, and local invocation of installed tools | Is not a required hop for an automated workflow |
-| `capability-verifier` | Resolve the lock, execute trials, retain evidence, and produce authoritative grades and comparisons | Evaluator implementation may become more internally separated; it remains the authority |
+| `capability-verifier` | Resolve the lock, execute trials, retain evidence, and produce authoritative grades and comparisons | Remains the orchestration and grading authority. An internal grading interface is still open ([capability-verifier #21](https://github.com/Living-Proof-Labs/capability-verifier/issues/21)). Calling evaluators through the contract is still open ([capability-verifier #51](https://github.com/Living-Proof-Labs/capability-verifier/issues/51)) |
+| `livingproof-evaluator` | Shared contract definitions at [v1.0.0](https://github.com/Living-Proof-Labs/livingproof-evaluator/releases/tag/v1.0.0), including [`schema/defs.schema.json`](https://github.com/Living-Proof-Labs/livingproof-evaluator/blob/v1.0.0/schema/defs.schema.json) | Evaluator identity, kind (`scenario` or `integrity`), execution (`deterministic` or `agentic`), and an input reference of role, URI, and SHA-256. The same tag publishes the shared result envelope, the optional 1.1 descriptor, and the run-integrity schemas. Observable vocabulary ([#2](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/2)) and the observation-binding format ([#3](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/3)) remain design. This repository ships no evaluator implementation. The `agentic` execution value is a contract field; human and agent evaluators remain unfinished on the [retained epic](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/1) |
+| `livingproof-evaluator-scenario` | Deterministic per-trial results at [v1.2.1](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/releases/tag/v1.2.1), written by [`result.py`](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/blob/v1.2.1/src/livingproof_evaluator_scenario/result.py) | Reads a `livingproof-hallway-evidence/2.0.0` manifest and each trial's observation JSON. Each `livingproof-evaluator-result/1.1.0` document records SHA-256 digests of the observation, the manifest, and the graded thresholds. Descriptor findings are empty in this release. MCAP reconstruction, the Gherkin step vocabulary, and observation bindings remain unfinished ([scenario #1](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/issues/1)). The authoritative run grade stays with the verifier |
 | Simulator provider | Physics execution and observations | Does not grade capability |
 | `livingproof-worlds` | Versioned fixtures and engine representations | Adapter code performs engine conversion |
 | `livingproof-capability-report` | Render the verifier's stored run and series assessments (render-only since [v2.0.0](https://github.com/Living-Proof-Labs/livingproof-capability-report/releases/tag/v2.0.0); [#30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) is done) | Must not recompute a grade or invent missing evidence |
@@ -88,7 +92,8 @@ verification workflow, and you get evidence of what it can do, version after ver
 | CI runners | Customer | The reusable workflow runs on the caller's GitHub Actions runners (`ubuntu-24.04`, CPU only) |
 | Evidence and reports | Customer | Evidence bundles and rendered reports are stored as workflow artifacts in the caller's repository; publishing to GitHub Pages is optional |
 | Capability specs, worlds, simulator providers | Living Proof Labs (open source) | `robot-capability-specs`, `livingproof-worlds`, `livingproof-sim-*` |
-| Verifier, grading policy and reusable workflow | Living Proof Labs (open source) | `capability-verifier`, including `walk-hallway.yml` |
+| Verifier, grading policy and reusable workflow | Living Proof Labs (open source) | `capability-verifier`, including `walk-hallway.yml`. This remains the authoritative grade |
+| Evaluator contract and deterministic scenario evaluator | Living Proof Labs (open source) | `livingproof-evaluator` v1.0.0 and `livingproof-evaluator-scenario` v1.2.1. They publish contract definitions and per-trial results. The verifier keeps the run grade |
 | Reporter | Living Proof Labs (open source) | `livingproof-capability-report`, render-only |
 
 The reusable workflow's main inputs: `repository` and `ref` (the robot
@@ -134,7 +139,7 @@ flowchart TD
 | Verification lock | Reviewed versions, commits, digests, and compatibility choices | Consumer (`livingproof-verification/verifications/*.lock.json`) |
 | Resolved run manifest | Exact executable inputs, planned trial identities, and **expected** media/evidence-link artifact names | Verifier |
 | Evidence record | **Actual** artifacts, checksums, timestamps, and pass, missing, or error status for every planned seed | Providers and verifier |
-| Assessment | Evidence sufficiency, authoritative grade, rationale, and comparison result | Verifier and its evaluators |
+| Assessment | Evidence sufficiency, authoritative grade, rationale, and comparison result | Verifier. The scenario evaluator writes a separate per-trial result |
 | Report | A supplied assessment and linked provenance for one run or a declared compatible series | Reporter |
 
 Pipeline completion, evidence sufficiency, and a capability grade are different
@@ -164,6 +169,20 @@ The [live index](https://docs.livingprooflabs.com/livingproof-verification/) lis
 which robots and variants are published and their latest grades. `capability-verifier`
 grades and writes the assessment into the bundle; `livingproof-capability-report`
 (render-only since v2.0.0) only validates and renders it.
+
+Two evaluator packages are published beside that path.
+[`livingproof-evaluator` v1.0.0](https://github.com/Living-Proof-Labs/livingproof-evaluator/releases/tag/v1.0.0)
+publishes shared contract definitions in
+[`schema/defs.schema.json`](https://github.com/Living-Proof-Labs/livingproof-evaluator/blob/v1.0.0/schema/defs.schema.json).
+[`livingproof-evaluator-scenario` v1.2.1](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/releases/tag/v1.2.1)
+reads observation JSON from a `livingproof-hallway-evidence/2.0.0` manifest and
+writes one deterministic result per trial. Each result records SHA-256 digests
+of the observation, the manifest, and the graded thresholds
+([`result.py`](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/blob/v1.2.1/src/livingproof_evaluator_scenario/result.py)).
+Those digests name the JSON inputs the writer read. MCAP reconstruction and a
+complete observation binding remain unfinished. The published robot reports
+still show the verifier's stored grade. Package checks and draft corner
+scenarios stay separate from a delivered robot capability result.
 
 The robot repositories (G1, Go1, T1) also call the same reusable workflow from
 their own CI. `livingproof` remains the local discovery, installation, and
@@ -198,6 +217,29 @@ have since changed as described above.
   (`unitree-go1` / `playground-mujoco-hallway`) and Booster T1 stock
   (`booster-t1` / `stock-mujoco-hallway`). Further robots and variants are not
   on it yet.
+- Observable vocabulary
+  ([livingproof-evaluator #2](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/2))
+  and the observation-binding format
+  ([livingproof-evaluator #3](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/3))
+  are still design.
+- Recording and binding remain unfinished. The scenario evaluator's Gherkin
+  vocabulary and MCAP runner are open
+  ([livingproof-evaluator-scenario #1](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/issues/1)).
+  MuJoCo still has to write MCAP and the producer and per-trial bindings
+  ([livingproof-sim-mujoco #28](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco/issues/28)).
+  Robot bindings remain open for the
+  [G1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/issues/17),
+  [Go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/issues/12),
+  and [T1](https://github.com/Living-Proof-Labs/livingproof-booster-t1/issues/17).
+- Human and agent evaluation stays on the retained
+  [evaluator epic](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/1#issuecomment-6891250274).
+  That epic is the next priority after the corner hallway cleanup
+  ([robot-capability-specs #40](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/40#issuecomment-6891640909)).
+  The Gazebo producer binding stays in the backlog until then
+  ([livingproof-sim-gazebo #5](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/5#issuecomment-6891353466)).
+  Corner work so far distinguishes proposed steering, draft specification and
+  world changes, and future robot reports. Package checks and those drafts are
+  separate from a delivered robot capability result.
 
 ## Migration work
 
@@ -205,7 +247,8 @@ have since changed as described above.
 | --- | --- | --- |
 | Define a generic robot manifest | [robot-capability-specs #27](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/27) (done) | Robots publish what they provide: configurations, adapters, assets, feature flags, and simulator compatibility |
 | Own one verification lock | [capability-verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) | The verifier resolves manifests and fans trials out and results back in |
-| Separate evaluator implementation | [capability-verifier #21](https://github.com/Living-Proof-Labs/capability-verifier/issues/21) | Grading can evolve behind an evaluator interface without a new evaluator repository |
+| Publish the evaluator contract and the deterministic scenario evaluator | [livingproof-evaluator v1.0.0](https://github.com/Living-Proof-Labs/livingproof-evaluator/blob/v1.0.0/schema/defs.schema.json) `schema/defs.schema.json` and [livingproof-evaluator-scenario v1.2.1](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/blob/v1.2.1/src/livingproof_evaluator_scenario/result.py) `result.py` | Shared contract definitions, and per-trial results that read observation JSON and record observation, manifest, and graded-threshold digests. These packages are separate from verifier orchestration and from the authoritative assessment. The reporter stays render-only |
+| Finish vocabulary, recording, bindings, and human or agent evaluation | [livingproof-evaluator #1](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/1), after [robot-capability-specs #40](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/40) | Retained sequence: corner hallway cleanup first, then the epic, including human and agent evaluators. Vocabulary, the binding format, MCAP recording and binding, and producer and robot bindings stay open. The Gazebo producer binding ([livingproof-sim-gazebo #5](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/5)) stays in the backlog until that cleanup |
 | Render supplied assessments only | [livingproof-capability-report #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) (done, reporter v2.0.0) | Reporter grading and aggregation are removed; absent assessment data remains explicit |
 | Publish robot manifests and contract-test them | [G1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/issues/4), [Go1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/issues/4), [T1 #7](https://github.com/Living-Proof-Labs/livingproof-booster-t1/issues/7) | Robot-owned verification locks are retired |
 | Add a Gazebo lock variant | [livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4) | Another simulator can participate through the same lock and adapter contracts |

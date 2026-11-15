@@ -54,7 +54,7 @@
       "repository": "livingproof-evaluator",
       "title": "Evaluator contract",
       "url": "https://docs.livingprooflabs.com/livingproof-evaluator/",
-      "scope": "Shared observable vocabulary, observation binding format and evaluator contract"
+      "scope": "Shared contract definitions at v1.0.0 (schema/defs.schema.json). Observable vocabulary and observation bindings remain design work"
     },
     {
       "repository": "livingproof-evaluator-run",
@@ -72,7 +72,7 @@
       "repository": "livingproof-evaluator-scenario",
       "title": "Scenario evaluator",
       "url": "https://docs.livingprooflabs.com/livingproof-evaluator-scenario/",
-      "scope": "Generic Gherkin step vocabulary and runner over observation bindings"
+      "scope": "Deterministic per-trial results from observation JSON at v1.2.1. Records observation, manifest, and graded-threshold digests. Gherkin vocabulary, MCAP reading, and bindings remain unfinished"
     },
     {
       "repository": "livingproof-worlds",
@@ -118,7 +118,7 @@
     {
       "repository": "livingproof-evaluator",
       "title": "Evaluator contract",
-      "summary": "Shared observable vocabulary, observation binding format and evaluator contract"
+      "summary": "Shared contract definitions at v1.0.0. Observable vocabulary and observation bindings remain design work"
     },
     {
       "repository": "livingproof-evaluator-run",
@@ -128,7 +128,7 @@
     {
       "repository": "livingproof-evaluator-scenario",
       "title": "Scenario evaluator",
-      "summary": "Generic Gherkin step vocabulary and runner over observation bindings"
+      "summary": "Deterministic per-trial results from observation JSON at v1.2.1. Gherkin vocabulary, MCAP reading, and bindings remain unfinished"
     },
     {
       "repository": "livingproof-capability-report",
