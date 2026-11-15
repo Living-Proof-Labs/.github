@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
+import { validateRequiredChecks } from './required-checks.mjs';
 /**
  * Apply the local Living Proof Labs repository policy with GH_TOKEN.
  *
@@ -47,6 +48,7 @@ const POLICY_KEYS = new Set([
   'manual_or_unavailable_settings',
   'immutable_releases',
   'pages',
+  'required_checks_by_repository',
   'main_ruleset'
 ]);
 
@@ -239,6 +241,7 @@ export function validatePolicy(policy) {
     if (!manual || typeof manual !== 'object' || Array.isArray(manual)) throw new Error('policy.manual_or_unavailable_settings must be an object.');
   }
   if (policy.main_ruleset !== undefined) validateRuleset(policy.main_ruleset);
+  validateRequiredChecks(policy);
   return policy;
 }
 
@@ -627,6 +630,7 @@ export async function observe(api, org, name, policy) {
 }
 
 export async function run({ policy, org, repo, dryRun, api, inventory, httpsOnly = false, expectedPlan }) {
+  if (!httpsOnly && Object.keys(policy.required_checks_by_repository ?? {}).length) throw new Error('Repository-specific checks require task github:settings:reconcile -- --dry-run; legacy full-policy apply/preview is unavailable.');
   if (inventory && !httpsOnly) throw new Error('--inventory requires HTTPS-only mode.');
   if (inventory) {
     validateInventory(inventory);

@@ -5,12 +5,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createGitHubClient } from './apply-repo-policy.mjs';
 import { validateInventory } from './verify-inventory.mjs';
+import { validateRequiredChecks } from './required-checks.mjs';
 import { rulesetPlan, strengthenRuleset } from './reconcile-ruleset.mjs';
 import { redactSecrets } from './redact-secrets.mjs';
 
 /** Replace only the legacy ruleset comparison; retain all other audit evidence. */
 export async function annotateRulesets(text, policy, inventory, api) {
   validateInventory(inventory);
+  validateRequiredChecks(policy, inventory);
   strengthenRuleset(null, policy.main_ruleset);
   const summaries = [...text.matchAll(/^(\d+) difference\(s\) found; (\d+) error\(s\)\.$/gm)];
   if (summaries.length !== 1) throw new Error('Expected one audit summary; cannot reconcile ruleset evidence.');

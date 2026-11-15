@@ -205,3 +205,22 @@ jobs:
           path: artifacts/settings-scenarios.xml
           retention-days: 14
           if-no-files-found: error
+  verification-gate:
+    name: Repository verification gate
+    if: always()
+    needs: [verify, docs-preview, repository-settings, trusted-repository-settings, app-bootstrap-tests, settings-scenarios]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Require complete successful verification evidence
+        run: node tools/github/verification-gate.mjs
+        env:
+          VERIFICATION_NEEDS: ${{ toJSON(needs) }}
+          VERIFICATION_EVENT: ${{ github.event_name }}

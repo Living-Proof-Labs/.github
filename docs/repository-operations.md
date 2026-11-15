@@ -168,3 +168,77 @@ Daylight Time. GitHub cron does not track daylight-saving transitions.
 
 No audit auto-remediates drift. Review a policy change and use the manual apply
 workflow when a write is intended.
+
+
+## Required checks: capability and staged adoption
+
+Required-check absence in the current default policy is an adoption gap, not
+settings drift. This controller supports a `required_checks_by_repository` object
+in `config/github/repository-policy.json`. It is deliberately not populated yet:
+**0 of 20 repositories are enrolled by this change**. A baseline audit pass does
+not mean required checks are enforced. Other existing protections are preserved.
+
+The first candidate is this repository's **Repository verification gate** in
+`verify.yml`. It always runs after all six verification jobs, requires success
+from each applicable job, and rejects missing, failed, cancelled, neutral and
+unexpectedly skipped results. On pull requests only the privileged main audit is
+expected to skip; on main events only the pull-request settings report skips.
+The PR settings report remains advisory about fleet drift; this gate requires
+that its reporting job completes, not that all live settings already comply.
+Adding a verification job requires extending the gate contract and its tests.
+
+After this gate is merged and observed successfully on a real pull request,
+propose this policy addition in a separate reviewed adoption PR:
+
+```json
+"required_checks_by_repository": {
+  ".github": {
+    "required_status_checks": [
+      { "context": "Repository verification gate", "integration_id": 15368 }
+    ],
+    "strict_required_status_checks_policy": true,
+    "do_not_enforce_on_create": false
+  }
+}
+```
+
+The GitHub Actions integration ID `15368` was observed on this repository's live
+check runs on 2026-11-15. Reconfirm the exact context and producer on the candidate
+PR before adoption. App binding restricts the producer, not the workflow file;
+it does not prevent a contributor from proposing workflow changes. Review the
+workflow and policy together. A required context is not proof of robot capability.
+
+The resolver adds missing checks, retains extra existing checks and stronger
+review rules, and tightens an any-source context to the approved integration.
+A conflicting non-null integration, duplicate context, unknown parameter or
+unreadable required-check state blocks that repository's ruleset action. Strict
+up-to-date protection cannot be relaxed, and creation enforcement cannot be
+removed. Other repositories continue independently. Full ruleset pagination,
+source/policy/implementation binding, preview revalidation and strict readback
+remain required. The strict audit uses this same resolver.
+
+Once any repository is enrolled, use `task github:settings:reconcile -- --dry-run`
+for preview. The legacy full-policy apply/preview CLI and legacy apply flags
+refuse enrolled policies so they cannot silently ignore these protections;
+HTTPS-only operations remain separate. Read-only audit commands still work.
+
+For each remaining inventory entry, inspect its actual PR workflow and publisher,
+select a trusted context or introduce a complete aggregate gate in that repository,
+and record the review and successful exact-revision evidence before enrollment.
+`livingproof-verification` has a separate PR `checks` job; do not require its
+robot verdict/deployment pipeline wholesale. `robot-capability-specs` tracks local
+adoption in [issue 44](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/44).
+Neither repository is enrolled here. All other inventory entries also remain
+pending a repository-specific check contract; no universal job name is assumed.
+
+A policy merge alone is not a live apply. After approved enrollment, preview from
+trusted main through the existing settings workflow, review its bound all-inventory
+plan, and obtain the protected `repository-administration` approval for precisely
+those changes. Use the existing settings App authority; this implementation adds
+no permissions or credentials. Retain final strict readback before claiming live
+enforcement. No merge queue is configured; adopting one requires `merge_group`
+coverage and its own gate contract first.
+
+GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
+explains skipped-job semantics and expected-source binding. A green skipped job
+alone is insufficient evidence, which is why the aggregate validates results.

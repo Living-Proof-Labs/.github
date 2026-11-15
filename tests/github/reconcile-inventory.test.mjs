@@ -498,3 +498,37 @@ test('ruleset audit rejects malformed or incomplete legacy evidence instead of r
 });
 
 });
+
+describe('Required-check enrollment through the controller', () => {
+  const enroll = f => { f.policy.required_checks_by_repository = { first: { required_status_checks: [{context:'Complete gate', integration_id:15368}], strict_required_status_checks_policy:true, do_not_enforce_on_create:false } }; };
+  test('approved enrollment applies once, preserves extras, audits accurately and rejects changed policy', async () => {
+    const f = fixture(['first','second']); enroll(f);
+    f.states.first.ruleset.rules.push({type:'required_signatures'});
+    const preview = await f.preview(); assert.equal(f.writes.length,0);
+    assert.ok(preview.plan.repositories[0].ruleset.write);
+    assert.equal(preview.plan.repositories[1].ruleset.write,null);
+    const text = 'Living-Proof-Labs/first\n  main ruleset: matches\n0 difference(s) found; 0 error(s).';
+    assert.match(await annotateRulesets(text,f.policy,f.inventory,f.api), /main ruleset: different/);
+    const approved = structuredClone(preview.plan);
+    f.policy.required_checks_by_repository.first.required_status_checks[0].context = 'Changed gate';
+    await assert.rejects(f.apply(approved)); assert.equal(f.writes.length,0);
+    f.policy.required_checks_by_repository.first.required_status_checks[0].context = 'Complete gate';
+    const result = await f.apply(approved); assert.equal(result.failures,0);
+    assert.equal(f.writes.length,1); assert.ok(f.states.first.ruleset.rules.some(r=>r.type==='required_signatures'));
+    assert.match(await annotateRulesets(text,f.policy,f.inventory,f.api), /main ruleset: matches/);
+    await f.apply((await f.preview()).plan); assert.equal(f.writes.length,1);
+  });
+  test('unknown required-check state isolates failure and lost write fails readback', async () => {
+    const f = fixture(['first','second']); enroll(f);
+    f.states.first.ruleset.rules.push({type:'required_status_checks',parameters:{}});
+    f.states.second.repo.has_wiki = true;
+    const preview = await f.preview(); assert.ok(preview.plan.repositories[0].rulesetError);
+    const result = await f.apply(preview.plan); assert.ok(result.failures > 0);
+    assert.ok(f.writes.every(w=>!w.resource?.includes('/first/')));
+    assert.equal(f.states.second.repo.has_wiki,false);
+    const lost = fixture(['first']); enroll(lost); lost.dropWrites = true;
+    const failed = await lost.apply((await lost.preview()).plan);
+    assert.ok(failed.failures > 0); assert.equal(lost.writes.length,1);
+    assert.ok(failed.repositories[0].failures.some(e=>/readback/i.test(e.message)));
+  });
+});
