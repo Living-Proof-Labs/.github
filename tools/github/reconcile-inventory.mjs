@@ -10,6 +10,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { observe, planRepository, validatePolicy, readPolicyFile, createGitHubClient, requireToken, repositoryRoot, GitHubApiError } from './apply-repo-policy.mjs';
 import { validateInventory } from './verify-inventory.mjs';
 import { runPages } from './setup-pages.mjs';
+import { validateRequiredChecks } from './required-checks.mjs';
 import { rulesetPlan, applyRuleset, strengthenRuleset } from './reconcile-ruleset.mjs';
 import { redactSecrets } from './redact-secrets.mjs';
 
@@ -20,7 +21,8 @@ Reconcile EVERY registered repository using the local policy. No target or scope
 checkboxes. Preview never writes. Apply requires the saved plan from this source
 revision, inventory and policy; each repository is checked again before writes.
 Known general settings, sponsorships, immutable releases and Pages (including
-HTTPS) are reconciled. Website's policy HTTPS exemption remains unmanaged.
+HTTPS) are reconciled. Repository-specific required checks, when configured,
+are added without removing stronger existing protection. Website's policy HTTPS exemption remains unmanaged.
 Unknown immutable state never authorizes a write. Rulesets are reconciled without weakening stronger existing protection.
 Each security-sensitive action must match its saved preview and protected approval.
 Failures and readback are reported for every repository; no rollback or automatic
@@ -31,11 +33,11 @@ from the environment. --report-output FILE, --summary-output FILE and --junit FI
 --fail-on-drift makes a preview fail on changes as well as unresolved state.
 `;
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const implementationDigest = () => digest(['reconcile-inventory.mjs', 'reconcile-ruleset.mjs', 'apply-repo-policy.mjs', 'setup-pages.mjs', 'pages-https.mjs', 'verify-inventory.mjs', 'redact-secrets.mjs'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')));
+const implementationDigest = () => digest(['reconcile-inventory.mjs', 'reconcile-ruleset.mjs', 'required-checks.mjs', 'apply-repo-policy.mjs', 'setup-pages.mjs', 'pages-https.mjs', 'verify-inventory.mjs', 'redact-secrets.mjs'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')));
 const fields = new Set(['has_wiki', 'has_issues', 'has_discussions', 'has_projects', 'pull_request_creation_policy', 'allow_merge_commit', 'allow_squash_merge', 'allow_rebase_merge', 'merge_commit_title', 'merge_commit_message', 'allow_update_branch', 'allow_auto_merge', 'delete_branch_on_merge']);
 
 export function validateConfiguration(inventory, policy) {
-  validateInventory(inventory); validatePolicy(policy); strengthenRuleset(null, policy.main_ruleset);
+  validateInventory(inventory); validatePolicy(policy); validateRequiredChecks(policy, inventory); strengthenRuleset(null, policy.main_ruleset);
   if (inventory.owner !== 'Living-Proof-Labs' || new Set(inventory.repositories.map(n => n.toLowerCase())).size !== inventory.repositories.length) throw new Error('Expected unique Living-Proof-Labs inventory.');
   for (const field of Object.keys(policy.repository)) if (!fields.has(field)) throw new Error(`Unsupported general setting: ${field}`);
   if (policy.immutable_releases !== true || policy.pages?.build_type !== 'workflow' || policy.pages?.https_enforced !== true) throw new Error('Policy must require immutable releases, workflow Pages and HTTPS; downgrades refused.');

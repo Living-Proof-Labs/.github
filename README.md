@@ -362,3 +362,9 @@ memory. `task github:app-token:help` prints the same usage text.
 Creating each App from its manifest, installing it on the organization, and
 storing the private key are owner steps. This public repository holds no
 secrets.
+
+
+Required-check enforcement is staged separately from the settings baseline.
+See [required-check adoption](docs/repository-operations.md#required-checks-capability-and-staged-adoption)
+for the repository-specific policy contract and complete verification gate.
+No repository is newly enrolled or changed live by this implementation.

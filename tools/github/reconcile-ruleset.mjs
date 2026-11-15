@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { repositoryRuleset, validateRequiredChecks, strengthenChecks, validateChecks } from './required-checks.mjs';
 import { isDeepStrictEqual as equal } from 'node:util';
 
 const booleans = ['dismiss_stale_reviews_on_push', 'require_code_owner_review', 'require_last_push_approval', 'required_review_thread_resolution'];
@@ -13,7 +14,8 @@ export function strengthenRuleset(existing, desired) {
   if (desired?.target !== 'branch' || desired.enforcement !== 'active' || !equal(desired.bypass_actors, []) ||
       !equal(desired.conditions, { ref_name: { include: ['~DEFAULT_BRANCH'], exclude: [] } })) fail('Unsupported ruleset policy; no write.');
   validateRules(desired);
-  if (desired.rules.some(rule => !['deletion', 'non_fast_forward', 'pull_request'].includes(rule.type))) fail('Unsupported managed rule type; no write.');
+  if (desired.rules.some(rule => !['deletion', 'non_fast_forward', 'pull_request', 'required_status_checks'].includes(rule.type))) fail('Unsupported managed rule type; no write.');
+  for (const rule of desired.rules) if (rule.type === 'required_status_checks') validateChecks(rule.parameters, true);
   const desiredPr = desired.rules.find(rule => rule.type === 'pull_request')?.parameters;
   if (!desiredPr || Object.keys(desiredPr).some(key => ![...booleans, 'required_approving_review_count', 'allowed_merge_methods'].includes(key))) fail('Unsupported pull-request policy parameters.');
   const validatePr = p => {
@@ -34,6 +36,7 @@ export function strengthenRuleset(existing, desired) {
   for (const rule of desired.rules) {
     const previous = next.rules.find(r => r.type === rule.type);
     if (!previous) { next.rules.push(structuredClone(rule)); continue; }
+    if (rule.type === 'required_status_checks') { previous.parameters = strengthenChecks(previous.parameters, rule.parameters); continue; }
     if (rule.type !== 'pull_request') continue;
     validatePr(previous.parameters);
     const p = previous.parameters;
@@ -47,6 +50,8 @@ export function strengthenRuleset(existing, desired) {
 
 export async function rulesetPlan(api, inventory, name, policy) {
   if (!inventory.repositories.includes(name) || inventory.owner !== 'Living-Proof-Labs') fail('Ruleset target not registered.');
+  validateRequiredChecks(policy, inventory);
+  const desiredPolicy = repositoryRuleset(policy, name);
   const base = `/repos/${inventory.owner}/${name}`;
   const repo = await api.get(base);
   if (!Number.isSafeInteger(repo?.id) || repo.full_name !== `${inventory.owner}/${name}` || repo.archived !== false || repo.disabled !== false || repo.visibility !== 'public' || typeof repo.default_branch !== 'string') fail('Ruleset repository identity/state is unverified.');
@@ -67,7 +72,7 @@ export async function rulesetPlan(api, inventory, name, policy) {
     if (full?.id !== item.id || full.source_type !== 'Repository' || full.source !== repo.full_name || full.name !== item.name) fail('Ruleset identity changed; no write.');
     before = { id: full.id, ...payload(full) };
   }
-  const desired = strengthenRuleset(before, policy.main_ruleset);
+  const desired = strengthenRuleset(before, desiredPolicy);
   const write = before && equal(payload(before), desired) ? null : { method: before ? 'PUT' : 'POST', path: `${base}/rulesets${before ? `/${before.id}` : ''}`, body: desired };
   return { identity: { id: repo.id, full_name: repo.full_name, default_branch: repo.default_branch }, before, write };
 }
