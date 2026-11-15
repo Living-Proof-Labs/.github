@@ -207,9 +207,10 @@ test('git blob SHA matches git hash-object for the pinned policy fixture', () =>
   assert.equal(pinned().pages.build_type, 'workflow');
 });
 
-test('checked-in policy preserves the migrated released policy bytes', () => {
-  const bytes = readFileSync(path.join(root, 'config/github/repository-policy.json'));
-  assert.equal(gitBlobSha(bytes), 'b5f31a288ae719c0f9e632f5ec359f33839f0850');
+test('checked-in policy preserves the migrated baseline apart from explicit check enrollment', () => {
+  const baseline = JSON.parse(readFileSync(path.join(root, 'tests/github/fixtures/reconciliation-policy.json')));
+  const { required_checks_by_repository, ...unchanged } = readPolicyFile();
+  assert.deepEqual(unchanged, baseline);
   const policy = readPolicyFile();
   validatePolicy(policy);
   assert.equal(policy.pages.https_enforced, true);

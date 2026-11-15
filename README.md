@@ -26,8 +26,8 @@ together here; no settings source is downloaded from collaboration-guidelines.
 | Validate this checkout | `bash tools/task.sh verify` | Checks inventory and tests |
 | Inspect settings drift | `task github:settings:report` | Read-only report; does not fail for existing drift |
 | Enforce settings policy | `task github:settings:check` | Read-only audit that fails for drift or unverified state |
-| Preview the local policy | `scripts/apply-repo-policy --dry-run` | Prints current -> desired for every org repository; no writes |
-| Apply the local policy | `scripts/apply-repo-policy --apply` | Writes only settings that differ; requires `GH_TOKEN` |
+| Preview the local policy | `task github:settings:reconcile -- --dry-run` | Plans every canonical inventory repository; no writes |
+| Apply reviewed policy | Protected repository-settings workflow | Requires a bound preview and separate environment approval |
 
 If Task is not installed, run `bash tools/setup.sh` once, then use
 `bash tools/task.sh <task>`. The local setup uses no `sudo`, does not modify
@@ -75,107 +75,32 @@ not dispatch workflows, merge changes, or claim a successful content deployment.
 
 ## Apply repository policy
 
-`scripts/apply-repo-policy` compares the local repository
-policy with every repository returned by `GET /orgs/Living-Proof-Labs/repos`
-and can write the settings that differ. `task github:policy:apply -- --dry-run`
-is the same command. It is separate from the reviewed GitHub App workflow in
-the [repository operations guide](docs/repository-operations.md): this command
-uses only the `GH_TOKEN` you export in the shell.
-
-### Prerequisites
-
-Run `bash tools/setup.sh` once so the wrapper can find the pinned Node. Export
-`GH_TOKEN` to a classic personal access token, a fine-grained personal access
-token, or a GitHub App installation token. The command reads that variable and
-does not accept the token as an argument. It never writes, caches, logs, or
-echoes the token. Policy loading reads this checkout without network access.
-A later helper may print an installation token; this command only consumes
-`GH_TOKEN`.
-
-The token must be able to see the organization's repositories. An installation
-token only lists repositories the App installation can access. Discovery is
-`GET /orgs/{org}/repos?type=all` (followed by `GET /repos/{owner}/{repo}` and
-the settings endpoints below). The command does not call `/user` or
-`/user/repos`, so an installation token and a PAT both work. An empty list is
-a failure, not a clean run.
-
-### Where the policy comes from
-
-The desired settings are checked in at
+The local desired policy is
 [`config/github/repository-policy.json`](config/github/repository-policy.json).
-The audit tool, controllers and tests are also local. Every desired setting and
-its implementation must be reviewed in this repository. No cross-repository
-commit or blob fetch pin is used. The protected workflow binds its saved preview
-to the source revision, implementation, policy and inventory before applying it.
+It enrolls only `.github` for the App-bound `Repository verification gate`;
+live enforcement remains pending separate approval and readback.
 
-`--policy FILE` reads another local JSON file for an explicit policy preview.
-Normal operation uses the checked-in file.
-
-### Preview and apply
+Use the canonical inventory controller for a read-only preview:
 
 ```bash
-export GH_TOKEN  # already set in the environment; do not commit or echo it
-scripts/apply-repo-policy --dry-run
-scripts/apply-repo-policy --apply
+task github:settings:reconcile -- --dry-run
 ```
 
-`--dry-run` prints each difference as `setting: current -> desired`, then
-`outcome: not written (dry-run)`. It sends no REST write and no GraphQL
-mutation. It does send read requests, including a GraphQL `query` for
-`hasSponsorshipsEnabled`, because that value is not on the REST repository
-object. `--apply` writes only the differing settings, then a second run reports
-no changes when the reads match the policy. Choose exactly one of the two
-flags. `--org` and `--repo` limit the organization list (`--repo` is a name,
-not `owner/name`).
+This requires the existing authorized settings credential through `GH_TOKEN`.
+Do not create or broaden credentials for this proposal. Missing or unreadable
+state is reported explicitly; it is not interpreted as compliance or absence.
+The preview follows the full inventory, so inspect any unrelated drift rather
+than assuming every proposed action is authorized by the enrollment change.
 
-A failure to read or write one setting is reported on that repository and the
-command continues with the others. The process exits non-zero if any
-repository failed. When GitHub omits a merge setting from the repository
-object, the error names the missing permission, `Administration: read`.
-Settings in `manual_or_unavailable_settings` are named and skipped; they have
-no API.
+The [repository operations guide](docs/repository-operations.md) documents trusted
+main execution, saved-plan binding, the protected `repository-administration`
+approval, partial failures and final strict readback. A source merge never applies
+settings. Manual observations remain distinct from API-backed checks.
 
-The command does not create a GitHub Pages site. A repository with no site is
-skipped for Pages. A 404 from a repository whose `has_pages` is not `false` is
-a permission failure, not an absent site. An archived repository is reported
-as `skipped (archived)` in both dry-run and apply, and it is left unread and
-unwritten.
-
-### Enforce HTTPS
-
-`pages.https_enforced` (boolean) is Enforce HTTPS. When the policy sets it and
-the repository already has a Pages site, a difference becomes
-`PUT /repos/{owner}/{repo}/pages` with only the Pages fields that differ
-(`https_enforced` and, when it also differs, `build_type`). The custom domain
-is not sent.
-
-The local policy sets `pages.build_type` to
-`workflow` and `pages.https_enforced` to `true`. It exempts `website`
-(`HTTPS terminated at Cloudflare`), so `--apply` does not send Enforce HTTPS
-for that repository. Other existing Pages sites are updated when Enforce HTTPS
-differs. If GitHub rejects a write, the report names the repository, the Pages
-setting, and GitHub's error message, then continues with the remaining
-repositories and exits non-zero.
-
-### Token permissions
-
-Classic personal access tokens need the `repo` scope. Fine-grained tokens and
-GitHub App installation tokens need repository permissions on the
-repositories the installation can access:
-
-| Setting | API | Fine-grained PAT / GitHub App |
-| --- | --- | --- |
-| `repository.*` (wiki, issues, merge, and the other REST fields) | `PATCH /repos/{owner}/{repo}` | Administration: Read and write |
-| `graphql.hasSponsorshipsEnabled` | GraphQL `updateRepository` | Administration: Read and write |
-| `immutable_releases` | `PUT` or `DELETE /repos/{owner}/{repo}/immutable-releases` | Administration: Read and write |
-| `main_ruleset` | `/repos/{owner}/{repo}/rulesets` | Administration: Read and write. If bypass actors are unreadable, the ruleset is not written. |
-| `pages.build_type`, `pages.https_enforced` | `GET` and `PUT /repos/{owner}/{repo}/pages` | Pages: Read and write, and Administration: Read and write. Pages writes are an additional permission on top of Administration. |
-| Organization repository list | `GET /orgs/{org}/repos` | Metadata: Read (GitHub Apps receive this automatically). Private repositories still require the installation to include them. |
-| `manual_or_unavailable_settings` | not called | none; these stay manual |
-
-Metadata read alone cannot change settings. Rivet's engineering App has no
-Administration grant. Use the separately approved repository-settings credential
-for settings changes; do not broaden Rivet to run this command.
+Legacy `scripts/apply-repo-policy --dry-run` / `--apply` and legacy apply flags
+refuse this enrolled policy because they cannot honor the complete protection
+contract. Separate HTTPS-only functionality remains available; this enrollment
+does not change Pages, HTTPS exemptions, credentials or App permissions.
 
 ## Repository directory
 
@@ -367,4 +292,5 @@ secrets.
 Required-check enforcement is staged separately from the settings baseline.
 See [required-check adoption](docs/repository-operations.md#required-checks-capability-and-staged-adoption)
 for the repository-specific policy contract and complete verification gate.
-No repository is newly enrolled or changed live by this implementation.
+The desired policy enrolls only `.github`; the other 19 repositories are unchanged.
+Live enforcement still requires a separately approved apply and strict readback.

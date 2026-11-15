@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Test-only transport. Every unrecognized host, endpoint or write fails closed.
+import { repositoryRuleset } from '../../tools/github/required-checks.mjs';
 import { readFileSync, appendFileSync } from 'node:fs';
 export const policy = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
 export const inventory = JSON.parse(readFileSync(new URL('../../config/github/repositories.json', import.meta.url)));
-export function response(resource, { method = 'GET', body, mode = process.env.SETTINGS_FIXTURE_MODE ?? 'compliant' } = {}) {
+export function response(resource, { method = 'GET', body, mode = process.env.SETTINGS_FIXTURE_MODE ?? 'compliant', observedPolicy = policy } = {}) {
   if (process.env.SETTINGS_REQUEST_LOG) appendFileSync(process.env.SETTINGS_REQUEST_LOG, `${method} ${resource}\n`);
   const url = new URL(resource, 'https://api.github.com/');
   if (url.origin !== 'https://api.github.com') throw new Error(`Forbidden host: ${url.origin}`);
@@ -21,11 +22,11 @@ export function response(resource, { method = 'GET', body, mode = process.env.SE
   if (suffix === '/immutable-releases') return { enabled: mode !== 'drift' };
   if (suffix === '/pages') return { build_type: mode === 'drift' ? 'legacy' : 'workflow', https_enforced: mode !== 'drift', cname: null, source: null };
   if (suffix === '/rulesets') return mode === 'drift' ? [] : [{ id: 1, name: policy.main_ruleset.name, source_type: 'Repository', source: repo.full_name }];
-  if (suffix === '/rulesets/1') return { id: 1, source_type: 'Repository', source: repo.full_name, ...policy.main_ruleset };
+  if (suffix === '/rulesets/1') return { id: 1, source_type: 'Repository', source: repo.full_name, ...repositoryRuleset(observedPolicy, name) };
   throw new Error(`Unexpected endpoint: ${resource}`);
 }
 // Loaded with NODE_OPTIONS for subprocess CLI tests, never production.
 if (process.env.SETTINGS_MOCK_NETWORK === '1') globalThis.fetch = async (url, init = {}) => new Response(JSON.stringify(response(String(url), { method: init.method ?? 'GET', body: init.body ? JSON.parse(init.body) : undefined })));
-export function fixtureApi(mode) {
-  return { get: async p => response(p, { mode }), graphql: async (query, variables) => response('/graphql', { mode, method: 'POST', body: { query, variables } }), write: async () => { throw new Error('No fixture writes'); } };
+export function fixtureApi(mode, observedPolicy = policy) {
+  return { get: async p => response(p, { mode, observedPolicy }), graphql: async (query, variables) => response('/graphql', { mode, method: 'POST', body: { query, variables } }), write: async () => { throw new Error('No fixture writes'); } };
 }

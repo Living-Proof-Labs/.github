@@ -174,11 +174,12 @@ workflow when a write is intended.
 
 Required-check absence in the current default policy is an adoption gap, not
 settings drift. This controller supports a `required_checks_by_repository` object
-in `config/github/repository-policy.json`. It is deliberately not populated yet:
-**0 of 20 repositories are enrolled by this change**. A baseline audit pass does
-not mean required checks are enforced. Other existing protections are preserved.
+in `config/github/repository-policy.json`. **The desired policy enrolls only `.github` (1 of 20 repositories).**
+Live enforcement is still pending a separately approved apply and strict readback.
+A policy merge or baseline audit pass is not proof that the new rule is live.
+The other 19 repositories and all existing stronger protections remain unchanged.
 
-The first candidate is this repository's **Repository verification gate** in
+The selected context is this repository's **Repository verification gate** in
 `verify.yml`. It always runs after all six verification jobs, requires success
 from each applicable job, and rejects missing, failed, cancelled, neutral and
 unexpectedly skipped results. On pull requests only the privileged main audit is
@@ -187,8 +188,9 @@ The PR settings report remains advisory about fleet drift; this gate requires
 that its reporting job completes, not that all live settings already comply.
 Adding a verification job requires extending the gate contract and its tests.
 
-After this gate is merged and observed successfully on a real pull request,
-propose this policy addition in a separate reviewed adoption PR:
+The gate passed on PR #97 and on merged revision
+`49f76c37a3d53791741bcfd5d5ba19d8e4a3ea69`. Check run `132733447408`
+reported success from GitHub Actions App ID `15368`. The desired addition is:
 
 ```json
 "required_checks_by_repository": {
@@ -217,7 +219,7 @@ removed. Other repositories continue independently. Full ruleset pagination,
 source/policy/implementation binding, preview revalidation and strict readback
 remain required. The strict audit uses this same resolver.
 
-Once any repository is enrolled, use `task github:settings:reconcile -- --dry-run`
+With this enrollment, use `task github:settings:reconcile -- --dry-run`
 for preview. The legacy full-policy apply/preview CLI and legacy apply flags
 refuse enrolled policies so they cannot silently ignore these protections;
 HTTPS-only operations remain separate. Read-only audit commands still work.
@@ -228,7 +230,7 @@ and record the review and successful exact-revision evidence before enrollment.
 `livingproof-verification` has a separate PR `checks` job; do not require its
 robot verdict/deployment pipeline wholesale. `robot-capability-specs` tracks local
 adoption in [issue 44](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/44).
-Neither repository is enrolled here. All other inventory entries also remain
+Neither repository is enrolled here. The other 19 inventory entries remain
 pending a repository-specific check contract; no universal job name is assumed.
 
 A policy merge alone is not a live apply. After approved enrollment, preview from
@@ -242,3 +244,23 @@ coverage and its own gate contract first.
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
 explains skipped-job semantics and expected-source binding. A green skipped job
 alone is insufficient evidence, which is why the aggregate validates results.
+
+
+### Enrollment preview boundary
+
+The .github-only proposal adds exactly one `required_status_checks` rule to the
+existing managed ruleset, ID `26190028`, leaving its deletion, non-fast-forward,
+pull-request parameters, conditions and existing stronger rules intact. The
+context is `Repository verification gate`, integration `15368`, strict policy
+`true`, and `do_not_enforce_on_create` is `false`. No other repository receives
+a settings change. Policy/source bindings change, including nested Pages plan
+digests, and therefore require a fresh approved plan. A fresh all-inventory preview may also expose unrelated existing
+drift; none of that is authorized for application by this enrollment PR.
+
+The 2026-11-15 public read of ruleset `26190028` omitted `bypass_actors`. The
+controller therefore refuses to produce an executable live ruleset action from
+that evidence. Do not substitute an empty bypass list. Mocked full-inventory
+plan comparisons prove the intended one-repository difference and preservation
+of stronger rules, but are not an approved live plan. Obtain complete evidence
+through the existing trusted settings authority for a fresh read-only preview
+before requesting precise apply approval. No apply workflow was dispatched.
