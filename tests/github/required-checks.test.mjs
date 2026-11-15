@@ -2,7 +2,7 @@
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateRequiredChecks, repositoryRuleset, strengthenChecks } from '../../tools/github/required-checks.mjs';
+import { validateRequiredChecks, repositoryRuleset, strengthenChecks, strengthenMergeQueue } from '../../tools/github/required-checks.mjs';
 import { strengthenRuleset, rulesetPlan, applyRuleset } from '../../tools/github/reconcile-ruleset.mjs';
 import { run as legacyRun, validatePolicy } from '../../tools/github/apply-repo-policy.mjs';
 import { run as legacySync } from '../../tools/github/repository-settings.mjs';
@@ -10,6 +10,9 @@ import { verifyResults, verificationJobs } from '../../tools/github/verification
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
 const checks = () => ({ required_status_checks: [{ context: 'Repository verification gate', integration_id: 15368 }], strict_required_status_checks_policy: true, do_not_enforce_on_create: false });
 const policy = () => ({ ...structuredClone(baseline), required_checks_by_repository: { '.github': checks() } });
+const queue = () => ({ check_response_timeout_minutes: 60, grouping_strategy: 'ALLGREEN', max_entries_to_build: 5, max_entries_to_merge: 5, merge_method: 'MERGE', min_entries_to_merge: 0, min_entries_to_merge_wait_minutes: 0 });
+const queuedChecks = () => ({ ...checks(), strict_required_status_checks_policy: false });
+const queuedPolicy = () => ({ ...structuredClone(baseline), required_checks_by_repository: { '.github': queuedChecks() }, merge_queue_by_repository: { '.github': queue() } });
 const inventory = { owner: 'Living-Proof-Labs', repositories: ['.github', 'website'] };
 describe('Repository-specific required protection', () => {
   test('legacy paths reject enrolled policy before any reads or writes', async () => {
@@ -74,9 +77,46 @@ describe('Repository-specific required protection', () => {
     await assert.rejects(rulesetPlan(api, inventory, '.github', p), /incomplete/);
   });
 });
+
+describe('Merge-queue enrollment', () => {
+  test('queued required checks drop the up-to-date rule and add a merge queue only for the enrolled repository', () => {
+    validateRequiredChecks(queuedPolicy(), inventory);
+    assert.deepEqual(repositoryRuleset(queuedPolicy(), 'website'), baseline.main_ruleset);
+    const rules = repositoryRuleset(queuedPolicy(), '.github').rules;
+    assert.deepEqual(rules.at(-2).parameters, queuedChecks());
+    assert.deepEqual(rules.at(-1), { type: 'merge_queue', parameters: queue() });
+  });
+  test('strict required checks remain required without a queue, and a queue forbids a strict up-to-date pin', () => {
+    const missingQueue = queuedPolicy(); delete missingQueue.merge_queue_by_repository;
+    assert.throws(() => validateRequiredChecks(missingQueue, inventory));
+    const stillStrict = queuedPolicy(); stillStrict.required_checks_by_repository['.github'].strict_required_status_checks_policy = true;
+    assert.throws(() => validateRequiredChecks(stillStrict, inventory));
+    const squash = queuedPolicy(); squash.merge_queue_by_repository['.github'].merge_method = 'SQUASH';
+    assert.throws(() => validateRequiredChecks(squash, inventory));
+  });
+  test('existing merge-queue settings are strengthened and a method conflict is refused', () => {
+    const previous = queue(); previous.check_response_timeout_minutes = 30; previous.grouping_strategy = 'HEADGREEN'; previous.max_entries_to_build = 2;
+    const next = strengthenMergeQueue(previous, queue());
+    assert.equal(next.check_response_timeout_minutes, 60);
+    assert.equal(next.grouping_strategy, 'ALLGREEN');
+    assert.equal(next.max_entries_to_build, 5);
+    previous.merge_method = 'REBASE';
+    assert.throws(() => strengthenMergeQueue(previous, queue()), /method conflicts/);
+  });
+  test('a queued enrollment relaxes an existing strict pin and keeps extra checks', () => {
+    const existing = structuredClone(baseline.main_ruleset);
+    existing.rules.push({ type: 'required_status_checks', parameters: { required_status_checks: [{ context: 'extra', integration_id: 77 }], strict_required_status_checks_policy: true, do_not_enforce_on_create: false } });
+    const next = strengthenRuleset(existing, repositoryRuleset(queuedPolicy(), '.github'));
+    const checksRule = next.rules.find(r => r.type === 'required_status_checks');
+    assert.equal(checksRule.parameters.strict_required_status_checks_policy, false);
+    assert.deepEqual(checksRule.parameters.required_status_checks.map(c => c.context), ['extra', 'Repository verification gate']);
+    assert.deepEqual(next.rules.find(r => r.type === 'merge_queue').parameters, queue());
+  });
+});
+
 describe('Complete verification gate', () => {
-  const evidence = event => Object.fromEntries(verificationJobs.map(job => [job, { result: (job === 'trusted-repository-settings' && event === 'pull_request') || (job === 'repository-settings' && event !== 'pull_request') ? 'skipped' : 'success' }]));
-  for (const event of ['pull_request', 'push', 'schedule', 'workflow_dispatch']) {
+  const evidence = event => Object.fromEntries(verificationJobs.map(job => [job, { result: (job === 'trusted-repository-settings' && (event === 'pull_request' || event === 'merge_group')) || (job === 'repository-settings' && event !== 'pull_request' && event !== 'merge_group') ? 'skipped' : 'success' }]));
+  for (const event of ['pull_request', 'merge_group', 'push', 'schedule', 'workflow_dispatch']) {
     test(`${event}: only documented event-specific skips pass`, () => verifyResults(evidence(event), event));
     for (const result of ['failure', 'cancelled', 'skipped', 'neutral', undefined]) test(`${event}: ${result ?? 'missing'} applicable evidence fails`, () => {
       for (const job of verificationJobs.filter(j => evidence(event)[j].result === 'success')) {
@@ -88,11 +128,11 @@ describe('Complete verification gate', () => {
     const needs = evidence('pull_request'); delete needs.verify; assert.throws(() => verifyResults(needs, 'pull_request'));
     assert.throws(() => verifyResults({...evidence('pull_request'), extra: {result:'success'}}, 'pull_request'));
     for (const needs of [null, [], {}]) assert.throws(() => verifyResults(needs, 'pull_request'));
-    assert.throws(() => verifyResults(evidence('push'), 'merge_group'));
+    assert.throws(() => verifyResults(evidence('push'), 'issue_comment'));
   });
   test('workflow aggregate always runs and consumes every other job', () => {
     const workflow = readFileSync(new URL('../../.github/workflows/verify.yml', import.meta.url), 'utf8');
-    const jobs = [...workflow.matchAll(/^  ([\w-]+):$/gm)].map(m => m[1]).filter(j => j !== 'verification-gate' && !['pull_request','push','schedule','workflow_dispatch'].includes(j));
+    const jobs = [...workflow.matchAll(/^  ([\w-]+):$/gm)].map(m => m[1]).filter(j => j !== 'verification-gate' && !['pull_request','merge_group','push','schedule','workflow_dispatch'].includes(j));
     assert.deepEqual(jobs.sort(), [...verificationJobs].sort());
     const gate = workflow.split('  verification-gate:')[1];
     assert.match(gate, /if: always\(\)/); assert.match(gate, /toJSON\(needs\)/);

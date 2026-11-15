@@ -2,6 +2,7 @@
 name: Verify group directory
 on:
   pull_request:
+  merge_group:
   push:
     branches: [main]
   schedule:
@@ -66,7 +67,7 @@ jobs:
           if-no-files-found: error
   repository-settings:
     name: Repository settings report
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -97,7 +98,7 @@ jobs:
           if-no-files-found: error
   trusted-repository-settings:
     name: Strict repository settings audit
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # This environment has no required reviewer. Its secrets are still limited
     # to trusted main/scheduled code; writes stay in repository-administration.

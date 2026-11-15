@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { repositoryRuleset, validateRequiredChecks, strengthenChecks, validateChecks } from './required-checks.mjs';
+import { repositoryRuleset, validateRequiredChecks, strengthenChecks, strengthenMergeQueue, validateChecks, validateMergeQueue } from './required-checks.mjs';
 import { isDeepStrictEqual as equal } from 'node:util';
 
 const booleans = ['dismiss_stale_reviews_on_push', 'require_code_owner_review', 'require_last_push_approval', 'required_review_thread_resolution'];
@@ -14,8 +14,11 @@ export function strengthenRuleset(existing, desired) {
   if (desired?.target !== 'branch' || desired.enforcement !== 'active' || !equal(desired.bypass_actors, []) ||
       !equal(desired.conditions, { ref_name: { include: ['~DEFAULT_BRANCH'], exclude: [] } })) fail('Unsupported ruleset policy; no write.');
   validateRules(desired);
-  if (desired.rules.some(rule => !['deletion', 'non_fast_forward', 'pull_request', 'required_status_checks'].includes(rule.type))) fail('Unsupported managed rule type; no write.');
-  for (const rule of desired.rules) if (rule.type === 'required_status_checks') validateChecks(rule.parameters, true);
+  if (desired.rules.some(rule => !['deletion', 'non_fast_forward', 'pull_request', 'required_status_checks', 'merge_queue'].includes(rule.type))) fail('Unsupported managed rule type; no write.');
+  for (const rule of desired.rules) {
+    if (rule.type === 'required_status_checks') validateChecks(rule.parameters, true);
+    if (rule.type === 'merge_queue') validateMergeQueue(rule.parameters);
+  }
   const desiredPr = desired.rules.find(rule => rule.type === 'pull_request')?.parameters;
   if (!desiredPr || Object.keys(desiredPr).some(key => ![...booleans, 'required_approving_review_count', 'allowed_merge_methods'].includes(key))) fail('Unsupported pull-request policy parameters.');
   const validatePr = p => {
@@ -36,7 +39,12 @@ export function strengthenRuleset(existing, desired) {
   for (const rule of desired.rules) {
     const previous = next.rules.find(r => r.type === rule.type);
     if (!previous) { next.rules.push(structuredClone(rule)); continue; }
-    if (rule.type === 'required_status_checks') { previous.parameters = strengthenChecks(previous.parameters, rule.parameters); continue; }
+    if (rule.type === 'required_status_checks') {
+      previous.parameters = strengthenChecks(previous.parameters, rule.parameters);
+      if (desired.rules.some(r => r.type === 'merge_queue')) previous.parameters.strict_required_status_checks_policy = false;
+      continue;
+    }
+    if (rule.type === 'merge_queue') { previous.parameters = strengthenMergeQueue(previous.parameters, rule.parameters); continue; }
     if (rule.type !== 'pull_request') continue;
     validatePr(previous.parameters);
     const p = previous.parameters;

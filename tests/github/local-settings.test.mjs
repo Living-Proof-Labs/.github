@@ -18,7 +18,7 @@ for (const mode of ['compliant', 'drift']) test(`local policy preserves old comp
   const digest = createHash('sha256').update(JSON.stringify(report.plan.repositories)).digest('hex');
   assert.equal(digest, baseline[mode].repositories_sha256);
   assert.equal(report.plan.repositories.length, baseline[mode].repository_count);
-  const { required_checks_by_repository, ...unchanged } = readPolicyFile();
+  const { required_checks_by_repository, merge_queue_by_repository, ...unchanged } = readPolicyFile();
   assert.deepEqual(unchanged, baselinePolicy);
 });
 test('documented audit and preview CLIs use only local settings sources and mocked GitHub reads', t => {
@@ -45,11 +45,16 @@ test('documented audit and preview CLIs use only local settings sources and mock
 
 describe('Directory-only required-check enrollment', () => {
   test('exact desired context, producer and enforcement; no other policy changed', () => {
-    const { required_checks_by_repository, ...rest } = readPolicyFile();
+    const { required_checks_by_repository, merge_queue_by_repository, ...rest } = readPolicyFile();
     assert.deepEqual(rest, baselinePolicy);
     assert.deepEqual(required_checks_by_repository, { '.github': {
       required_status_checks: [{ context: 'Repository verification gate', integration_id: 15368 }],
-      strict_required_status_checks_policy: true, do_not_enforce_on_create: false
+      strict_required_status_checks_policy: false, do_not_enforce_on_create: false
+    }});
+    assert.deepEqual(merge_queue_by_repository, { '.github': {
+      check_response_timeout_minutes: 60, grouping_strategy: 'ALLGREEN',
+      max_entries_to_build: 5, max_entries_to_merge: 5, merge_method: 'MERGE',
+      min_entries_to_merge: 0, min_entries_to_merge_wait_minutes: 0
     }});
   });
   test('full-inventory precise preview adds one rule only and performs no writes', async () => {
@@ -67,8 +72,11 @@ describe('Directory-only required-check enrollment', () => {
       const {ruleset: oldRuleset, ...oldOther} = old;
       assert.deepEqual(other,oldOther); assert.deepEqual(ruleset.before,oldRuleset.before);
       assert.equal(ruleset.write.method,'PUT'); assert.equal(ruleset.write.path,'/repos/Living-Proof-Labs/.github/rulesets/1');
-      assert.deepEqual(ruleset.write.body.rules.slice(0,-1),baselinePolicy.main_ruleset.rules);
-      assert.deepEqual(ruleset.write.body.rules.at(-1), {type:'required_status_checks',parameters:policy.required_checks_by_repository['.github']});
+      assert.deepEqual(ruleset.write.body.rules.slice(0, baselinePolicy.main_ruleset.rules.length), baselinePolicy.main_ruleset.rules);
+      assert.deepEqual(ruleset.write.body.rules.slice(baselinePolicy.main_ruleset.rules.length), [
+        {type:'required_status_checks',parameters:policy.required_checks_by_repository['.github']},
+        {type:'merge_queue',parameters:policy.merge_queue_by_repository['.github']},
+      ]);
     }
     assert.equal(newPlan.plan.repositories.filter(r=>r.ruleset.write).length,1);
   });
@@ -88,6 +96,8 @@ describe('Directory-only required-check enrollment', () => {
     assert.equal(rules[2].parameters.required_approving_review_count,2);
     assert.ok(rules.some(r=>r.type==='required_signatures'));
     assert.deepEqual(rules.find(r=>r.type==='required_status_checks').parameters.required_status_checks,[{context:'Existing trusted gate',integration_id:42},...policy.required_checks_by_repository['.github'].required_status_checks]);
+    assert.equal(rules.find(r=>r.type==='required_status_checks').parameters.strict_required_status_checks_policy,false);
+    assert.deepEqual(rules.find(r=>r.type==='merge_queue').parameters, policy.merge_queue_by_repository['.github']);
     api.get=async resource=>{const value=await get(resource);if(resource.endsWith('/.github/rulesets/1'))delete value.bypass_actors;return value;};
     const incomplete=await runInventory({api,inventory,policy,revision:'a'.repeat(40),dryRun:true});
     assert.match(incomplete.plan.repositories[0].rulesetError,/bypass actors are unreadable/);

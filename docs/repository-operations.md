@@ -182,7 +182,7 @@ The other 19 repositories and all existing stronger protections remain unchanged
 The selected context is this repository's **Repository verification gate** in
 `verify.yml`. It always runs after all six verification jobs, requires success
 from each applicable job, and rejects missing, failed, cancelled, neutral and
-unexpectedly skipped results. On pull requests only the privileged main audit is
+unexpectedly skipped results. On pull requests and merge groups only the privileged main audit is
 expected to skip; on main events only the pull-request settings report skips.
 The PR settings report remains advisory about fleet drift; this gate requires
 that its reporting job completes, not that all live settings already comply.
@@ -198,8 +198,19 @@ reported success from GitHub Actions App ID `15368`. The desired addition is:
     "required_status_checks": [
       { "context": "Repository verification gate", "integration_id": 15368 }
     ],
-    "strict_required_status_checks_policy": true,
+    "strict_required_status_checks_policy": false,
     "do_not_enforce_on_create": false
+  }
+},
+"merge_queue_by_repository": {
+  ".github": {
+    "check_response_timeout_minutes": 60,
+    "grouping_strategy": "ALLGREEN",
+    "max_entries_to_build": 5,
+    "max_entries_to_merge": 5,
+    "merge_method": "MERGE",
+    "min_entries_to_merge": 0,
+    "min_entries_to_merge_wait_minutes": 0
   }
 }
 ```
@@ -213,9 +224,13 @@ workflow and policy together. A required context is not proof of robot capabilit
 The resolver adds missing checks, retains extra existing checks and stronger
 review rules, and tightens an any-source context to the approved integration.
 A conflicting non-null integration, duplicate context, unknown parameter or
-unreadable required-check state blocks that repository's ruleset action. Strict
-up-to-date protection cannot be relaxed, and creation enforcement cannot be
-removed. Other repositories continue independently. Full ruleset pagination,
+unreadable required-check state blocks that repository's ruleset action. When a
+merge queue is enrolled for the same repository, required checks must set
+`strict_required_status_checks_policy` to `false` because the queue updates the
+branch against latest default and re-runs the required checks there; the two
+settings are incompatible. Repositories without a merge queue still require
+strict up-to-date protection. Creation enforcement cannot be removed. Other
+repositories continue independently. Full ruleset pagination,
 source/policy/implementation binding, preview revalidation and strict readback
 remain required. The strict audit uses this same resolver.
 
@@ -238,8 +253,12 @@ trusted main through the existing settings workflow, review its bound all-invent
 plan, and obtain the protected `repository-administration` approval for precisely
 those changes. Use the existing settings App authority; this implementation adds
 no permissions or credentials. Retain final strict readback before claiming live
-enforcement. No merge queue is configured; adopting one requires `merge_group`
-coverage and its own gate contract first.
+enforcement. The desired policy enrolls a `merge_queue` rule for `.github` only,
+alongside its required checks. `verify.yml` and the verification gate already
+handle `merge_group` with the same skip rules as pull requests, so the required
+gate can report in the queue. Other repositories stay off the queue until their
+required CI also triggers on `merge_group`. After this policy is applied, merge
+by enqueueing rather than updating every other open branch by hand.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
 explains skipped-job semantics and expected-source binding. A green skipped job
@@ -248,11 +267,13 @@ alone is insufficient evidence, which is why the aggregate validates results.
 
 ### Enrollment preview boundary
 
-The .github-only proposal adds exactly one `required_status_checks` rule to the
-existing managed ruleset, ID `26190028`, leaving its deletion, non-fast-forward,
-pull-request parameters, conditions and existing stronger rules intact. The
-context is `Repository verification gate`, integration `15368`, strict policy
-`true`, and `do_not_enforce_on_create` is `false`. No other repository receives
+The .github-only proposal adds a `required_status_checks` rule and a
+`merge_queue` rule to the existing managed ruleset, ID `26190028`, leaving its
+deletion, non-fast-forward, pull-request parameters, conditions and existing
+stronger rules intact. The context is `Repository verification gate`, integration
+`15368`, `strict_required_status_checks_policy` is `false`, and
+`do_not_enforce_on_create` is `false`. The merge queue uses merge commits,
+`ALLGREEN` grouping, and a 60-minute check timeout. No other repository receives
 a settings change. Policy/source bindings change, including nested Pages plan
 digests, and therefore require a fresh approved plan. A fresh all-inventory preview may also expose unrelated existing
 drift; none of that is authorized for application by this enrollment PR.
