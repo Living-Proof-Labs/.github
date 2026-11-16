@@ -172,14 +172,22 @@ workflow when a write is intended.
 
 ## Required checks: capability and staged adoption
 
-Required-check absence in the current default policy is an adoption gap, not
-settings drift. This controller supports a `required_checks_by_repository` object
-in `config/github/repository-policy.json`. **The desired policy enrolls only `.github` (1 of 20 repositories).**
-The `.github` pilot is live: the approved apply, strict readback and real queue
-merges completed on 2026-11-16. See the [rollout ledger](required-check-rollout.md)
-for exact evidence and the remaining repository prerequisites.
-A policy merge or baseline audit pass is not proof that the new rule is live.
-The other 19 repositories and all existing stronger protections remain unchanged.
+Queue enrollment and required-check enrollment are separate. The desired policy
+now enrolls **all canonical repositories in merge queues**, while the only selected
+required-check contract remains `.github`'s `Repository verification gate`.
+The other repositories gain no mandatory status contexts. Aaron clarified on
+2026-11-16 that non-required checks remain informational; candidate checks in
+[the readiness proposal](https://github.com/Living-Proof-Labs/.github/pull/111)
+are not automatically promoted into blocking requirements.
+
+The `.github` pilot has retained real queue-trial evidence:
+[apply/readback](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)
+and [independent real queue trials](https://github.com/Living-Proof-Labs/.github/issues/102#issuecomment-6907470862).
+Fleet queues are **live and verified across all 20 repositories** by
+[apply and strict readback 43829155236](https://github.com/Living-Proof-Labs/.github/actions/runs/43829155236).
+See the [delivery and historical candidate ledger](required-check-rollout.md) and the
+[fleet queue rollout](fleet-queue-rollout.md) for delivered scope,
+required-contract readiness and the fresh-plan approval boundary.
 
 The selected context is this repository's **Repository verification gate** in
 `verify.yml`. It always runs after all six verification jobs, requires success
@@ -192,7 +200,8 @@ Adding a verification job requires extending the gate contract and its tests.
 
 The gate passed on PR #97 and on merged revision
 `49f76c37a3d53791741bcfd5d5ba19d8e4a3ea69`. Check run `132733447408`
-reported success from GitHub Actions App ID `15368`. The enrolled pilot policy is:
+reported success from GitHub Actions App ID `15368`. The pilot contract below remains unchanged; the queue parameters are now repeated
+for every canonical inventory entry in the checked-in policy:
 
 ```json
 "required_checks_by_repository": {
@@ -241,43 +250,54 @@ for preview. The legacy full-policy apply/preview CLI and legacy apply flags
 refuse enrolled policies so they cannot silently ignore these protections;
 HTTPS-only operations remain separate. Read-only audit commands still work.
 
-For each remaining inventory entry, inspect its actual PR workflow and publisher,
-select a trusted context or introduce a complete aggregate gate in that repository,
-and record the review and successful exact-revision evidence before enrollment.
-`livingproof-verification` has a separate PR `checks` job; do not require its
-robot verdict/deployment pipeline wholesale. `robot-capability-specs` tracks local
-adoption in [issue 44](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/44).
-Neither repository is enrolled here. The other 19 inventory entries remain
-pending a repository-specific check contract; no universal job name is assumed.
+For any selected required contract, verify its actual PR and `merge_group`
+workflow, check producer and queue SHA before application. Keep expected skips,
+robot capability verdicts and publishing side effects explicit. Rivet coordinates
+repository-local prerequisites; informational checks need not be promoted or awaited.
+`robot-capability-specs` tracks separate required-check adoption in
+[issue 44](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/44).
+This fleet queue change does not select that check or complete that issue.
 
-A policy merge alone is not a live apply. After approved enrollment, preview from
-trusted main through the existing settings workflow, review its bound all-inventory
-plan, and obtain the protected `repository-administration` approval for precisely
-those changes. Use the existing settings App authority; this implementation adds
-no permissions or credentials. Retain final strict readback before claiming live
-enforcement. The desired policy enrolls a `merge_queue` rule for `.github` only,
-alongside its required checks. `verify.yml` and the verification gate already
-handle `merge_group` with the same skip rules as pull requests, so the required
-gate can report in the queue. Other repositories stay off the queue until their
-required CI also triggers on `merge_group`. The pilot is applied; merge `.github` pull requests by enqueueing. Further
-enrollment requires the separate readiness and approval stages in the ledger.
+A policy merge alone is not a live apply. Follow the [fleet rollout boundary](fleet-queue-rollout.md)
+and review a fresh trusted-main all-inventory bound plan before obtaining Aaron's
+confirmation immediately before application and protected environment approval.
+No old pilot plan is reusable; no new credentials or grants are needed.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
 explains skipped-job semantics and expected-source binding. A green skipped job
 alone is insufficient evidence, which is why the aggregate validates results.
 
 
-### Completed pilot and future preview boundary
+### Fleet enrollment preview boundary
 
-[Apply evidence](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)
-records the approved update to ruleset `26190028`, preserving existing protections,
-conditions and bypass list. [Independent queue-trial verification](https://github.com/Living-Proof-Labs/.github/issues/102#issuecomment-6907470862)
-confirms real #106/#109 queue merges and successful main audits. This completes
-only the `.github` pilot, not fleet enrollment.
+Verified fleet apply added 19 queue rules, with `.github` unchanged and no new
+required checks. Strict readback found all 20 compliant with zero remaining
+changes or failures. The completed plan is not reusable for another apply.
+Existing stronger rules, conditions and bypass
+boundaries remain controlled by the unchanged resolver. Hidden bypass values
+remain unknown; never substitute an empty list. Any unexpected required contract,
+strict-check incompatibility, unreadable evidence or unrelated drift must be
+resolved and disclosed before exact plan approval. See [fleet rollout](fleet-queue-rollout.md).
 
-The earlier public read omitted `bypass_actors`; authenticated protected preview
-resolved that evidence boundary. Never fabricate hidden values. Old pilot plans
-are superseded. Every further enrollment needs a fresh bound all-inventory
-preview, complete evidence, precise scope approval and strict readback. Unrelated
-drift found by a preview is not automatically authorized. See the
-[readiness ledger](required-check-rollout.md) and issue 98 before proposing a batch.
+### Read-only classic branch protection evidence
+
+For fleet queue rollout ([#98](https://github.com/Living-Proof-Labs/.github/issues/98)),
+run **Collect classic branch protection evidence** only after its reviewed workflow
+has merged to trusted `main`. It requires the existing `repository-administration`
+environment approval and narrows the existing settings App token to Administration
+read. It has no apply input or mutation step and uses no pull-request secrets.
+
+Download `classic-protection-evidence/report.json` from that run. It records the
+source revision, canonical inventory digest, timestamps, default branches, classic required contexts, producer App IDs (null means any
+producer), and strictness. Every canonical entry must be present and `complete`
+must be true. Explicit `Branch not protected` 404 after successful identity reads
+means no classic protection; generic 404, denied reads, malformed evidence and a
+changed default branch remain unverified and fail the job while retaining partial
+evidence. An unreadable repository is never counted as clean.
+
+This snapshot does not certify queue readiness or replace inherited ruleset reads.
+Reconcile actual required contracts with queue-SHA workflow evidence; informational
+checks do not become mandatory. Collect fresh evidence alongside the protected
+full-inventory bound preview, review every proposed action, and obtain Aaron's exact
+live-plan approval before any apply. Neither an artifact nor a green collection run
+authorizes settings changes. Do not reuse superseded previews.

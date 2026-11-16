@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Collect classic branch protection evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: classic-protection-evidence
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: repository-administration
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.22.3'
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ vars.REPO_ADMIN_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-administration: read
+      - name: Collect every canonical default branch using GET only
+        run: node tools/github/collect-classic-protections.mjs
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Retain evidence even when incomplete
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: classic-protection-evidence
+          path: artifacts/classic-protections/report.json
+          retention-days: 14
+          if-no-files-found: error

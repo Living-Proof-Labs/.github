@@ -1,6 +1,6 @@
-# Required-check and merge-queue rollout readiness
+# Fleet queue delivery and historical required-check candidates
 
-Evidence snapshot: 2026-11-16 UTC. Owner: Keel. Tracking: [issue 98](https://github.com/Living-Proof-Labs/.github/issues/98).
+Delivery verified: 2026-11-16 UTC. Historical workflow scan: earlier that day. Owner: Keel. Tracking: [issue 98](https://github.com/Living-Proof-Labs/.github/issues/98).
 
 This ledger records readiness, not executable enrollment policy or apply authority.
 The sole scope source is [canonical inventory](../config/github/repositories.json),
@@ -10,15 +10,36 @@ and reading every `.github/workflows/*.yml` and `*.yaml` at that revision.
 It is a dated evidence projection, not a second registry. Refresh from the inventory;
 a new or missing entry is **unassessed**, never silently excluded or considered ready.
 
-## Completed pilot, incomplete fleet
+## Delivered fleet queues
 
-Only `.github` is enrolled and verified. [Apply and strict readback evidence](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)
-records run [43794530229](https://github.com/Living-Proof-Labs/.github/actions/runs/43794530229)
-on `d7f06e1711d62ecf35bd6593bb62d5005920f606`: one ruleset PUT, other 19 unchanged,
-then 20 compliant with zero remaining changes/failures. This is compliance with
-the enrolled policy, not proof all 20 require checks. Four manual observations
-remain unverified: archive-program inclusion, Git LFS archive inclusion,
-ref-update limit, and linked-issue autoclose.
+[Apply run 43829155236](https://github.com/Living-Proof-Labs/.github/actions/runs/43829155236)
+completed successfully on trusted source `887d4788421aec3bb5f33447c1a8e479acd0e359`.
+It added only a merge-queue rule to each of the other 19 repositories; `.github`
+remained unchanged. Apply and strict readback each verified all 20 canonical
+repositories with zero failures; final readback had zero remaining changes.
+[Results artifact 14208036773](https://github.com/Living-Proof-Labs/.github/actions/runs/43829155236/artifacts/14208036773)
+has ZIP SHA256 `ca1778e27b3b6d412552148e9f7e9eedceed24dfda2802a9f87dead9ba00854b`.
+Independent live GETs matched the planned rules, conditions and bypass lists on
+all 20 active rulesets. Fleet queue settings are delivered and verified.
+
+The preceding [classic-protection collection 43828994015](https://github.com/Living-Proof-Labs/.github/actions/runs/43828994015)
+reported complete evidence for all 20 default branches, with no classic branch
+protections or classic required contexts at collection time. This does not mean
+ruleset protection is absent. The only selected required-check contract remains
+`.github`'s `Repository verification gate`, App `15368`. No new required checks
+were added elsewhere; informational checks remain informational.
+
+Real queue trials on the newly enrolled 19 repositories remain unverified here;
+settings enforcement does not establish fleet required-test coverage or robot
+capability success. Four manual observation categories remain unverified:
+archive-program inclusion, Git LFS archive inclusion, ref-update limit and
+linked-issue autoclose. No further settings changes are authorized by this ledger.
+
+## Historical pilot evidence
+
+The earlier [pilot apply 43794530229](https://github.com/Living-Proof-Labs/.github/actions/runs/43794530229)
+changed only `.github`; its then-unchanged other 19 repositories were subsequently
+enrolled by the fleet apply above.
 
 [Vera's final queue-trial PASS](https://github.com/Living-Proof-Labs/.github/issues/102#issuecomment-6907470862)
 records real queued merges #106 and #109. Runs
@@ -32,37 +53,43 @@ passed. These are linked retained review findings; this ledger refresh did not
 repeat a live apply or queue trial. Old preview plans are superseded and must
 never be reused for rollout.
 
-## Inventory-derived source ledger
+## Historical inventory-derived workflow scan
 
-Only `.github/verify.yml` declares `merge_group` in this snapshot. All other rows
-are **blocked: queue trigger absent**, with producer/complete contract/queue behavior
-unverified unless separately evidenced below. A successful push check alone is
-not readiness. Revision links expose all workflow files inspected.
+At the exact revisions below, only `.github/verify.yml` declared `merge_group`.
+These are historical source observations, not current enrollment blockers. All
+20 now have verified active queues. Absence of a trigger for informational jobs
+is not a queue prerequisite. Before any future required-check adoption, refresh
+only the proposed contract's applicable queue behavior and producer evidence.
+The rows do not claim a fresh scan of today's repository heads.
 
-| Repository | Batch | Exact default-branch revision / workflows | Readiness |
+| Repository | Batch | Exact default-branch revision / workflows | Historical observation |
 | --- | --- | --- | --- |
-| `.github` | Pilot | [272e907fd059b6f2e8619f891f057257b71e6482](https://github.com/Living-Proof-Labs/.github/tree/272e907fd059b6f2e8619f891f057257b71e6482/.github/workflows) | Verified pilot |
-| `capability-verifier` | A | [1e1330a5671db081b786767d35013880b26a1720](https://github.com/Living-Proof-Labs/capability-verifier/tree/1e1330a5671db081b786767d35013880b26a1720/.github/workflows) | Blocked; no merge_group |
-| `collaboration-guidelines` | C | [f98c2864d53585dc53ce7744c441f4593fb48f83](https://github.com/Living-Proof-Labs/collaboration-guidelines/tree/f98c2864d53585dc53ce7744c441f4593fb48f83/.github/workflows) | Blocked; no merge_group |
-| `living-proof-labs.github.io` | C | [cd339643f206770be0c1af25a7199aac4f2b4739](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/tree/cd339643f206770be0c1af25a7199aac4f2b4739/.github/workflows) | Blocked; no merge_group |
-| `livingproof` | B | [934f82e065f89d17d0c06c7074f4d8b968ea711c](https://github.com/Living-Proof-Labs/livingproof/tree/934f82e065f89d17d0c06c7074f4d8b968ea711c/.github/workflows) | Blocked; no merge_group |
-| `livingproof-booster-t1` | B | [8da4ee58745163ed0aca6e217ba5aa61430556a6](https://github.com/Living-Proof-Labs/livingproof-booster-t1/tree/8da4ee58745163ed0aca6e217ba5aa61430556a6/.github/workflows) | Blocked; no merge_group |
-| `livingproof-capability-report` | B | [d1666e1c01a14166d2ece9a51b6a9d29994f4d9a](https://github.com/Living-Proof-Labs/livingproof-capability-report/tree/d1666e1c01a14166d2ece9a51b6a9d29994f4d9a/.github/workflows) | Blocked; no merge_group |
-| `livingproof-common` | B | [81871cb2367575e17cf0e5d7098653dd0104a4a4](https://github.com/Living-Proof-Labs/livingproof-common/tree/81871cb2367575e17cf0e5d7098653dd0104a4a4/.github/workflows) | Blocked; no merge_group |
-| `livingproof-evaluator` | B | [51a14a200c4477da359ab78403012f6479e1d277](https://github.com/Living-Proof-Labs/livingproof-evaluator/tree/51a14a200c4477da359ab78403012f6479e1d277/.github/workflows) | Blocked; no merge_group |
-| `livingproof-evaluator-run` | C | [1deba5bc9250fc8534b386481de4203327200607](https://github.com/Living-Proof-Labs/livingproof-evaluator-run/tree/1deba5bc9250fc8534b386481de4203327200607/.github/workflows) | Blocked; no merge_group |
-| `livingproof-evaluator-scenario` | B | [287f6ae3155e2bc8eb8a5490ad8dbb17b6787413](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/tree/287f6ae3155e2bc8eb8a5490ad8dbb17b6787413/.github/workflows) | Blocked; no merge_group |
-| `livingproof-sim-gazebo` | A | [f2ed3e8800ff29ee45d64158872e7abd8e873659](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/tree/f2ed3e8800ff29ee45d64158872e7abd8e873659/.github/workflows) | Blocked; no merge_group |
-| `livingproof-sim-mujoco` | A | [7331df1c6adcafaa1bca16efb3ec3c17083d6301](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco/tree/7331df1c6adcafaa1bca16efb3ec3c17083d6301/.github/workflows) | Blocked; no merge_group |
-| `livingproof-unitree-g1` | B | [dcfcf27e3803d83ebc7f1030ddbd99edf52a8a73](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/tree/dcfcf27e3803d83ebc7f1030ddbd99edf52a8a73/.github/workflows) | Blocked; no merge_group |
-| `livingproof-unitree-go1` | B | [7a375c39ee51dfb77b27d6a92f51a7af89f124b7](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/tree/7a375c39ee51dfb77b27d6a92f51a7af89f124b7/.github/workflows) | Blocked; no merge_group |
-| `livingproof-verification` | C | [c4be9a8898d0dbe615d0200a4d23c678b9ba583a](https://github.com/Living-Proof-Labs/livingproof-verification/tree/c4be9a8898d0dbe615d0200a4d23c678b9ba583a/.github/workflows) | Blocked; no merge_group |
-| `livingproof-worlds` | A | [29484d3cdbcbc31d9a6b931c03acd13607f6b5c9](https://github.com/Living-Proof-Labs/livingproof-worlds/tree/29484d3cdbcbc31d9a6b931c03acd13607f6b5c9/.github/workflows) | Blocked; no merge_group |
-| `robot-capability-specs` | A | [c3662d50376ef14f2e9c8eea09e7940bea923dbf](https://github.com/Living-Proof-Labs/robot-capability-specs/tree/c3662d50376ef14f2e9c8eea09e7940bea923dbf/.github/workflows) | Blocked; no merge_group |
-| `unitree-foxglove-sdk` | D | [2afda1bbad7c9c2f549e7cfca16ad6c1012262a3](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk/tree/2afda1bbad7c9c2f549e7cfca16ad6c1012262a3/.github/workflows) | Blocked; no merge_group |
-| `website` | C | [12cef24c9ae60ae54a534e8111f0ee04117a8c0c](https://github.com/Living-Proof-Labs/website/tree/12cef24c9ae60ae54a534e8111f0ee04117a8c0c/.github/workflows) | Blocked; no merge_group |
+| `.github` | Pilot | [272e907fd059b6f2e8619f891f057257b71e6482](https://github.com/Living-Proof-Labs/.github/tree/272e907fd059b6f2e8619f891f057257b71e6482/.github/workflows) | Pilot had queue coverage |
+| `capability-verifier` | A | [1e1330a5671db081b786767d35013880b26a1720](https://github.com/Living-Proof-Labs/capability-verifier/tree/1e1330a5671db081b786767d35013880b26a1720/.github/workflows) | No merge_group at recorded revision |
+| `collaboration-guidelines` | C | [f98c2864d53585dc53ce7744c441f4593fb48f83](https://github.com/Living-Proof-Labs/collaboration-guidelines/tree/f98c2864d53585dc53ce7744c441f4593fb48f83/.github/workflows) | No merge_group at recorded revision |
+| `living-proof-labs.github.io` | C | [cd339643f206770be0c1af25a7199aac4f2b4739](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/tree/cd339643f206770be0c1af25a7199aac4f2b4739/.github/workflows) | No merge_group at recorded revision |
+| `livingproof` | B | [934f82e065f89d17d0c06c7074f4d8b968ea711c](https://github.com/Living-Proof-Labs/livingproof/tree/934f82e065f89d17d0c06c7074f4d8b968ea711c/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-booster-t1` | B | [8da4ee58745163ed0aca6e217ba5aa61430556a6](https://github.com/Living-Proof-Labs/livingproof-booster-t1/tree/8da4ee58745163ed0aca6e217ba5aa61430556a6/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-capability-report` | B | [d1666e1c01a14166d2ece9a51b6a9d29994f4d9a](https://github.com/Living-Proof-Labs/livingproof-capability-report/tree/d1666e1c01a14166d2ece9a51b6a9d29994f4d9a/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-common` | B | [81871cb2367575e17cf0e5d7098653dd0104a4a4](https://github.com/Living-Proof-Labs/livingproof-common/tree/81871cb2367575e17cf0e5d7098653dd0104a4a4/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-evaluator` | B | [51a14a200c4477da359ab78403012f6479e1d277](https://github.com/Living-Proof-Labs/livingproof-evaluator/tree/51a14a200c4477da359ab78403012f6479e1d277/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-evaluator-run` | C | [1deba5bc9250fc8534b386481de4203327200607](https://github.com/Living-Proof-Labs/livingproof-evaluator-run/tree/1deba5bc9250fc8534b386481de4203327200607/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-evaluator-scenario` | B | [287f6ae3155e2bc8eb8a5490ad8dbb17b6787413](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario/tree/287f6ae3155e2bc8eb8a5490ad8dbb17b6787413/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-sim-gazebo` | A | [f2ed3e8800ff29ee45d64158872e7abd8e873659](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/tree/f2ed3e8800ff29ee45d64158872e7abd8e873659/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-sim-mujoco` | A | [7331df1c6adcafaa1bca16efb3ec3c17083d6301](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco/tree/7331df1c6adcafaa1bca16efb3ec3c17083d6301/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-unitree-g1` | B | [dcfcf27e3803d83ebc7f1030ddbd99edf52a8a73](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/tree/dcfcf27e3803d83ebc7f1030ddbd99edf52a8a73/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-unitree-go1` | B | [7a375c39ee51dfb77b27d6a92f51a7af89f124b7](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/tree/7a375c39ee51dfb77b27d6a92f51a7af89f124b7/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-verification` | C | [c4be9a8898d0dbe615d0200a4d23c678b9ba583a](https://github.com/Living-Proof-Labs/livingproof-verification/tree/c4be9a8898d0dbe615d0200a4d23c678b9ba583a/.github/workflows) | No merge_group at recorded revision |
+| `livingproof-worlds` | A | [29484d3cdbcbc31d9a6b931c03acd13607f6b5c9](https://github.com/Living-Proof-Labs/livingproof-worlds/tree/29484d3cdbcbc31d9a6b931c03acd13607f6b5c9/.github/workflows) | No merge_group at recorded revision |
+| `robot-capability-specs` | A | [c3662d50376ef14f2e9c8eea09e7940bea923dbf](https://github.com/Living-Proof-Labs/robot-capability-specs/tree/c3662d50376ef14f2e9c8eea09e7940bea923dbf/.github/workflows) | No merge_group at recorded revision |
+| `unitree-foxglove-sdk` | D | [2afda1bbad7c9c2f549e7cfca16ad6c1012262a3](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk/tree/2afda1bbad7c9c2f549e7cfca16ad6c1012262a3/.github/workflows) | No merge_group at recorded revision |
+| `website` | C | [12cef24c9ae60ae54a534e8111f0ee04117a8c0c](https://github.com/Living-Proof-Labs/website/tree/12cef24c9ae60ae54a534e8111f0ee04117a8c0c/.github/workflows) | No merge_group at recorded revision |
 
-## Batch A: candidates, not approved required contexts
+## Historical Batch A candidates for possible future required contracts
+
+These candidate analyses are not selected contracts or mandatory gates. Their
+coverage suggestions apply only if that work is explicitly selected for future
+required enforcement; informational work does not block merging.
 
 Checks below were read from the paginated Checks API at each exact source revision
 above. Names and producer IDs are observed on main/push evidence; no Batch A
@@ -72,7 +99,7 @@ local changes; App binding alone does not distinguish workflows with the same na
 
 ### capability-verifier
 
-Candidate coverage is `verify`, **both amd64 and arm64** `report` legs, `report-results`, `documentation`, and both `hallway-image-pr` matrix legs. That last job currently requires `event_name == pull_request`, so merely adding a queue trigger silently skips image testing. Include matrix completeness and missing artifact checks, not only a successful dependency aggregate. The `verify`, `report`, `report-results` and `documentation` checkouts use PR-head SHA with `github.sha` fallback. In contrast, the [hallway-image-pr checkout at this revision](https://github.com/Living-Proof-Labs/capability-verifier/blob/1e1330a5671db081b786767d35013880b26a1720/.github/workflows/verify.yml#L547) sets `ref` only to `github.event.pull_request.head.sha`, without a fallback. Its queue adoption must explicitly select the merge-group SHA as well as broaden the job condition; verify both architecture legs check out that SHA. The separate livingproof-verification checkout in this job remains bound to the image lock commit, not the queue SHA. Existing artifact names using PR-head SHA with `github.sha` fallback do not prove that this checkout is queue-safe. No workflow-wide concurrency is declared. Keep release, registry image publishing and documentation deployment out of queue runs. The reusable scenario/walk-hallway workflows are not the repository's required verification contract: capability FAIL is data, while infrastructure/reproducibility failures remain failures. Do not convert expected fixture FAIL verdicts into pipeline failures.
+Candidate coverage is `verify`, **both amd64 and arm64** `report` legs, `report-results`, `documentation`, and both `hallway-image-pr` matrix legs. At that revision, that last job requires `event_name == pull_request`, so merely adding a queue trigger silently skips image testing. Include matrix completeness and missing artifact checks, not only a successful dependency aggregate. The `verify`, `report`, `report-results` and `documentation` checkouts use PR-head SHA with `github.sha` fallback. In contrast, the [hallway-image-pr checkout at this revision](https://github.com/Living-Proof-Labs/capability-verifier/blob/1e1330a5671db081b786767d35013880b26a1720/.github/workflows/verify.yml#L547) sets `ref` only to `github.event.pull_request.head.sha`, without a fallback. Its queue adoption must explicitly select the merge-group SHA as well as broaden the job condition; verify both architecture legs check out that SHA. The separate livingproof-verification checkout in this job remains bound to the image lock commit, not the queue SHA. Existing artifact names using PR-head SHA with `github.sha` fallback do not prove that this checkout is queue-safe. No workflow-wide concurrency is declared. Keep release, registry image publishing and documentation deployment out of queue runs. The reusable scenario/walk-hallway workflows are not the repository's required verification contract: capability FAIL is data, while infrastructure/reproducibility failures remain failures. Do not convert expected fixture FAIL verdicts into pipeline failures.
 
 Observed candidate checks (App `15368` for every linked row):
 
@@ -106,7 +133,7 @@ Existing open PRs at inspection: [#16](https://github.com/Living-Proof-Labs/livi
 
 ### livingproof-worlds
 
-Candidate coverage spans `verify.yml` job `verify` **and** `manual.yml` job `build`. Both workflows need queue coverage; requiring only verify omits manual validation and publication-completeness checks. A cross-workflow aggregate needs explicit complete evidence for the same SHA, or require a reviewed unique complete set. Both checkouts fall back from PR head to `github.sha`. No verification-wide concurrency is declared; the deployment lock is separate. Keep release and Pages deployment excluded; manual deployment currently requires a non-PR event and main ref, which must be tested for queue events.
+Candidate coverage spans `verify.yml` job `verify` **and** `manual.yml` job `build`. If both are selected as required coverage, both workflows need queue coverage; requiring only verify omits manual validation and publication-completeness checks. A cross-workflow aggregate needs explicit complete evidence for the same SHA, or require a reviewed unique complete set. Both checkouts fall back from PR head to `github.sha`. No verification-wide concurrency is declared; the deployment lock is separate. Keep release and Pages deployment excluded; manual deployment currently requires a non-PR event and main ref, which must be tested for queue events.
 
 Observed candidate checks (App `15368` for every linked row):
 
@@ -127,34 +154,43 @@ Observed candidate checks (App `15368` for every linked row):
 
 Existing open PRs at inspection: [#56](https://github.com/Living-Proof-Labs/robot-capability-specs/pull/56), [#53](https://github.com/Living-Proof-Labs/robot-capability-specs/pull/53). These were dependency updates, not evidence of queue readiness. Rivet must reconcile newer work before implementation.
 
-## Remaining batches and prerequisites
+## Historical remaining candidate batches
 
 Batch membership is recorded in the inventory-derived table, following the
 [coordination plan](https://github.com/Living-Proof-Labs/.github/issues/98#issuecomment-6907918290).
 
 - **B — matrix/package verification:** establish all architectures, reusable-workflow jobs and packaging checks in the complete contract; retain per-leg evidence, cancellation/timeout/missing-leg tests and publishing separation. Exact context/producer and cost/runtime assessment remain unverified here.
-- **C — multiple workflows and sites:** define read-only PR/queue checks independently of publish/deploy. `website` currently has only deploy/release workflow files, without a dedicated PR validation workflow. `livingproof-verification/checks.yml` needs review of PR-number concurrency and PR-head SHA assumptions; do not gate its robot-verdict/deployment pipeline wholesale. Exact complete contexts/producers remain unverified.
-- **D — explicit special contract:** `unitree-foxglove-sdk` requires separation of unit/lint health from documented unstable locomotion capability outcomes. Rivet must obtain the precise blocking-evidence contract; no silent exclusion or weakened verdict semantics. Queue behavior and trusted context remain unverified.
+- **C — multiple workflows and sites:** define read-only PR/queue checks independently of publish/deploy. At the recorded revision, `website` has only deploy/release workflow files, without a dedicated PR validation workflow. `livingproof-verification/checks.yml` needs review of PR-number concurrency and PR-head SHA assumptions; do not gate its robot-verdict/deployment pipeline wholesale. Exact complete contexts/producers remain unverified.
+- **D — explicit special contract:** A future required contract for `unitree-foxglove-sdk` needs separation of unit/lint health from documented unstable locomotion capability outcomes. Rivet must obtain the precise blocking-evidence contract; no silent exclusion or weakened verdict semantics. Queue behavior and trusted context remain unverified.
 
-## Exit criteria and ownership
+## Future required-contract work and ownership
 
-Keel owns this ledger, policy enrollment and protected preview/apply coordination.
-Rivet coordinates repository-local implementation and independent review through
-[the existing request](https://github.com/Living-Proof-Labs/.github/issues/98#issuecomment-6907918290).
-At this snapshot that issue has no Rivet reply; local work acceptance and linked
-implementation PRs are pending. Do not assign parallel implementation directly
-to other team members. The issue assignee and project Owner are distinct fields;
-this document does not claim to update project fields.
+Keel owns this ledger and settings coordination. Rivet remains the sole route for
+repository-local implementation; refresh the [existing coordination thread](https://github.com/Living-Proof-Labs/.github/issues/98#issuecomment-6907918290)
+before proposing work, without duplicating teammates' changes. The earlier scan
+had no Rivet reply; that is historical, not a claim about today's issue state.
+Issue assignee and project Owner are distinct; this document updates neither.
 
-For each repository, retain these stages separately:
+If a new required contract is requested, keep these evidence questions separate:
 
-1. **Contract reviewed:** list all applicable jobs and matrix legs, required artifacts, exact expected skips by event, robot-verdict semantics, checkout SHA, concurrency and publishing boundaries. Choose unique trusted check contexts or a complete always-running gate; record real check name, App ID, SHA and URL. Unknown evidence blocks readiness.
-2. **Local change verified/merged:** support `pull_request` and `merge_group`; exercise missing, failed, cancelled, timed-out and unexpectedly skipped work. Check artifact/test publication completeness and legitimate skip cases. Every queue test uses the merge-group SHA; no release, deployment or external PR-comment side effect. Link exact-head CI and independent review through Rivet. Queue-event behavior remains unverified until observed.
-3. **Policy reviewed:** enroll only ready entries in a separate independently reviewed `.github` PR. Preserve extra existing checks, stronger rules/reviews, branch coverage and bypass boundaries. Queue enrollment uses compatible non-strict branch updates and creation enforcement; do not weaken non-queue protections. No policy change is made by this ledger.
-4. **Plan approved/applied:** obtain a fresh trusted-main all-inventory preview and compare every action and unresolved result to precise approved scope. Retain source, policy, implementation and inventory bindings. Aaron's action-time approval and protected environment approval are separate requirements; pilot approval covers no additional repository. Stop on extra/unresolved changes. Never reuse old previews or broaden credentials.
-5. **Enforcement and trial proven:** retain actual live ruleset readback plus full-inventory strict readback, then a real queue merge with exact merge-group SHA/check producer and postmerge audit. Do not label a policy merge or green baseline audit fleet completion. Keep issue 98 open until every inventory entry reaches this stage or Aaron approves an explicit documented exception.
+1. Which jobs/artifacts are actually selected as required? Do not promote every
+   candidate or informational check. Record trusted context/App identity, matrix
+   coverage, legitimate skips and robot-verdict semantics for that selected scope.
+2. Does that contract report correctly on its exact PR and merge-group SHA,
+   including failed, cancelled, missing and unexpectedly skipped required work?
+   Keep release/deploy side effects off queue events and coordinate through Rivet.
+3. Does a separately authorized policy change preserve stronger existing rules,
+   contexts, branch coverage and bypass boundaries? A queue-only rollout does not
+   itself select more required checks.
+4. Before any further live change, inspect a fresh bound all-inventory plan and
+   obtain precise action-time and protected-environment approval. Retain strict
+   readback; do not reuse the completed fleet apply plan or broaden credentials.
+5. Record actual queue trials separately from settings enforcement. Future trial
+   or contract evidence gaps do not undo the verified queue delivery above and
+   are not invented gates on informational work or this documentation PR.
 
-Refresh this snapshot from the canonical inventory when source revisions or local
-work changes. Record the observation date and new evidence; invalidate readiness
-when the contract changes. Reconcile inventory additions/removals before choosing
-a batch. Renovate preset adoption in issue 103 is related but does not enable queues.
+Refresh source observations from the canonical inventory when evaluating a new
+contract. The current ledger preserves immutable historical evidence, including
+the PR-only hallway-image checkout distinction, rather than implying it describes
+newer teammate changes. Issue 98 can track any remaining separately requested
+contract or trial work without claiming that fleet queue settings are pending.

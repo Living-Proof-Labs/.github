@@ -14,7 +14,7 @@ const verification = readFileSync(path.join(root, '.github/workflows/verify.yml'
 const workflowDir = path.join(root, '.github/workflows');
 
 describe('Merge-queue review contracts', () => {
-  test('desired policy enrolls a merge queue and non-strict required checks for .github only', () => {
+  test('desired policy enrolls every canonical queue without adding required contexts', () => {
     assert.deepEqual(inventory.repositories, [
       '.github',
       'capability-verifier',
@@ -41,7 +41,7 @@ describe('Merge-queue review contracts', () => {
     validatePolicy(policy);
     validateRequiredChecks(policy, inventory);
     assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github']);
-    assert.deepEqual(Object.keys(policy.merge_queue_by_repository), ['.github']);
+    assert.deepEqual(Object.keys(policy.merge_queue_by_repository), inventory.repositories);
     assert.equal(policy.required_checks_by_repository['.github'].strict_required_status_checks_policy, false);
     assert.deepEqual(
       policy.required_checks_by_repository['.github'].required_status_checks,
@@ -60,8 +60,8 @@ describe('Merge-queue review contracts', () => {
         assert.ok(types.includes('required_status_checks'));
         assert.ok(types.includes('merge_queue'));
       } else {
-        assert.deepEqual(types, policy.main_ruleset.rules.map(rule => rule.type));
-        assert.ok(!types.includes('merge_queue'));
+        assert.deepEqual(types, [...policy.main_ruleset.rules.map(rule => rule.type), 'merge_queue']);
+        assert.ok(types.includes('merge_queue'));
         assert.ok(!types.includes('required_status_checks'));
       }
     }
@@ -84,6 +84,7 @@ describe('Merge-queue review contracts', () => {
     assert.deepEqual(names, [
       'apply-repository-settings.yml',
       'bootstrap-agent-apps.yml',
+      'collect-classic-protections.yml',
       'keel-comment-pilot.yml',
       'verify.yml',
     ]);
