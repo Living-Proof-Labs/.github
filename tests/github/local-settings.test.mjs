@@ -51,34 +51,33 @@ describe('Directory-only required-check enrollment', () => {
       required_status_checks: [{ context: 'Repository verification gate', integration_id: 15368 }],
       strict_required_status_checks_policy: false, do_not_enforce_on_create: false
     }});
-    assert.deepEqual(merge_queue_by_repository, { '.github': {
+    assert.deepEqual(merge_queue_by_repository, Object.fromEntries(inventory.repositories.map(name => [name, {
       check_response_timeout_minutes: 60, grouping_strategy: 'ALLGREEN',
       max_entries_to_build: 5, max_entries_to_merge: 5, merge_method: 'MERGE',
       min_entries_to_merge: 0, min_entries_to_merge_wait_minutes: 0
-    }});
+    }])));
   });
-  test('full-inventory precise preview adds one rule only and performs no writes', async () => {
-    const oldPlan = await runInventory({api: fixtureApi('compliant', baselinePolicy), inventory, policy: baselinePolicy, revision:'a'.repeat(40), dryRun:true});
-    const newPlan = await runInventory({api: fixtureApi('compliant', baselinePolicy), inventory, policy, revision:'a'.repeat(40), dryRun:true});
-    assert.equal(newPlan.failures, 0);
-    assert.equal(newPlan.plan.repositories.length,20);
-    for (let i=0;i<20;i++) {
+  test('pilot-to-fleet preview adds exactly 19 queue rules without changing required checks or other settings', async () => {
+    const pilot = structuredClone(policy);
+    pilot.merge_queue_by_repository = { '.github': policy.merge_queue_by_repository['.github'] };
+    const oldPlan = await runInventory({api: fixtureApi('compliant', pilot), inventory, policy: pilot, revision:'a'.repeat(40), dryRun:true});
+    const newPlan = await runInventory({api: fixtureApi('compliant', pilot), inventory, policy, revision:'a'.repeat(40), dryRun:true});
+    assert.equal(oldPlan.failures,0); assert.equal(newPlan.failures,0);
+    assert.equal(newPlan.plan.repositories.length,inventory.repositories.length);
+    for (let i=0;i<inventory.repositories.length;i++) {
       const old = structuredClone(oldPlan.plan.repositories[i]), next = structuredClone(newPlan.plan.repositories[i]);
-      // Every nested Pages plan binds the entire policy, even with no Pages change.
-      assert.notEqual(next.pages.policy, old.pages.policy);
+      assert.notEqual(next.pages.policy,old.pages.policy);
       delete next.pages.policy; delete old.pages.policy;
-      if (next.name !== '.github') { assert.deepEqual(next, old); continue; }
-      const {ruleset, ...other} = next;
-      const {ruleset: oldRuleset, ...oldOther} = old;
+      if (next.name === '.github') { assert.deepEqual(next,old); continue; }
+      const {ruleset,...other}=next, {ruleset:oldRuleset,...oldOther}=old;
       assert.deepEqual(other,oldOther); assert.deepEqual(ruleset.before,oldRuleset.before);
-      assert.equal(ruleset.write.method,'PUT'); assert.equal(ruleset.write.path,'/repos/Living-Proof-Labs/.github/rulesets/1');
-      assert.deepEqual(ruleset.write.body.rules.slice(0, baselinePolicy.main_ruleset.rules.length), baselinePolicy.main_ruleset.rules);
-      assert.deepEqual(ruleset.write.body.rules.slice(baselinePolicy.main_ruleset.rules.length), [
-        {type:'required_status_checks',parameters:policy.required_checks_by_repository['.github']},
-        {type:'merge_queue',parameters:policy.merge_queue_by_repository['.github']},
-      ]);
+      assert.equal(ruleset.write.method,'PUT');
+      assert.equal(ruleset.write.path,`/repos/Living-Proof-Labs/${next.name}/rulesets/1`);
+      assert.deepEqual(ruleset.write.body.rules,[...pilot.main_ruleset.rules,{type:'merge_queue',parameters:policy.merge_queue_by_repository[next.name]}]);
+      assert.deepEqual(ruleset.write.body.conditions,pilot.main_ruleset.conditions);
+      assert.deepEqual(ruleset.write.body.bypass_actors,[]);
     }
-    assert.equal(newPlan.plan.repositories.filter(r=>r.ruleset.write).length,1);
+    assert.equal(newPlan.plan.repositories.filter(r=>r.ruleset.write).length,19);
   });
   test('existing stronger rules survive; unavailable bypass evidence cannot become a live plan', async () => {
     const api = fixtureApi('compliant',baselinePolicy), get=api.get;
