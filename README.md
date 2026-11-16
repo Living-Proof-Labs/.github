@@ -79,7 +79,8 @@ The local desired policy is
 [`config/github/repository-policy.json`](config/github/repository-policy.json).
 It enrolls only `.github` for the App-bound `Repository verification gate` and a
 merge queue. Required checks are not strict there, because the queue keeps the
-branch current; live enforcement remains pending separate approval and readback.
+branch current. The `.github` pilot apply, strict readback and real queue trials
+completed on 2026-11-16; see the [rollout ledger](docs/required-check-rollout.md).
 
 Use the canonical inventory controller for a read-only preview:
 
@@ -294,4 +295,6 @@ Required-check enforcement is staged separately from the settings baseline.
 See [required-check adoption](docs/repository-operations.md#required-checks-capability-and-staged-adoption)
 for the repository-specific policy contract and complete verification gate.
 The desired policy enrolls only `.github` for required checks and a merge queue; the other 19 repositories are unchanged.
-Live enforcement still requires a separately approved apply and strict readback.
+The `.github` pilot is live and verified; remaining repositories require local
+readiness work and separately approved enrollment. See the
+[inventory-derived readiness ledger](docs/required-check-rollout.md).

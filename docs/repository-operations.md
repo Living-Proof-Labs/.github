@@ -175,7 +175,9 @@ workflow when a write is intended.
 Required-check absence in the current default policy is an adoption gap, not
 settings drift. This controller supports a `required_checks_by_repository` object
 in `config/github/repository-policy.json`. **The desired policy enrolls only `.github` (1 of 20 repositories).**
-Live enforcement is still pending a separately approved apply and strict readback.
+The `.github` pilot is live: the approved apply, strict readback and real queue
+merges completed on 2026-11-16. See the [rollout ledger](required-check-rollout.md)
+for exact evidence and the remaining repository prerequisites.
 A policy merge or baseline audit pass is not proof that the new rule is live.
 The other 19 repositories and all existing stronger protections remain unchanged.
 
@@ -190,7 +192,7 @@ Adding a verification job requires extending the gate contract and its tests.
 
 The gate passed on PR #97 and on merged revision
 `49f76c37a3d53791741bcfd5d5ba19d8e4a3ea69`. Check run `132733447408`
-reported success from GitHub Actions App ID `15368`. The desired addition is:
+reported success from GitHub Actions App ID `15368`. The enrolled pilot policy is:
 
 ```json
 "required_checks_by_repository": {
@@ -257,31 +259,25 @@ enforcement. The desired policy enrolls a `merge_queue` rule for `.github` only,
 alongside its required checks. `verify.yml` and the verification gate already
 handle `merge_group` with the same skip rules as pull requests, so the required
 gate can report in the queue. Other repositories stay off the queue until their
-required CI also triggers on `merge_group`. After this policy is applied, merge
-by enqueueing rather than updating every other open branch by hand.
+required CI also triggers on `merge_group`. The pilot is applied; merge `.github` pull requests by enqueueing. Further
+enrollment requires the separate readiness and approval stages in the ledger.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
 explains skipped-job semantics and expected-source binding. A green skipped job
 alone is insufficient evidence, which is why the aggregate validates results.
 
 
-### Enrollment preview boundary
+### Completed pilot and future preview boundary
 
-The .github-only proposal adds a `required_status_checks` rule and a
-`merge_queue` rule to the existing managed ruleset, ID `26190028`, leaving its
-deletion, non-fast-forward, pull-request parameters, conditions and existing
-stronger rules intact. The context is `Repository verification gate`, integration
-`15368`, `strict_required_status_checks_policy` is `false`, and
-`do_not_enforce_on_create` is `false`. The merge queue uses merge commits,
-`ALLGREEN` grouping, and a 60-minute check timeout. No other repository receives
-a settings change. Policy/source bindings change, including nested Pages plan
-digests, and therefore require a fresh approved plan. A fresh all-inventory preview may also expose unrelated existing
-drift; none of that is authorized for application by this enrollment PR.
+[Apply evidence](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)
+records the approved update to ruleset `26190028`, preserving existing protections,
+conditions and bypass list. [Independent queue-trial verification](https://github.com/Living-Proof-Labs/.github/issues/102#issuecomment-6907470862)
+confirms real #106/#109 queue merges and successful main audits. This completes
+only the `.github` pilot, not fleet enrollment.
 
-The 2026-11-15 public read of ruleset `26190028` omitted `bypass_actors`. The
-controller therefore refuses to produce an executable live ruleset action from
-that evidence. Do not substitute an empty bypass list. Mocked full-inventory
-plan comparisons prove the intended one-repository difference and preservation
-of stronger rules, but are not an approved live plan. Obtain complete evidence
-through the existing trusted settings authority for a fresh read-only preview
-before requesting precise apply approval. No apply workflow was dispatched.
+The earlier public read omitted `bypass_actors`; authenticated protected preview
+resolved that evidence boundary. Never fabricate hidden values. Old pilot plans
+are superseded. Every further enrollment needs a fresh bound all-inventory
+preview, complete evidence, precise scope approval and strict readback. Unrelated
+drift found by a preview is not automatically authorized. See the
+[readiness ledger](required-check-rollout.md) and issue 98 before proposing a batch.
