@@ -31,11 +31,11 @@ test('PR audit stays secret-free while trusted main audit is environment-gated',
   const trustedAudit = verification.match(/  trusted-repository-settings:[\s\S]*/)?.[0];
   assert.ok(prAudit);
   assert.ok(trustedAudit);
-  assert.match(prAudit, /name: Repository settings report\n    if: github\.event_name == 'pull_request'/);
+  assert.match(prAudit, /name: Repository settings report\n    if: github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group'/);
   assert.doesNotMatch(prAudit, /create-github-app-token|environment: repository-administration|secrets\./);
   assert.match(trustedAudit, /name: Strict repository settings audit[\s\S]*environment: repository-audit/);
   assert.match(trustedAudit, /actions\/create-github-app-token@[0-9a-f]{40}/);
-  assert.match(verification, /github\.event_name != 'pull_request' && github\.ref == 'refs\/heads\/main'/);
+  assert.match(verification, /github\.event_name != 'pull_request' && github\.event_name != 'merge_group' && github\.ref == 'refs\/heads\/main'/);
 });
 
 test('daily strict audit is unattended while apply remains reviewer-gated', () => {

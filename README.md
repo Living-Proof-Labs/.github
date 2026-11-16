@@ -77,8 +77,9 @@ not dispatch workflows, merge changes, or claim a successful content deployment.
 
 The local desired policy is
 [`config/github/repository-policy.json`](config/github/repository-policy.json).
-It enrolls only `.github` for the App-bound `Repository verification gate`;
-live enforcement remains pending separate approval and readback.
+It enrolls only `.github` for the App-bound `Repository verification gate` and a
+merge queue. Required checks are not strict there, because the queue keeps the
+branch current; live enforcement remains pending separate approval and readback.
 
 Use the canonical inventory controller for a read-only preview:
 
@@ -292,5 +293,5 @@ secrets.
 Required-check enforcement is staged separately from the settings baseline.
 See [required-check adoption](docs/repository-operations.md#required-checks-capability-and-staged-adoption)
 for the repository-specific policy contract and complete verification gate.
-The desired policy enrolls only `.github`; the other 19 repositories are unchanged.
+The desired policy enrolls only `.github` for required checks and a merge queue; the other 19 repositories are unchanged.
 Live enforcement still requires a separately approved apply and strict readback.
