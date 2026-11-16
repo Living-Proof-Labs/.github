@@ -23,13 +23,13 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '24'
-      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2
+          node-version: '24.22.3'
+      - uses: go-task/setup-task@a00fbb05ce67b35648be3c78cbc9fd85354c757e # v2.2.0
         with:
           version: '3.54.0'
       - run: task setup
@@ -44,7 +44,7 @@ jobs:
           echo '## Agent App bootstrap' >> "$GITHUB_STEP_SUMMARY"
           echo 'Read-only plan. Unknown, inaccessible and 404 responses never authorize creation. Review the plan artifact and docs/GITHUB-APPS.md. Registration and installation need an owner; no keys or consent forms are uploaded. This informational job tolerates only typed incomplete visibility (recognized access-denial 403 or ambiguous 404); a successful job is not verified App access. Authentication failures, rate limits, malformed evidence, conflicts, drift and other execution errors still fail. The strict access audit remains failing on incomplete evidence.' >> "$GITHUB_STEP_SUMMARY"
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: agent-app-bootstrap-plan
           path: artifacts/app-bootstrap-plan.json
