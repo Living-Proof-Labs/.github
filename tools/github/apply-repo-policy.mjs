@@ -49,6 +49,7 @@ const POLICY_KEYS = new Set([
   'immutable_releases',
   'pages',
   'required_checks_by_repository',
+  'merge_queue_by_repository',
   'main_ruleset'
 ]);
 
@@ -630,7 +631,7 @@ export async function observe(api, org, name, policy) {
 }
 
 export async function run({ policy, org, repo, dryRun, api, inventory, httpsOnly = false, expectedPlan }) {
-  if (!httpsOnly && Object.keys(policy.required_checks_by_repository ?? {}).length) throw new Error('Repository-specific checks require task github:settings:reconcile -- --dry-run; legacy full-policy apply/preview is unavailable.');
+  if (!httpsOnly && (Object.keys(policy.required_checks_by_repository ?? {}).length || Object.keys(policy.merge_queue_by_repository ?? {}).length)) throw new Error('Repository-specific checks require task github:settings:reconcile -- --dry-run; legacy full-policy apply/preview is unavailable.');
   if (inventory && !httpsOnly) throw new Error('--inventory requires HTTPS-only mode.');
   if (inventory) {
     validateInventory(inventory);

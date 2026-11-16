@@ -21,7 +21,7 @@ Reconcile EVERY registered repository using the local policy. No target or scope
 checkboxes. Preview never writes. Apply requires the saved plan from this source
 revision, inventory and policy; each repository is checked again before writes.
 Known general settings, sponsorships, immutable releases and Pages (including
-HTTPS) are reconciled. Repository-specific required checks, when configured,
+HTTPS) are reconciled. Repository-specific required checks and merge queues, when configured,
 are added without removing stronger existing protection. Website's policy HTTPS exemption remains unmanaged.
 Unknown immutable state never authorizes a write. Rulesets are reconciled without weakening stronger existing protection.
 Each security-sensitive action must match its saved preview and protected approval.

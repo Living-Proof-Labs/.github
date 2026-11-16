@@ -295,7 +295,7 @@ function assertVerified(label, state) {
 export function run({ policy, inventory, flags, api = defaultApi, log = console.log }) {
   validateConfig(policy, inventory, flags.repository);
   validateRequiredChecks(policy, inventory);
-  if (flags.apply && Object.keys(policy.required_checks_by_repository ?? {}).length) throw new Error('Required checks must be applied through the protected inventory reconciliation workflow.');
+  if (flags.apply && (Object.keys(policy.required_checks_by_repository ?? {}).length || Object.keys(policy.merge_queue_by_repository ?? {}).length)) throw new Error('Required checks must be applied through the protected inventory reconciliation workflow.');
   const repositories = flags.repository ? [flags.repository] : inventory.repositories;
   const report = { repositories: [], failures: [] };
   for (const repository of repositories) {
