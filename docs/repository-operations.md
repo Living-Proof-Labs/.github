@@ -285,3 +285,26 @@ plan comparisons prove the intended one-repository difference and preservation
 of stronger rules, but are not an approved live plan. Obtain complete evidence
 through the existing trusted settings authority for a fresh read-only preview
 before requesting precise apply approval. No apply workflow was dispatched.
+
+### Read-only classic branch protection evidence
+
+For fleet queue rollout ([#98](https://github.com/Living-Proof-Labs/.github/issues/98)),
+run **Collect classic branch protection evidence** only after its reviewed workflow
+has merged to trusted `main`. It requires the existing `repository-administration`
+environment approval and narrows the existing settings App token to Administration
+read. It has no apply input or mutation step and uses no pull-request secrets.
+
+Download `classic-protection-evidence/report.json` from that run. It records the
+source revision, canonical inventory digest, timestamps, default branches, classic required contexts, producer App IDs (null means any
+producer), and strictness. Every canonical entry must be present and `complete`
+must be true. Explicit `Branch not protected` 404 after successful identity reads
+means no classic protection; generic 404, denied reads, malformed evidence and a
+changed default branch remain unverified and fail the job while retaining partial
+evidence. An unreadable repository is never counted as clean.
+
+This snapshot does not certify queue readiness or replace inherited ruleset reads.
+Reconcile actual required contracts with queue-SHA workflow evidence; informational
+checks do not become mandatory. Collect fresh evidence alongside the protected
+full-inventory bound preview, review every proposed action, and obtain Aaron's exact
+live-plan approval before any apply. Neither an artifact nor a green collection run
+authorizes settings changes. Do not reuse superseded previews.
