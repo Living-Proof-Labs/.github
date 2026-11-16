@@ -172,12 +172,20 @@ workflow when a write is intended.
 
 ## Required checks: capability and staged adoption
 
-Required-check absence in the current default policy is an adoption gap, not
-settings drift. This controller supports a `required_checks_by_repository` object
-in `config/github/repository-policy.json`. **The desired policy enrolls only `.github` (1 of 20 repositories).**
-Live enforcement is still pending a separately approved apply and strict readback.
-A policy merge or baseline audit pass is not proof that the new rule is live.
-The other 19 repositories and all existing stronger protections remain unchanged.
+Queue enrollment and required-check enrollment are separate. The desired policy
+now enrolls **all canonical repositories in merge queues**, while the only selected
+required-check contract remains `.github`'s `Repository verification gate`.
+The other repositories gain no mandatory status contexts. Aaron clarified on
+2026-11-16 that non-required checks remain informational; candidate checks in
+[the readiness proposal](https://github.com/Living-Proof-Labs/.github/pull/111)
+are not automatically promoted into blocking requirements.
+
+Only the `.github` pilot has verified live application and queue-trial evidence:
+[apply/readback](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)
+and [independent real queue trials](https://github.com/Living-Proof-Labs/.github/issues/102#issuecomment-6907470862).
+Fleet desired policy is **not yet live**. See the
+[fleet queue rollout](fleet-queue-rollout.md) for exact expected differences,
+required-contract readiness and the fresh-plan approval boundary.
 
 The selected context is this repository's **Repository verification gate** in
 `verify.yml`. It always runs after all six verification jobs, requires success
@@ -190,7 +198,8 @@ Adding a verification job requires extending the gate contract and its tests.
 
 The gate passed on PR #97 and on merged revision
 `49f76c37a3d53791741bcfd5d5ba19d8e4a3ea69`. Check run `132733447408`
-reported success from GitHub Actions App ID `15368`. The desired addition is:
+reported success from GitHub Actions App ID `15368`. The pilot contract below remains unchanged; the queue parameters are now repeated
+for every canonical inventory entry in the checked-in policy:
 
 ```json
 "required_checks_by_repository": {
@@ -239,49 +248,30 @@ for preview. The legacy full-policy apply/preview CLI and legacy apply flags
 refuse enrolled policies so they cannot silently ignore these protections;
 HTTPS-only operations remain separate. Read-only audit commands still work.
 
-For each remaining inventory entry, inspect its actual PR workflow and publisher,
-select a trusted context or introduce a complete aggregate gate in that repository,
-and record the review and successful exact-revision evidence before enrollment.
-`livingproof-verification` has a separate PR `checks` job; do not require its
-robot verdict/deployment pipeline wholesale. `robot-capability-specs` tracks local
-adoption in [issue 44](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/44).
-Neither repository is enrolled here. The other 19 inventory entries remain
-pending a repository-specific check contract; no universal job name is assumed.
+For any selected required contract, verify its actual PR and `merge_group`
+workflow, check producer and queue SHA before application. Keep expected skips,
+robot capability verdicts and publishing side effects explicit. Rivet coordinates
+repository-local prerequisites; informational checks need not be promoted or awaited.
+`robot-capability-specs` tracks separate required-check adoption in
+[issue 44](https://github.com/Living-Proof-Labs/robot-capability-specs/issues/44).
+This fleet queue change does not select that check or complete that issue.
 
-A policy merge alone is not a live apply. After approved enrollment, preview from
-trusted main through the existing settings workflow, review its bound all-inventory
-plan, and obtain the protected `repository-administration` approval for precisely
-those changes. Use the existing settings App authority; this implementation adds
-no permissions or credentials. Retain final strict readback before claiming live
-enforcement. The desired policy enrolls a `merge_queue` rule for `.github` only,
-alongside its required checks. `verify.yml` and the verification gate already
-handle `merge_group` with the same skip rules as pull requests, so the required
-gate can report in the queue. Other repositories stay off the queue until their
-required CI also triggers on `merge_group`. After this policy is applied, merge
-by enqueueing rather than updating every other open branch by hand.
+A policy merge alone is not a live apply. Follow the [fleet rollout boundary](fleet-queue-rollout.md)
+and review a fresh trusted-main all-inventory bound plan before obtaining Aaron's
+confirmation immediately before application and protected environment approval.
+No old pilot plan is reusable; no new credentials or grants are needed.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
 explains skipped-job semantics and expected-source binding. A green skipped job
 alone is insufficient evidence, which is why the aggregate validates results.
 
 
-### Enrollment preview boundary
+### Fleet enrollment preview boundary
 
-The .github-only proposal adds a `required_status_checks` rule and a
-`merge_queue` rule to the existing managed ruleset, ID `26190028`, leaving its
-deletion, non-fast-forward, pull-request parameters, conditions and existing
-stronger rules intact. The context is `Repository verification gate`, integration
-`15368`, `strict_required_status_checks_policy` is `false`, and
-`do_not_enforce_on_create` is `false`. The merge queue uses merge commits,
-`ALLGREEN` grouping, and a 60-minute check timeout. No other repository receives
-a settings change. Policy/source bindings change, including nested Pages plan
-digests, and therefore require a fresh approved plan. A fresh all-inventory preview may also expose unrelated existing
-drift; none of that is authorized for application by this enrollment PR.
-
-The 2026-11-15 public read of ruleset `26190028` omitted `bypass_actors`. The
-controller therefore refuses to produce an executable live ruleset action from
-that evidence. Do not substitute an empty bypass list. Mocked full-inventory
-plan comparisons prove the intended one-repository difference and preservation
-of stronger rules, but are not an approved live plan. Obtain complete evidence
-through the existing trusted settings authority for a fresh read-only preview
-before requesting precise apply approval. No apply workflow was dispatched.
+Expected difference from the verified pilot: 19 additional queue rules, with
+`.github` unchanged and no new required checks. This is an offline expectation,
+not an executable live plan. Existing stronger rules, conditions and bypass
+boundaries remain controlled by the unchanged resolver. Hidden bypass values
+remain unknown; never substitute an empty list. Any unexpected required contract,
+strict-check incompatibility, unreadable evidence or unrelated drift must be
+resolved and disclosed before exact plan approval. See [fleet rollout](fleet-queue-rollout.md).
