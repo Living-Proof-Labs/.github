@@ -77,9 +77,11 @@ not dispatch workflows, merge changes, or claim a successful content deployment.
 
 The local desired policy is
 [`config/github/repository-policy.json`](config/github/repository-policy.json).
-It enrolls only `.github` for the App-bound `Repository verification gate` and a
-merge queue. Required checks are not strict there, because the queue keeps the
-branch current; live enforcement remains pending separate approval and readback.
+It proposes merge queues for every canonical repository, while retaining only
+`.github`’s App-bound `Repository verification gate` as a selected required check.
+Informational checks remain informational. The `.github` pilot is live; fleet
+application awaits a fresh reviewed plan and action-time approval. See the
+[fleet queue rollout](docs/fleet-queue-rollout.md).
 
 Use the canonical inventory controller for a read-only preview:
 
@@ -293,5 +295,6 @@ secrets.
 Required-check enforcement is staged separately from the settings baseline.
 See [required-check adoption](docs/repository-operations.md#required-checks-capability-and-staged-adoption)
 for the repository-specific policy contract and complete verification gate.
-The desired policy enrolls only `.github` for required checks and a merge queue; the other 19 repositories are unchanged.
-Live enforcement still requires a separately approved apply and strict readback.
+Desired queues cover the canonical inventory; selected required checks remain
+`.github`-only. Fleet queue application still requires exact fresh-plan approval
+and strict readback; it does not establish fleet test enforcement.

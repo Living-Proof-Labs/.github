@@ -349,7 +349,7 @@ test('CLI preview and apply retain parseable complete reports with mocked transp
   const enrolledPolicy = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
   const enrolled = enrolledPolicy.required_checks_by_repository;
   f.states['.github'].ruleset.rules.push({ type: 'required_status_checks', parameters: enrolled['.github'] });
-  f.states['.github'].ruleset.rules.push({ type: 'merge_queue', parameters: enrolledPolicy.merge_queue_by_repository['.github'] });
+  for (const name of f.inventory.repositories) f.states[name].ruleset.rules.push({ type: 'merge_queue', parameters: enrolledPolicy.merge_queue_by_repository[name] });
   const directory = mkdtempSync(path.join(tmpdir(), 'inventory-cli-'));
   const planFile = path.join(directory, 'plan.json'), reportFile = path.join(directory, 'report.json'), xmlFile = path.join(directory, 'result.xml');
   let stdout = '', stderr = ''; const requests = [];
@@ -536,4 +536,29 @@ describe('Required-check enrollment through the controller', () => {
     assert.ok(failed.failures > 0); assert.equal(lost.writes.length,1);
     assert.ok(failed.repositories[0].failures.some(e=>/readback/i.test(e.message)));
   });
+});
+
+
+test('fleet queue saved plan writes only 19 rulesets once and final preview is compliant', async () => {
+  const f=fixture();
+  f.policy=JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  f.states['.github'].ruleset.rules.push(
+    {type:'required_status_checks',parameters:f.policy.required_checks_by_repository['.github']},
+    {type:'merge_queue',parameters:f.policy.merge_queue_by_repository['.github']});
+  const preview=await f.preview();
+  assert.equal(preview.failures,0); assert.equal(f.writes.length,0);
+  assert.equal(preview.plan.repositories.filter(r=>r.ruleset.write).length,19);
+  const applied=await f.apply(preview.plan);
+  assert.equal(applied.failures,0); assert.equal(f.writes.length,19);
+  assert.equal(new Set(f.writes.map(w=>w.resource)).size,19);
+  for(const write of f.writes) {
+    assert.equal(write.method,'PUT'); assert.match(write.resource,/\/rulesets\/1$/);
+    assert.ok(!write.resource.includes('/.github/'));
+    assert.ok(!write.body.rules.some(r=>r.type==='required_status_checks'));
+  }
+  const final=await f.preview(); assert.equal(final.failures,0);
+  assert.equal(final.plan.repositories.filter(r=>r.ruleset.write).length,0);
+  const stale=fixture(); stale.policy=f.policy;
+  await assert.rejects(stale.apply({...preview.plan,revision:'b'.repeat(40)}));
+  assert.equal(stale.writes.length,0);
 });

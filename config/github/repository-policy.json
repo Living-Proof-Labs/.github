@@ -75,6 +75,177 @@
       "merge_method": "MERGE",
       "min_entries_to_merge": 0,
       "min_entries_to_merge_wait_minutes": 0
+    },
+    "capability-verifier": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "collaboration-guidelines": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "living-proof-labs.github.io": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-booster-t1": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-capability-report": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-common": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-evaluator": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-evaluator-run": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-evaluator-scenario": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-sim-gazebo": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-sim-mujoco": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-unitree-g1": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-unitree-go1": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-verification": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "livingproof-worlds": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "robot-capability-specs": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "unitree-foxglove-sdk": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
+    },
+    "website": {
+      "check_response_timeout_minutes": 60,
+      "grouping_strategy": "ALLGREEN",
+      "max_entries_to_build": 5,
+      "max_entries_to_merge": 5,
+      "merge_method": "MERGE",
+      "min_entries_to_merge": 0,
+      "min_entries_to_merge_wait_minutes": 0
     }
   }
 }
