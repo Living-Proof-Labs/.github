@@ -180,11 +180,13 @@ The other repositories gain no mandatory status contexts. Aaron clarified on
 [the readiness proposal](https://github.com/Living-Proof-Labs/.github/pull/111)
 are not automatically promoted into blocking requirements.
 
-Only the `.github` pilot has verified live application and queue-trial evidence:
+The `.github` pilot has retained real queue-trial evidence:
 [apply/readback](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)
 and [independent real queue trials](https://github.com/Living-Proof-Labs/.github/issues/102#issuecomment-6907470862).
-Fleet desired policy is **not yet live**. See the
-[fleet queue rollout](fleet-queue-rollout.md) for exact expected differences,
+Fleet queues are **live and verified across all 20 repositories** by
+[apply and strict readback 43829155236](https://github.com/Living-Proof-Labs/.github/actions/runs/43829155236).
+See the [delivery and historical candidate ledger](required-check-rollout.md) and the
+[fleet queue rollout](fleet-queue-rollout.md) for delivered scope,
 required-contract readiness and the fresh-plan approval boundary.
 
 The selected context is this repository's **Repository verification gate** in
@@ -268,9 +270,10 @@ alone is insufficient evidence, which is why the aggregate validates results.
 
 ### Fleet enrollment preview boundary
 
-Expected difference from the verified pilot: 19 additional queue rules, with
-`.github` unchanged and no new required checks. This is an offline expectation,
-not an executable live plan. Existing stronger rules, conditions and bypass
+Verified fleet apply added 19 queue rules, with `.github` unchanged and no new
+required checks. Strict readback found all 20 compliant with zero remaining
+changes or failures. The completed plan is not reusable for another apply.
+Existing stronger rules, conditions and bypass
 boundaries remain controlled by the unchanged resolver. Hidden bypass values
 remain unknown; never substitute an empty list. Any unexpected required contract,
 strict-check incompatibility, unreadable evidence or unrelated drift must be
