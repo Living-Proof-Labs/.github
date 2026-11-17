@@ -85,6 +85,7 @@ test('versioned manifests match the least-privilege bot sets', () => {
     assert.equal(Object.hasOwn(permissions, 'deployments'), false);
   }
   assert.equal(BOT_MANIFESTS.art.permissions.contents, 'write');
+  assert.equal(BOT_MANIFESTS.art.permissions.discussions, 'write');
   assert.equal(BOT_MANIFESTS.art.permissions.issues, 'write');
   assert.equal(BOT_MANIFESTS.art.permissions.pull_requests, 'write');
   assert.equal(BOT_MANIFESTS.art.permissions.organization_projects, 'write');
@@ -92,9 +93,11 @@ test('versioned manifests match the least-privilege bot sets', () => {
   assert.equal(BOT_MANIFESTS.art.permissions.statuses, 'read');
   assert.equal(BOT_MANIFESTS.art.permissions.checks, 'read');
   assert.equal(Object.hasOwn(BOT_MANIFESTS.art.permissions, 'actions'), false);
+  assert.equal(BOT_MANIFESTS.cody.permissions.discussions, 'write');
   assert.equal(BOT_MANIFESTS.cody.permissions.statuses, 'read');
   assert.equal(BOT_MANIFESTS.cody.permissions.organization_projects, 'write');
   assert.equal(Object.hasOwn(BOT_MANIFESTS.cody.permissions, 'deployments'), false);
+  assert.equal(BOT_MANIFESTS.vera.permissions.discussions, 'write');
   assert.equal(BOT_MANIFESTS.vera.permissions.statuses, 'read');
   assert.equal(BOT_MANIFESTS.vera.permissions.checks, 'write');
   assert.equal(BOT_MANIFESTS.vera.permissions.contents, 'write');
@@ -105,6 +108,7 @@ test('versioned manifests match the least-privilege bot sets', () => {
   assert.equal(rivet.administration, undefined);
   assert.equal(rivet.pages, 'write');
   assert.equal(rivet.contents, 'write');
+  assert.equal(rivet.discussions, 'write');
   assert.equal(rivet.pull_requests, 'write');
   assert.equal(rivet.issues, 'write');
   assert.equal(rivet.actions, 'write');

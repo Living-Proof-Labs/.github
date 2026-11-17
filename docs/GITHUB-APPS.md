@@ -181,6 +181,7 @@ Name: `Rivet Agent - Living Proof Labs`.
 | actions | write |
 | checks | read |
 | contents | write |
+| discussions | write |
 | issues | write |
 | metadata | read |
 | pages | write |
@@ -201,6 +202,7 @@ Name: `Cody Agent - Living Proof Labs` (30 characters).
 | actions | read |
 | checks | read |
 | contents | write |
+| discussions | write |
 | issues | write |
 | metadata | read |
 | pull_requests | write |
@@ -225,6 +227,7 @@ Name: `Vera Agent - Living Proof Labs` (30 characters).
 | actions | read |
 | checks | write |
 | contents | write |
+| discussions | write |
 | issues | write |
 | metadata | read |
 | pull_requests | write |
@@ -250,6 +253,7 @@ Name: `Art Agent - Living Proof Labs` (29 characters).
 | --- | --- |
 | checks | read |
 | contents | write |
+| discussions | write |
 | issues | write |
 | metadata | read |
 | pull_requests | write |

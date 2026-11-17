@@ -76,7 +76,7 @@ test('scope validation rejects permission expansion, events, webhook, public and
   for(const mutate of [m=>m.default_permissions.administration='write',m=>m.default_permissions.contents='read',m=>m.default_events=['push'],m=>m.hook_attributes={url:'https://attacker.invalid'},m=>m.public=true,m=>m.redirect_url='https://attacker.invalid']) {
     const f=fixture();mutate(f.manifests.cody);assert.throws(()=>validateConfig(f.config,f.manifests));
   }
-  assert.deepEqual(enrolled.manifests.art.default_permissions,{checks:'read',contents:'write',issues:'write',metadata:'read',pull_requests:'write',statuses:'read',organization_projects:'write'});
+  assert.deepEqual(enrolled.manifests.art.default_permissions,{checks:'read',contents:'write',discussions:'write',issues:'write',metadata:'read',pull_requests:'write',statuses:'read',organization_projects:'write'});
 });
 test('fixed-origin GET transport rejects redirects and never uses mutating requests',async()=>{
   await githubRead('/apps/example','SENTINEL',async(url,options)=>{assert.equal(url,'https://api.github.com/apps/example');assert.equal(options.method,'GET');assert.equal(options.redirect,'error');return {ok:true,json:async()=>({})};});
