@@ -8,6 +8,7 @@
     "actions": "write",
     "checks": "read",
     "contents": "write",
+    "discussions": "write",
     "issues": "write",
     "metadata": "read",
     "pages": "write",

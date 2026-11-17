@@ -10,9 +10,12 @@ const installation=()=>({id:desired.installation_id,app_id:desired.app_id,accoun
 
 test('reviewed config matches manifest and excludes Administration',()=>{
  assert.equal(validateAccess(config),config);
- assert.equal(desired.permissions.administration,undefined);
- const manifest=JSON.parse(readFileSync(new URL('../../'+desired.manifest,import.meta.url)));
- assert.equal(comparePermissions(desired.permissions,manifest.default_permissions).status,'compliant');
+ for(const app of config.apps){
+  assert.equal(app.permissions.administration,undefined);
+  assert.equal(app.permissions.discussions,'write');
+  const manifest=JSON.parse(readFileSync(new URL('../../'+app.manifest,import.meta.url)));
+  assert.equal(comparePermissions(app.permissions,manifest.default_permissions).status,'compliant');
+ }
 });
 test('complete matching registration and installation pass',()=>assert.equal(compareApp(config,desired,registration(),installation()).status,'compliant'));
 for(const kind of ['missing','extra','level']) test(`${kind} permission drift has precise before/after`,()=>{
