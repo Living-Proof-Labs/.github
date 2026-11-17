@@ -312,7 +312,7 @@ test('a final Pages audit detects drift after an earlier successful readback', a
   assert.equal(report.failures, 1); assert.match(JSON.stringify(report.repositories[0].failures), /drift remains/);
 });
 test('saved migration fixture retains unchanged policy fields outside enrollment', () => {
-  const { required_checks_by_repository, merge_queue_by_repository, ...unchanged } = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  const { required_checks_by_repository, merge_queue_by_repository, discussions_enabled_exceptions, ...unchanged } = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
   assert.deepEqual(unchanged, policy);
 });
 
@@ -348,6 +348,7 @@ test('CLI preview and apply retain parseable complete reports with mocked transp
   // The real CLI reads the enrolled policy; begin with that rule already compliant.
   const enrolledPolicy = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
   const enrolled = enrolledPolicy.required_checks_by_repository;
+  f.states['.github'].repo.has_discussions = true;
   f.states['.github'].ruleset.rules.push({ type: 'required_status_checks', parameters: enrolled['.github'] });
   for (const name of f.inventory.repositories) f.states[name].ruleset.rules.push({ type: 'merge_queue', parameters: enrolledPolicy.merge_queue_by_repository[name] });
   const directory = mkdtempSync(path.join(tmpdir(), 'inventory-cli-'));
@@ -542,6 +543,7 @@ describe('Required-check enrollment through the controller', () => {
 test('fleet queue saved plan writes only 19 rulesets once and final preview is compliant', async () => {
   const f=fixture();
   f.policy=JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  f.states['.github'].repo.has_discussions = true;
   f.states['.github'].ruleset.rules.push(
     {type:'required_status_checks',parameters:f.policy.required_checks_by_repository['.github']},
     {type:'merge_queue',parameters:f.policy.merge_queue_by_repository['.github']});
@@ -561,4 +563,21 @@ test('fleet queue saved plan writes only 19 rulesets once and final preview is c
   const stale=fixture(); stale.policy=f.policy;
   await assert.rejects(stale.apply({...preview.plan,revision:'b'.repeat(40)}));
   assert.equal(stale.writes.length,0);
+});
+
+test('reviewed Discussions plan enables root only, reads back and repeats without writes', async () => {
+  const f = fixture(['.github', 'other']);
+  f.policy.discussions_enabled_exceptions = [{ repo: '.github', reason: 'Organization discussion host' }];
+  f.states.other.repo.has_discussions = true;
+  const preview = await f.preview();
+  assert.equal(preview.failures, 0);
+  assert.equal(f.writes.length, 0);
+  const result = await f.apply(preview.plan);
+  assert.equal(result.failures, 0);
+  assert.deepEqual(f.writes.map(w => ({ resource: w.resource, body: w.body })), [
+    { resource: '/repos/Living-Proof-Labs/.github', body: { has_discussions: true } },
+    { resource: '/repos/Living-Proof-Labs/other', body: { has_discussions: false } }
+  ]);
+  await f.apply((await f.preview()).plan);
+  assert.equal(f.writes.length, 2);
 });

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Test-only transport. Every unrecognized host, endpoint or write fails closed.
+import { repositoryDefaults } from '../../tools/github/repository-defaults.mjs';
 import { repositoryRuleset } from '../../tools/github/required-checks.mjs';
 import { readFileSync, appendFileSync } from 'node:fs';
 export const policy = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
@@ -17,7 +18,7 @@ export function response(resource, { method = 'GET', body, mode = process.env.SE
   const match = url.pathname.match(/^\/repos\/Living-Proof-Labs\/([^/]+)(.*)$/);
   if (!match || !inventory.repositories.includes(match[1])) throw new Error(`Unexpected endpoint: ${resource}`);
   const [, name, suffix] = match;
-  const repo = { id: inventory.repositories.indexOf(name) + 1, full_name: `${inventory.owner}/${name}`, archived: false, disabled: false, visibility: 'public', default_branch: 'main', has_pages: true, ...policy.repository };
+  const repo = { id: inventory.repositories.indexOf(name) + 1, full_name: `${inventory.owner}/${name}`, archived: false, disabled: false, visibility: 'public', default_branch: 'main', has_pages: true, ...repositoryDefaults(observedPolicy, name) };
   if (!suffix) return { ...repo, ...(mode === 'drift' ? { has_wiki: true, has_projects: true } : {}) };
   if (suffix === '/immutable-releases') return { enabled: mode !== 'drift' };
   if (suffix === '/pages') return { build_type: mode === 'drift' ? 'legacy' : 'workflow', https_enforced: mode !== 'drift', cname: null, source: null };

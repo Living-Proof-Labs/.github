@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
+import { repositoryDefaults, validateDiscussionExceptions } from './repository-defaults.mjs';
 import { validateRequiredChecks } from './required-checks.mjs';
 /**
  * Apply the local Living Proof Labs repository policy with GH_TOKEN.
@@ -44,6 +45,7 @@ const ADMINISTRATION_READ_FIELDS = new Set([
 const POLICY_KEYS = new Set([
   'schema_version',
   'repository',
+  'discussions_enabled_exceptions',
   'graphql_repository',
   'manual_or_unavailable_settings',
   'immutable_releases',
@@ -225,6 +227,7 @@ export function validatePolicy(policy) {
   if (!policy.repository || typeof policy.repository !== 'object' || Array.isArray(policy.repository)) {
     throw new Error('policy.repository must be an object.');
   }
+  validateDiscussionExceptions(policy);
   if (policy.pages !== undefined) validatePages(policy.pages);
   if (policy.graphql_repository !== undefined) {
     const graphql = policy.graphql_repository;
@@ -357,7 +360,7 @@ export function planRepository(policy, observed, repository) {
   const skipped = [];
   const failures = [];
   const patch = {};
-  for (const [key, desired] of Object.entries(policy.repository)) {
+  for (const [key, desired] of Object.entries(repositoryDefaults(policy, repository.name))) {
     const setting = `repository.${key}`;
     if (!Object.hasOwn(observed.repository, key)) {
       failures.push({ setting, message: absentRepositoryField(key) });

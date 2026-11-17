@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { repositoryDefaults, validateDiscussionExceptions } from './repository-defaults.mjs';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pagesHttpsEnforced } from './pages-https.mjs';
@@ -6,6 +7,7 @@ import { redactSecrets } from './redact-secrets.mjs';
 
 const [policyFile, auditFile, outputFile, manualEvidenceFile] = process.argv.slice(2);
 const policy = JSON.parse(readFileSync(policyFile, 'utf8'));
+validateDiscussionExceptions(policy);
 const manualEvidence = manualEvidenceFile
   ? JSON.parse(readFileSync(manualEvidenceFile, 'utf8'))
   : { observations: [] };
@@ -43,7 +45,7 @@ function manualObservation(repository, field) {
 }
 const cases = [];
 for (const [repo, state] of entries) {
-  for (const [field, expected] of Object.entries(policy.repository ?? {})) {
+  for (const [field, expected] of Object.entries(repositoryDefaults(policy, repo.split('/')[1]))) {
     const actual = state.differences.get(field);
     const name = `${repo} :: ${field}`;
     if (actual === undefined) cases.push(`<testcase name="${escape(name)}"/>`);

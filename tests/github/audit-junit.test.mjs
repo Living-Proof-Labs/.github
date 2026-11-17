@@ -147,3 +147,10 @@ test('junit results redact a stateless installation token', () => {
   assert.equal(xml.includes(fixture.token.slice(4)), false);
   assert.match(xml, /\[redacted\]/);
 });
+
+test('Discussion exception is reflected in per-repository JUnit expectations', () => {
+  const xml = createJUnit({ policy: { repository: { has_discussions: false }, discussions_enabled_exceptions: [{ repo: '.github', reason: 'Organization host' }] },
+    audit: 'Living-Proof-Labs/.github\n  has_discussions: false -> true\nLiving-Proof-Labs/other\n  has_discussions: true -> false\n' });
+  assert.match(xml, /\.github :: has_discussions.*actual false.*expected true/);
+  assert.match(xml, /other :: has_discussions.*actual true.*expected false/);
+});
