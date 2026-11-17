@@ -38,6 +38,14 @@ preview and apply to the same reviewed source revision and policy digest.
 The inventory is the only organization-wide repository list. Do not duplicate
 it in policy tooling or another repository.
 
+## Organization Discussions
+
+Discussions stay disabled by default. The reasoned
+`discussions_enabled_exceptions` entry enables them only on `.github`, which
+hosts the organization-wide discussion space. Apply plans, readback and audit
+results use this same per-repository expectation. Other repositories keep
+`has_discussions: false`; enabling the organization space does not enable them.
+
 ## Interpret audit results
 
 | Result | Meaning | Next step |

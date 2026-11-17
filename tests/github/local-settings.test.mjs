@@ -18,7 +18,7 @@ for (const mode of ['compliant', 'drift']) test(`local policy preserves old comp
   const digest = createHash('sha256').update(JSON.stringify(report.plan.repositories)).digest('hex');
   assert.equal(digest, baseline[mode].repositories_sha256);
   assert.equal(report.plan.repositories.length, baseline[mode].repository_count);
-  const { required_checks_by_repository, merge_queue_by_repository, ...unchanged } = readPolicyFile();
+  const { required_checks_by_repository, merge_queue_by_repository, discussions_enabled_exceptions, ...unchanged } = readPolicyFile();
   assert.deepEqual(unchanged, baselinePolicy);
 });
 test('documented audit and preview CLIs use only local settings sources and mocked GitHub reads', t => {
@@ -45,7 +45,7 @@ test('documented audit and preview CLIs use only local settings sources and mock
 
 describe('Directory-only required-check enrollment', () => {
   test('exact desired context, producer and enforcement; no other policy changed', () => {
-    const { required_checks_by_repository, merge_queue_by_repository, ...rest } = readPolicyFile();
+    const { required_checks_by_repository, merge_queue_by_repository, discussions_enabled_exceptions, ...rest } = readPolicyFile();
     assert.deepEqual(rest, baselinePolicy);
     assert.deepEqual(required_checks_by_repository, { '.github': {
       required_status_checks: [{ context: 'Repository verification gate', integration_id: 15368 }],

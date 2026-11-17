@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
+import { repositoryDefaults, validateDiscussionExceptions } from './repository-defaults.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual as equal } from 'node:util';
@@ -33,10 +34,11 @@ from the environment. --report-output FILE, --summary-output FILE and --junit FI
 --fail-on-drift makes a preview fail on changes as well as unresolved state.
 `;
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const implementationDigest = () => digest(['reconcile-inventory.mjs', 'reconcile-ruleset.mjs', 'required-checks.mjs', 'apply-repo-policy.mjs', 'setup-pages.mjs', 'pages-https.mjs', 'verify-inventory.mjs', 'redact-secrets.mjs'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')));
+const implementationDigest = () => digest(['repository-defaults.mjs', 'reconcile-inventory.mjs', 'reconcile-ruleset.mjs', 'required-checks.mjs', 'apply-repo-policy.mjs', 'setup-pages.mjs', 'pages-https.mjs', 'verify-inventory.mjs', 'redact-secrets.mjs'].map(file => readFileSync(new URL(file, import.meta.url), 'utf8')));
 const fields = new Set(['has_wiki', 'has_issues', 'has_discussions', 'has_projects', 'pull_request_creation_policy', 'allow_merge_commit', 'allow_squash_merge', 'allow_rebase_merge', 'merge_commit_title', 'merge_commit_message', 'allow_update_branch', 'allow_auto_merge', 'delete_branch_on_merge']);
 
 export function validateConfiguration(inventory, policy) {
+  validateDiscussionExceptions(policy, inventory);
   validateInventory(inventory); validatePolicy(policy); validateRequiredChecks(policy, inventory); strengthenRuleset(null, policy.main_ruleset);
   if (inventory.owner !== 'Living-Proof-Labs' || new Set(inventory.repositories.map(n => n.toLowerCase())).size !== inventory.repositories.length) throw new Error('Expected unique Living-Proof-Labs inventory.');
   for (const field of Object.keys(policy.repository)) if (!fields.has(field)) throw new Error(`Unsupported general setting: ${field}`);
@@ -119,7 +121,7 @@ export async function writeSettings(api, inventory, name, policy, write) {
   }
   if (write.setting === 'repository' && write.method === 'PATCH' && write.path === base &&
       write.body && !Array.isArray(write.body) && Object.keys(write.body).length &&
-      Object.entries(write.body).every(([key, value]) => fields.has(key) && Object.hasOwn(policy.repository, key) && equal(value, policy.repository[key]))) return api.write(write.method, write.path, write.body);
+      Object.entries(write.body).every(([key, value]) => fields.has(key) && Object.hasOwn(policy.repository, key) && equal(value, repositoryDefaults(policy, name)[key]))) return api.write(write.method, write.path, write.body);
   if (write.setting === 'immutable_releases' && write.method === 'PUT' && write.path === `${base}/immutable-releases` && write.body === undefined && policy.immutable_releases === true) return api.write(write.method, write.path);
   throw new Error('Settings write refused.');
 }

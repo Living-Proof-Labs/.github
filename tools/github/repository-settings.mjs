@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
+import { repositoryDefaults, validateDiscussionExceptions } from './repository-defaults.mjs';
 import { validateRequiredChecks } from './required-checks.mjs';
 /** Audit or deliberately apply Living Proof Labs' repository defaults. */
 import { execFileSync } from 'node:child_process';
@@ -175,6 +176,7 @@ export function pagesHttpsEnforced(policy, repositoryName) {
 export function validateConfig(policy, inventory, selectedRepository) {
   if (policy.schema_version !== 1) throw new Error(`Unsupported policy schema version: ${policy.schema_version}`);
   validatePages(policy.pages);
+  validateDiscussionExceptions(policy, inventory);
   if (inventory.schema_version !== 1) throw new Error(`Unsupported inventory schema version: ${inventory.schema_version}`);
   if (typeof inventory.owner !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(inventory.owner)) throw new Error('Inventory owner must be a GitHub account name.');
   if (!Array.isArray(inventory.repositories) || new Set(inventory.repositories).size !== inventory.repositories.length || !inventory.repositories.every((name) => typeof name === 'string' && (name === '.github' || /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)))) throw new Error('Inventory must contain unique, valid GitHub repository names.');
@@ -308,7 +310,7 @@ export function run({ policy, inventory, flags, api = defaultApi, log = console.
     report.repositories.push(result);
     try {
       const actual = api.get(endpoint);
-      result.settings = differences(actual, policy.repository);
+      result.settings = differences(actual, repositoryDefaults(policy, repository));
       if (policy.graphql_repository) {
         const graphqlActual = api.graphqlRepository(inventory.owner, repository);
         result.sponsorships = differences(graphqlActual, policy.graphql_repository)
@@ -339,8 +341,8 @@ export function run({ policy, inventory, flags, api = defaultApi, log = console.
       if (https?.report) log(`  pages.https_enforced: ${https.report}`);
       if (!flags.apply) continue;
       if (result.settings.length) {
-        api.write('PATCH', endpoint, policy.repository);
-        const verification = differences(api.get(endpoint), policy.repository);
+        api.write('PATCH', endpoint, repositoryDefaults(policy, repository));
+        const verification = differences(api.get(endpoint), repositoryDefaults(policy, repository));
         if (verification.length) throw new Error(`repository settings verification failed: ${verification.map((item) => item.field).join(', ')}`);
         result.settings = [];
         result.settingsOutcome = 'applied';

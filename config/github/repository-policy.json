@@ -15,6 +15,9 @@
     "allow_auto_merge": true,
     "delete_branch_on_merge": true
   },
+  "discussions_enabled_exceptions": [
+    { "repo": ".github", "reason": "Hosts organization-wide Discussions; keep conversation centralized." }
+  ],
   "graphql_repository": {
     "hasSponsorshipsEnabled": false
   },
