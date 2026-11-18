@@ -48,6 +48,10 @@ A green continuous-integration workflow can successfully publish a robot FAIL.
 Look for the number of trials, how many passed and how many the plan required.
 Use this run's pass bar, not a universal threshold. `PASS`, `FAIL` and
 `INSUFFICIENT_EVIDENCE` describe the stored policy outcome; they are not diagnoses.
+Current hallway reports use `repeated-outcome@1.0.0`: “3 of 3 repeats agree”,
+with no Wilson interval or threshold; the k-of-n and 95% interval guidance here
+applies to corner reports.
+
 The reported 95% confidence interval expresses uncertainty in the success tally,
 not a separate pass condition or a guarantee about deployment.
 
