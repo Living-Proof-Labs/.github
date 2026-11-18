@@ -57,6 +57,9 @@ preset pin; `tests/github/guidelines-pins.test.mjs` keeps both on one tag.
   verification job of that run to have the result expected for the event. If any
   of them failed, was cancelled or was skipped, the gate fails and the release job
   is skipped.
+- A red push to `main` publishes no release. That includes strict live-settings
+  drift caught by `trusted-repository-settings`. Nothing is retried: the next green
+  push to `main` releases every unreleased commit together.
 - It runs only on a `push` to `main`. Pull requests, merge queue runs, the daily
   schedule and manual dispatches never publish.
 - It publishes only when the commits since the last tag are releasable. A repeat
@@ -65,7 +68,8 @@ preset pin; `tests/github/guidelines-pins.test.mjs` keeps both on one tag.
 - Nothing rewrites history: the engine adds a tag and a Release and creates no
   commit.
 
-`tests/github/release-workflow.test.mjs` proves these conditions offline by
+`tests/github/release-workflow.test.mjs` and
+`tests/github/verification-gate-blocks-release.test.mjs` prove these conditions offline by
 reading the workflow and running the real gate script for every result.
 
 ### Commit messages and the version
