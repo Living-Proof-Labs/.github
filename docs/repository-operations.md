@@ -181,12 +181,22 @@ workflow when a write is intended.
 ## Required checks: capability and staged adoption
 
 Queue enrollment and required-check enrollment are separate. The desired policy
-now enrolls **all canonical repositories in merge queues**, while the only selected
-required-check contract remains `.github`'s `Repository verification gate`.
-The other repositories gain no mandatory status contexts. Aaron clarified on
-2026-11-16 that non-required checks remain informational; candidate checks in
-[the readiness proposal](https://github.com/Living-Proof-Labs/.github/pull/111)
-are not automatically promoted into blocking requirements.
+now selects `.github`'s `Repository verification gate` and the three robot
+repositories' `Robot verification gate`, each bound to GitHub Actions App `15368`.
+All canonical repositories remain enrolled in merge queues. Checks outside those
+four explicitly selected contracts remain informational; they are not silently
+promoted into blocking requirements.
+
+The robot contract is a new stage under [issue 98](https://github.com/Living-Proof-Labs/.github/issues/98),
+not a claim that the earlier fleet queue apply enforced robot tests. Its gate
+requires the full native amd64/arm64 Test matrix to succeed, including on
+`merge_group`. Failed, cancelled or unexpectedly skipped matrix results fail the
+gate. The queue tests the combined candidate commit; strict branch-update checks
+remain disabled. This is pipeline health, not a passing robot capability verdict.
+
+The robot policy still requires a fresh protected preview, review of every action,
+explicit apply approval and live readback. The current rollout evidence and
+remaining verification are recorded in [the ledger](required-check-rollout.md).
 
 The `.github` pilot has retained real queue-trial evidence:
 [apply/readback](https://github.com/Living-Proof-Labs/.github/issues/108#issuecomment-6906158990)

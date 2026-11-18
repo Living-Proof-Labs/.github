@@ -349,7 +349,7 @@ test('CLI preview and apply retain parseable complete reports with mocked transp
   const enrolledPolicy = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
   const enrolled = enrolledPolicy.required_checks_by_repository;
   f.states['.github'].repo.has_discussions = true;
-  f.states['.github'].ruleset.rules.push({ type: 'required_status_checks', parameters: enrolled['.github'] });
+  for (const [name, parameters] of Object.entries(enrolled)) f.states[name].ruleset.rules.push({ type: 'required_status_checks', parameters });
   for (const name of f.inventory.repositories) f.states[name].ruleset.rules.push({ type: 'merge_queue', parameters: enrolledPolicy.merge_queue_by_repository[name] });
   const directory = mkdtempSync(path.join(tmpdir(), 'inventory-cli-'));
   const planFile = path.join(directory, 'plan.json'), reportFile = path.join(directory, 'report.json'), xmlFile = path.join(directory, 'result.xml');
@@ -543,6 +543,8 @@ describe('Required-check enrollment through the controller', () => {
 test('fleet queue saved plan writes only 19 rulesets once and final preview is compliant', async () => {
   const f=fixture();
   f.policy=JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  // Preserve this historical queue-only rollout fixture.
+  f.policy.required_checks_by_repository = { '.github': f.policy.required_checks_by_repository['.github'] };
   f.states['.github'].repo.has_discussions = true;
   f.states['.github'].ruleset.rules.push(
     {type:'required_status_checks',parameters:f.policy.required_checks_by_repository['.github']},

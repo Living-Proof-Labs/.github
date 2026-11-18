@@ -14,7 +14,7 @@ const verification = readFileSync(path.join(root, '.github/workflows/verify.yml'
 const workflowDir = path.join(root, '.github/workflows');
 
 describe('Merge-queue review contracts', () => {
-  test('desired policy enrolls every canonical queue without adding required contexts', () => {
+  test('desired policy enrolls canonical queues and only selected verification contracts', () => {
     assert.deepEqual(inventory.repositories, [
       '.github',
       'capability-verifier',
@@ -40,7 +40,7 @@ describe('Merge-queue review contracts', () => {
     assert.equal(inventory.repositories.length, 20);
     validatePolicy(policy);
     validateRequiredChecks(policy, inventory);
-    assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github']);
+    assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);
     assert.deepEqual(Object.keys(policy.merge_queue_by_repository), inventory.repositories);
     assert.equal(policy.required_checks_by_repository['.github'].strict_required_status_checks_policy, false);
     assert.deepEqual(
@@ -56,7 +56,7 @@ describe('Merge-queue review contracts', () => {
     assert.ok(!policy.main_ruleset.rules.some(rule => rule.type === 'merge_queue' || rule.type === 'required_status_checks'));
     for (const name of inventory.repositories) {
       const types = repositoryRuleset(policy, name).rules.map(rule => rule.type);
-      if (name === '.github') {
+      if (Object.hasOwn(policy.required_checks_by_repository, name)) {
         assert.ok(types.includes('required_status_checks'));
         assert.ok(types.includes('merge_queue'));
       } else {

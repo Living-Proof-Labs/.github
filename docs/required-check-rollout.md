@@ -10,6 +10,37 @@ and reading every `.github/workflows/*.yml` and `*.yaml` at that revision.
 It is a dated evidence projection, not a second registry. Refresh from the inventory;
 a new or missing entry is **unassessed**, never silently excluded or considered ready.
 
+## Robot required-check stage (2026-11-18)
+
+The current policy adds `Robot verification gate`, trusted to GitHub Actions App
+`15368`, only for `livingproof-booster-t1`, `livingproof-unitree-g1` and
+`livingproof-unitree-go1`. Other existing queue enrollment and protections are
+unchanged. This is a proposed enforcement stage, not a live-apply claim.
+
+Prerequisites merged through the queue:
+
+| Repository | Prerequisite | Merge revision | Exact-head Test evidence |
+| --- | --- | --- | --- |
+| G1 | [#71](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/pull/71) | `9d80dfdee9a48cdbfd5a1f214d7aebadfa6c0e54` | [44240233055](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/actions/runs/44240233055) |
+| T1 | [#61](https://github.com/Living-Proof-Labs/livingproof-booster-t1/pull/61) | `54bd9dc715549d5ed5483a9c201893ddc0db7c89` | [44240207037](https://github.com/Living-Proof-Labs/livingproof-booster-t1/actions/runs/44240207037) |
+| Go1 | [#55](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/pull/55) | `5e1b8cad6f69cec98835608ce12e1012246a36e4` | [44240210782](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/44240210782) |
+
+All three exact-head Test matrices and their gates passed, with producer App
+`15368`. Mainline Test matrices and gates also passed: [G1 44240858895](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/actions/runs/44240858895),
+[T1 44240864095](https://github.com/Living-Proof-Labs/livingproof-booster-t1/actions/runs/44240864095),
+and [Go1 44240877734](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/44240877734).
+Go1 ran at descendant `5d95e5a1d00a81c711eb4f83e259b82126ec6592`, which includes
+the gate merge and subsequent scenario changes; it was not a run on the intermediate
+merge commit alone. Each workflow now runs
+on `merge_group` with an always-running gate that rejects any non-success Test
+result. Local regression tests exercise the actual shell gate against success,
+failure, cancelled, skipped, neutral, missing and unknown results.
+
+Remaining: reviewed policy merge, a fresh full-inventory
+protected preview and approval, apply/readback, and a queue trial after enforcement.
+A green earlier settings audit only proved the baseline configured at that time.
+Release-after-test gating is tracked separately in the three robot repositories.
+
 ## Delivered fleet queues
 
 [Apply run 43829155236](https://github.com/Living-Proof-Labs/.github/actions/runs/43829155236)
@@ -25,7 +56,7 @@ all 20 active rulesets. Fleet queue settings are delivered and verified.
 The preceding [classic-protection collection 43828994015](https://github.com/Living-Proof-Labs/.github/actions/runs/43828994015)
 reported complete evidence for all 20 default branches, with no classic branch
 protections or classic required contexts at collection time. This does not mean
-ruleset protection is absent. The only selected required-check contract remains
+ruleset protection is absent. At that apply, the only selected required-check contract was
 `.github`'s `Repository verification gate`, App `15368`. No new required checks
 were added elsewhere; informational checks remain informational.
 

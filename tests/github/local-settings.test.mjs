@@ -43,14 +43,17 @@ test('documented audit and preview CLIs use only local settings sources and mock
 });
 
 
-describe('Directory-only required-check enrollment', () => {
+describe('Selected required-check enrollment', () => {
   test('exact desired context, producer and enforcement; no other policy changed', () => {
     const { required_checks_by_repository, merge_queue_by_repository, discussions_enabled_exceptions, ...rest } = readPolicyFile();
     assert.deepEqual(rest, baselinePolicy);
     assert.deepEqual(required_checks_by_repository, { '.github': {
       required_status_checks: [{ context: 'Repository verification gate', integration_id: 15368 }],
       strict_required_status_checks_policy: false, do_not_enforce_on_create: false
-    }});
+    }, ...Object.fromEntries(['livingproof-booster-t1','livingproof-unitree-g1','livingproof-unitree-go1'].map(name => [name, {
+      required_status_checks: [{ context: 'Robot verification gate', integration_id: 15368 }],
+      strict_required_status_checks_policy: false, do_not_enforce_on_create: false
+    }])) });
     assert.deepEqual(merge_queue_by_repository, Object.fromEntries(inventory.repositories.map(name => [name, {
       check_response_timeout_minutes: 60, grouping_strategy: 'ALLGREEN',
       max_entries_to_build: 5, max_entries_to_merge: 5, merge_method: 'MERGE',
@@ -58,10 +61,12 @@ describe('Directory-only required-check enrollment', () => {
     }])));
   });
   test('pilot-to-fleet preview adds exactly 19 queue rules without changing required checks or other settings', async () => {
-    const pilot = structuredClone(policy);
+    const fleet = structuredClone(policy);
+    fleet.required_checks_by_repository = { '.github': policy.required_checks_by_repository['.github'] };
+    const pilot = structuredClone(fleet);
     pilot.merge_queue_by_repository = { '.github': policy.merge_queue_by_repository['.github'] };
     const oldPlan = await runInventory({api: fixtureApi('compliant', pilot), inventory, policy: pilot, revision:'a'.repeat(40), dryRun:true});
-    const newPlan = await runInventory({api: fixtureApi('compliant', pilot), inventory, policy, revision:'a'.repeat(40), dryRun:true});
+    const newPlan = await runInventory({api: fixtureApi('compliant', pilot), inventory, policy: fleet, revision:'a'.repeat(40), dryRun:true});
     assert.equal(oldPlan.failures,0); assert.equal(newPlan.failures,0);
     assert.equal(newPlan.plan.repositories.length,inventory.repositories.length);
     for (let i=0;i<inventory.repositories.length;i++) {
@@ -104,3 +109,23 @@ describe('Directory-only required-check enrollment', () => {
     assert.ok(incomplete.failures>0);
   });
 });
+
+ test('robot contract preview adds only three trusted gate rules', async () => {
+  const previous = structuredClone(policy);
+  const robots = ['livingproof-booster-t1','livingproof-unitree-g1','livingproof-unitree-go1'];
+  for (const name of robots) delete previous.required_checks_by_repository[name];
+  const preview = await runInventory({api:fixtureApi('compliant', previous),inventory,policy,revision:'a'.repeat(40),dryRun:true});
+  assert.equal(preview.failures, 0);
+  assert.deepEqual(preview.plan.repositories.filter(r=>r.ruleset?.write).map(r=>r.name), robots);
+  for (const r of preview.plan.repositories.filter(r=>r.ruleset?.write)) {
+    const {before,write} = r.ruleset;
+    assert.equal(write.method, 'PUT');
+    assert.deepEqual(write.body.conditions, before.conditions);
+    assert.deepEqual(write.body.bypass_actors, before.bypass_actors);
+    assert.deepEqual(write.body.rules.filter(r=>r.type!=='required_status_checks'), before.rules);
+    assert.deepEqual(write.body.rules.find(r=>r.type==='required_status_checks').parameters, {
+      required_status_checks:[{context:'Robot verification gate',integration_id:15368}],
+      strict_required_status_checks_policy:false,do_not_enforce_on_create:false
+    });
+  }
+ });
