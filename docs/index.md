@@ -45,7 +45,8 @@ the bundle and renders that stored grade.
 <div markdown>
 ### 4. Read the report
 See what passed, what did not, and why, traced back to the evidence.
-[Robot reports](https://docs.livingprooflabs.com/livingproof-verification/)
+[Robot reports](https://docs.livingprooflabs.com/livingproof-verification/) ·
+[How to read a report](reading-reports.md)
 </div>
 </div>
 

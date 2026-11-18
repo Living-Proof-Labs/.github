@@ -15,6 +15,12 @@
       "license": "CC-BY-4.0"
     },
     {
+      "source": "docs/reading-reports.md",
+      "path": "reading-reports.md",
+      "title": "Read a robot report",
+      "license": "CC-BY-4.0"
+    },
+    {
       "source": "docs/vision.md",
       "path": "vision.md",
       "title": "Vision and terminology",
