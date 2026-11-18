@@ -132,7 +132,7 @@ describe('Complete verification gate', () => {
   });
   test('workflow aggregate always runs and consumes every other job', () => {
     const workflow = readFileSync(new URL('../../.github/workflows/verify.yml', import.meta.url), 'utf8');
-    const jobs = [...workflow.matchAll(/^  ([\w-]+):$/gm)].map(m => m[1]).filter(j => j !== 'verification-gate' && !['pull_request','merge_group','push','schedule','workflow_dispatch'].includes(j));
+    const jobs = [...workflow.matchAll(/^  ([\w-]+):$/gm)].map(m => m[1]).filter(j => j !== 'verification-gate' && j !== 'release' && !['pull_request','merge_group','push','schedule','workflow_dispatch'].includes(j));
     assert.deepEqual(jobs.sort(), [...verificationJobs].sort());
     const gate = workflow.split('  verification-gate:')[1];
     assert.match(gate, /if: always\(\)/); assert.match(gate, /toJSON\(needs\)/);

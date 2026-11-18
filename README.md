@@ -17,6 +17,20 @@ This repository owns the organization inventory, desired repository settings,
 and every settings audit and apply tool. Review policy and implementation changes
 together here; no settings source is downloaded from collaboration-guidelines.
 
+### Releases
+
+Immutable semantic tags (`vX.Y.Z`) and GitHub Releases are published from `main`
+using the shared `collaboration-guidelines` semantic-release workflow, only
+after `Repository verification gate` (`verification-gate`) passes on that exact
+commit. Pull requests, merge groups, schedules, and failed verification runs
+never publish a release.
+
+A release version identifies a verified snapshot of this repository's
+organization policy, settings/inventory/App tooling, and organization
+documentation source (`docs/`). Publishing a release **does not** run
+`apply-repository-settings`, modify live repository settings on GitHub, or imply
+any `repository-audit` or `repository-administration` environment approval.
+
 ### Quick start
 
 | Goal | Command | Result |
