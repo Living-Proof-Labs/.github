@@ -228,15 +228,18 @@ jobs:
   release:
     name: Publish repository release
     # Publish a semantic tag and GitHub Release only for a push to main whose
-    # complete verification passed on this same commit. `needs` plus the
-    # implicit success() check mean a failed, cancelled or skipped gate never
-    # reaches this job. Pull requests, merge queue runs, schedules and manual
+    # complete verification passed on this same commit. The gate result is
+    # required explicitly. An `if` with no status function carries an implicit
+    # success() over the whole `needs` ancestry, and `repository-settings` is
+    # skipped on every push by design, so that form would skip this job on every
+    # push. always() lifts the ancestry rule; the gate result keeps the strictness.
+    # Pull requests, merge queue runs, schedules and manual
     # dispatches are excluded by the event test. A repeat run on an already
     # tagged commit publishes nothing: the shared engine never moves or
     # recreates a tag. Publishing never runs apply-repository-settings and
     # grants no environment approval; see RELEASING.md.
     needs: verification-gate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: always() && needs.verification-gate.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
     uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v9.6.10
