@@ -43,7 +43,7 @@ function evaluate(expression, context) {
   };
   return expression.split('||').some(group => group.split('&&').every(value));
 }
-const condition = scalar(release, 'if');
+const condition = scalar(release, 'if').replace(/^\$\{\{\s*|\s*\}\}$/g, ''); // an expression starting with `!` must be written as ${{ ... }}: a bare `!` is a YAML tag
 const events = ['pull_request', 'merge_group', 'schedule', 'workflow_dispatch', 'push'];
 const refs = ['refs/heads/main', 'refs/heads/topic', 'refs/pull/1/merge', 'refs/heads/gh-readonly-queue/main/pr-1-abc'];
 const goodNeeds = event => Object.fromEntries(verificationJobs.map(job => {
