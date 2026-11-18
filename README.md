@@ -10,6 +10,8 @@ evidence, and understandable reports.
   [`docs/`](docs/site.json); see [organization documentation](#organization-documentation).
 - **Operating this organization?** Use the quick start below, then the
   [repository operations guide](docs/repository-operations.md).
+- **Pinning this repository?** Read what a [release](RELEASING.md) identifies
+  and what publishing it does not do.
 
 ## Organization operations
 

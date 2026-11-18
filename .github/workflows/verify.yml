@@ -225,3 +225,18 @@ jobs:
         env:
           VERIFICATION_NEEDS: ${{ toJSON(needs) }}
           VERIFICATION_EVENT: ${{ github.event_name }}
+  release:
+    name: Publish repository release
+    # Publish a semantic tag and GitHub Release only for a push to main whose
+    # complete verification passed on this same commit. `needs` plus the
+    # implicit success() check mean a failed, cancelled or skipped gate never
+    # reaches this job. Pull requests, merge queue runs, schedules and manual
+    # dispatches are excluded by the event test. A repeat run on an already
+    # tagged commit publishes nothing: the shared engine never moves or
+    # recreates a tag. Publishing never runs apply-repository-settings and
+    # grants no environment approval; see RELEASING.md.
+    needs: verification-gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v9.6.10
