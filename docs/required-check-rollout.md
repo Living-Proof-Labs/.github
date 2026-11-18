@@ -26,12 +26,17 @@ Prerequisites merged through the queue:
 | Go1 | [#55](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/pull/55) | `5e1b8cad6f69cec98835608ce12e1012246a36e4` | [44240210782](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/44240210782) |
 
 All three exact-head Test matrices and their gates passed, with producer App
-`15368`. Mainline verification remains a separate step. Each workflow now runs
+`15368`. Mainline Test matrices and gates also passed: [G1 44240858895](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/actions/runs/44240858895),
+[T1 44240864095](https://github.com/Living-Proof-Labs/livingproof-booster-t1/actions/runs/44240864095),
+and [Go1 44240877734](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/actions/runs/44240877734).
+Go1 ran at descendant `5d95e5a1d00a81c711eb4f83e259b82126ec6592`, which includes
+the gate merge and subsequent scenario changes; it was not a run on the intermediate
+merge commit alone. Each workflow now runs
 on `merge_group` with an always-running gate that rejects any non-success Test
 result. Local regression tests exercise the actual shell gate against success,
 failure, cancelled, skipped, neutral, missing and unknown results.
 
-Remaining: mainline evidence, reviewed policy merge, a fresh full-inventory
+Remaining: reviewed policy merge, a fresh full-inventory
 protected preview and approval, apply/readback, and a queue trial after enforcement.
 A green earlier settings audit only proved the baseline configured at that time.
 Release-after-test gating is tracked separately in the three robot repositories.
