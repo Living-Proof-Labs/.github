@@ -28,7 +28,7 @@ test('dormant workflow isolates credentials and explicitly narrows both token re
   assert.doesNotMatch(prepare,/secrets\.|environment:|create-github-app-token/);
   for (const job of ['publish','queue']) {
     const body=template.split(`  ${job}:`)[1].split('\n  queue:')[0];
-    assert.match(body,/environment: bundle-operations/);
+    assert.match(body,/environment: ci-automation/);
     assert.match(body,/owner: Living-Proof-Labs\n          repositories: livingproof-verification\n/);
     assert.match(body,/permission-metadata: read/);
     assert.match(body,/permission-contents: write/);
@@ -50,9 +50,10 @@ test('dormant workflow isolates credentials and explicitly narrows both token re
 });
 
 test('reference manifest is unenrolled and contains only the proposed minimum grants', () => {
-  const manifest=JSON.parse(readFileSync(new URL('../../config/github/app-reference-manifests/bundle-completion.manifest.json',import.meta.url)));
+  const manifest=JSON.parse(readFileSync(new URL('../../config/github/app-reference-manifests/ci-automation.manifest.json',import.meta.url)));
   assert.deepEqual(manifest.default_permissions,{metadata:'read',contents:'write',workflows:'write',pull_requests:'write'});
+  assert.equal(manifest.name,'CI Automation');
   assert.equal(manifest.public,false);
   assert.deepEqual(manifest.default_events,[]);
-  assert.equal(existsSync(new URL('../../config/github/apps/bundle-completion.manifest.json',import.meta.url)),false);
+  assert.equal(existsSync(new URL('../../config/github/apps/ci-automation.manifest.json',import.meta.url)),false);
 });

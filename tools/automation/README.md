@@ -1,4 +1,4 @@
-# Dormant bundle operations
+# CI Automation: dormant bundle operations
 
 Proposal for [verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105).
 Nothing here creates an App, installs it, changes permissions, creates an environment,
@@ -8,12 +8,15 @@ Do not reuse the administration App or an all-repository agent key.
 
 ## Custody and execution
 
-Proposed owner: Living Proof Labs. Proposed installation: **selected repositories**,
+Confirmed service name: **CI Automation**, owned by Living Proof Labs. This is the
+general CI service identity; Renovate bundle completion is its first use case.
+Additional uses require separately reviewed adapters and scope decisions.
+Proposed installation: **selected repositories**,
 initially only `Living-Proof-Labs/livingproof-verification`. `.github` does not need to
 be selected: its ordinary read-only workflow token checks out operations code and
 handles same-run artifacts. Keep the private key solely in `.github`'s dedicated
-`bundle-operations` environment as `BUNDLE_APP_PRIVATE_KEY`; keep the App ID in
-`BUNDLE_APP_ID`. Restrict that environment to the exact `main` branch, exclude tags,
+`ci-automation` environment as `CI_AUTOMATION_APP_PRIVATE_KEY`; keep the App ID in
+`CI_AUTOMATION_APP_ID`. Restrict that environment to the exact `main` branch, exclude tags,
 and review its deployment policy before any binding. No repository/organization-wide
 key and no reusable workflow accepting arbitrary caller commands or `secrets: inherit`.
 
@@ -95,7 +98,8 @@ machine result. Existing audit tests assert this refusal.
 Rivet handoff, all still pending:
 
 1. Independent review of both draft changes, including the trusted adapter output API.
-2. Owner chooses App name/slug and approves registration, initial selection, environment
+2. The App name is **CI Automation**. Owner confirms an available slug and approves
+   registration, initial selection, environment
    branch policy, key custody/rotation/revocation and accepted permissions. No provisioning
    is performed by this proposal. No bypass or Administration may be granted.
 3. After merging the reviewed adapter, independently verify public read access using the

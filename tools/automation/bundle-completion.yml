@@ -78,7 +78,7 @@ jobs:
     if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main' && needs.prepare.outputs.candidate != '{}'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
-    environment: bundle-operations
+    environment: ci-automation
     outputs:
       head: ${{ steps.publish.outputs.head }}
       pr: ${{ steps.publish.outputs.pr }}
@@ -103,8 +103,8 @@ jobs:
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.BUNDLE_APP_ID }}
-          private-key: ${{ secrets.BUNDLE_APP_PRIVATE_KEY }}
+          app-id: ${{ vars.CI_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.CI_AUTOMATION_APP_PRIVATE_KEY }}
           owner: Living-Proof-Labs
           repositories: livingproof-verification
           permission-metadata: read
@@ -127,7 +127,7 @@ jobs:
     if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main' && needs.prepare.outputs.candidate != '{}'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
-    environment: bundle-operations
+    environment: ci-automation
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -144,8 +144,8 @@ jobs:
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.BUNDLE_APP_ID }}
-          private-key: ${{ secrets.BUNDLE_APP_PRIVATE_KEY }}
+          app-id: ${{ vars.CI_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.CI_AUTOMATION_APP_PRIVATE_KEY }}
           owner: Living-Proof-Labs
           repositories: livingproof-verification
           permission-metadata: read

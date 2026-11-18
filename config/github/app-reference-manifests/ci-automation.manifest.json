@@ -1,6 +1,6 @@
 {
-  "name": "Living Proof Labs bundle writer",
-  "description": "Complete reviewed dependency bundles and request normal merge queue entry on selected repositories.",
+  "name": "CI Automation",
+  "description": "Living Proof Labs CI service identity. Initial use: complete reviewed dependency bundles and request normal merge queue entry on selected repositories.",
   "url": "https://github.com/Living-Proof-Labs/.github",
   "redirect_url": "http://127.0.0.1:8787/github-app-manifest/callback",
   "public": false,
