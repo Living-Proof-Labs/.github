@@ -33,6 +33,7 @@ const stripComments = text => text.replace(/^\s*#.*$/gm, '');
 function evaluate(expression, context) {
   const value = term => {
     if (term.trim() === 'always()') return true;
+    if (term.trim() === '!cancelled()') return !context.cancelled;
     const gate = term.trim().match(/^needs\.verification-gate\.result\s*(==|!=)\s*'([^']*)'$/);
     if (gate) return (context.gate === gate[2]) === (gate[1] === '==');
     const m = term.trim().match(/^(github\.[a-z_]+)\s*(==|!=)\s*'([^']*)'$/);
@@ -42,7 +43,7 @@ function evaluate(expression, context) {
   };
   return expression.split('||').some(group => group.split('&&').every(value));
 }
-const condition = scalar(release, 'if');
+const condition = scalar(release, 'if').replace(/^\$\{\{\s*|\s*\}\}$/g, ''); // an expression starting with `!` must be written as ${{ ... }}: a bare `!` is a YAML tag
 const events = ['pull_request', 'merge_group', 'schedule', 'workflow_dispatch', 'push'];
 const refs = ['refs/heads/main', 'refs/heads/topic', 'refs/pull/1/merge', 'refs/heads/gh-readonly-queue/main/pr-1-abc'];
 const goodNeeds = event => Object.fromEntries(verificationJobs.map(job => {
@@ -51,7 +52,7 @@ const goodNeeds = event => Object.fromEntries(verificationJobs.map(job => {
   return [job, { result: skipped ? 'skipped' : 'success' }];
 }));
 const gatePasses = (needs, event) => { try { verifyResults(needs, event); return true; } catch { return false; } };
-// The condition names always(), so the gate result is read explicitly from needs.
+// The condition names !cancelled(), so the gate result is read explicitly from needs.
 // The ancestry rule (a skipped job anywhere upstream skips a job with no status function) is simulated in release-job-graph.test.mjs.
 const releaseRuns = (event, ref, needs) => evaluate(condition, { event_name: event, ref, gate: gatePasses(needs, event) ? 'success' : 'failure' });
 
@@ -61,8 +62,8 @@ test('release waits for the verification gate and nothing else', () => {
 });
 
 test('release condition is exactly a push to main whose gate result is success', () => {
-  assert.equal(condition, "always() && needs.verification-gate.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'");
-  assert.doesNotMatch(condition, /failure\(|cancelled\(|success\(/, 'always() is only allowed together with the explicit gate result');
+  assert.equal(condition, "!cancelled() && needs.verification-gate.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'");
+  assert.doesNotMatch(condition, /always\(|failure\(|success\(/, '!cancelled() is the only status function allowed, with the explicit gate result');
 });
 
 test('the gate stays an unconditional aggregate of exactly the verification jobs and is not downstream of release', () => {

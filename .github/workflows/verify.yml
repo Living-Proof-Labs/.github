@@ -232,14 +232,14 @@ jobs:
     # required explicitly. An `if` with no status function carries an implicit
     # success() over the whole `needs` ancestry, and `repository-settings` is
     # skipped on every push by design, so that form would skip this job on every
-    # push. always() lifts the ancestry rule; the gate result keeps the strictness.
+    # push. !cancelled() lifts the ancestry rule and, unlike always(), stays false once the run is cancelled; the gate result keeps the strictness.
     # Pull requests, merge queue runs, schedules and manual
     # dispatches are excluded by the event test. A repeat run on an already
     # tagged commit publishes nothing: the shared engine never moves or
     # recreates a tag. Publishing never runs apply-repository-settings and
     # grants no environment approval; see RELEASING.md.
     needs: verification-gate
-    if: always() && needs.verification-gate.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ !cancelled() && needs.verification-gate.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     permissions:
       contents: write
     uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v9.6.10
