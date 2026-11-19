@@ -8,8 +8,9 @@ were read before editing, together with issue comments and open pull requests.
 
 Only `.github` and the three robot repositories are currently enrolled in the
 checked-in required-check policy. Their source handles `merge_group`; this audit
-does not claim their live rules or queue runs were verified. Fourteen of the
-nineteen active repositories lack merge-group handling in the principal workflow.
+does not claim their live rules or queue runs were verified. The original snapshot found fourteen of the nineteen active repositories lacking
+merge-group handling in the principal workflow. That count is historical, not a
+fresh fleet-wide audit; the bounded refresh below covers verification and Gazebo.
 
 | Repository | Gate candidate | Queue event and coverage | Enrollment readiness | Docs freshness |
 | --- | --- | --- | --- | --- |
@@ -33,6 +34,68 @@ nineteen active repositories lack merge-group handling in the principal workflow
 | [robot-capability-specs](https://github.com/Living-Proof-Labs/robot-capability-specs/tree/9db79d2801c1668169db5c86d87f5c9b8b7a2332) | verify.yml: verify | no; unconditional | add merge_group | skip; malformed-SHA hardening remains |
 | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk/tree/2afda1bbad7c9c2f549e7cfca16ad6c1012262a3) | none proposed | no; legacy ci/locomotion remain in source | EXCEPTION: deprecated; do not revive or enroll | not applicable |
 | [website](https://github.com/Living-Proof-Labs/website/tree/63b664e8a994e4e885890614adce0018e9d70864) | release.yml: Verify static site inputs | no; unconditional | add merge_group; deploy excluded | deployment is separate; no main-freshness guard found |
+
+## Bounded rollout refresh — 19 November 2026
+
+The [authoritative handoff](https://github.com/Living-Proof-Labs/.github/issues/141#issuecomment-7023991706)
+corrects the [preview run](https://github.com/Living-Proof-Labs/.github/actions/runs/44627913772):
+at `.github` main `28cfb4b8c9891f1233e9fb818fc09d0e3e444fed`, every
+change/write list was empty. That preview checked the four enrolled repositories;
+it did not propose fleet enrollment. The active policy still contains those four.
+
+Verification main was refreshed at
+[`d3e36b11af8d034040f689cd2ac21709af934c17`](https://github.com/Living-Proof-Labs/livingproof-verification/tree/d3e36b11af8d034040f689cd2ac21709af934c17).
+Both `checks.yml` and `verify.yml` run unfiltered on pull requests and
+`merge_group: checks_requested`. Complete coverage requires **four** contexts:
+
+| Context | Coverage |
+| --- | --- |
+| `checks` | Lint, format, Python tests, workflow lint, fixture site and browser checks |
+| `bundle-release-engine` | Separate offline shared-engine regression job |
+| `renovate` | Separate configuration validation and reporter extraction tests |
+| `verification` | Lock guard, all ten scenario jobs, world and parameter-digest integrity |
+
+The last three are not covered by `checks`. Release, site publication and Pages
+are main-only publishing work, excluded from PR/queue verification. The gate on
+audited main rejects non-success results but accepts a nonempty subset of expected
+jobs. The separate workflow prerequisite must reject missing and unexpected jobs,
+and test pull-request and merge-group coverage, before enrollment.
+
+[The proposed entry](proposals/141-verification-checks.json) is deliberately outside
+`repository-policy.json`: no command loads it automatically. It requires all four
+contexts from Actions app **15368**, strict checks and enforcement on creation.
+The validator now permits an explicit strict choice with a queue, and reconciliation
+retains that choice instead of forcing it false. Existing four-repository policy,
+ALLGREEN queue, extra checks, PR protections and empty bypass remain intact.
+The non-strict choice for existing queued entries remains supported.
+
+This expands the two-context minimum in
+[verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105),
+[#160](https://github.com/Living-Proof-Labs/livingproof-verification/pull/160)
+(head `f8fbb3be0952dce1dadb49e4e6134d19e3558905`) and
+[central #144](https://github.com/Living-Proof-Labs/.github/pull/144)
+(head `867481d3b6be5372f6bdc91e90d552a882e45e26`). Those drafts remain owned
+separately. Their writer remains unactivated. Keel must reconcile the four-context
+coverage requirement with that lane before activation; two named checks alone
+would silently omit the separate engine and Renovate checks.
+
+[Gazebo #56](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/pull/56)
+is still open draft, currently at `72ba30ad7a3fc7caaa89f2a5cb67f92882dab5ce`,
+not the earlier handoff head `c85bb2ea601b335da5ba6ffd1fec6bc9e2ff54b3`.
+Its [PR run](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/actions/runs/44497212748)
+reports successful verify, publish-tests and Gazebo verification gate; deploy-docs
+is skipped on PRs. This is not merged-main readiness or independent review of the
+new head. Reuse #56; do not enroll its gate before merge and main verification.
+
+Before promoting this proposal into active policy: independently review both
+final drafts, merge the workflow prerequisite, inspect its integrated main and
+exact-head hosted checks, reconcile #105 coverage, and recheck current open work.
+Then review an enrollment PR and a new protected settings preview with real
+additions. Settings application requires separate approval; subsequent live
+ruleset readback and successful/failing actual merge-group evidence remain pending.
+Local negative tests do not establish GitHub server queue behavior. The remaining
+fleet rows above are dated gaps, not repaired by this slice; the deprecated SDK
+exception remains unchanged.
 
 ## Decisions and staged rollout
 

@@ -41,7 +41,8 @@ export function strengthenRuleset(existing, desired) {
     if (!previous) { next.rules.push(structuredClone(rule)); continue; }
     if (rule.type === 'required_status_checks') {
       previous.parameters = strengthenChecks(previous.parameters, rule.parameters);
-      if (desired.rules.some(r => r.type === 'merge_queue')) previous.parameters.strict_required_status_checks_policy = false;
+      // Queued repositories choose strictness explicitly; do not erase a strict proposal.
+      if (desired.rules.some(r => r.type === 'merge_queue')) previous.parameters.strict_required_status_checks_policy = rule.parameters.strict_required_status_checks_policy;
       continue;
     }
     if (rule.type === 'merge_queue') { previous.parameters = strengthenMergeQueue(previous.parameters, rule.parameters); continue; }

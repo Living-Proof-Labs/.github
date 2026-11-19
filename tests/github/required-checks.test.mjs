@@ -95,11 +95,11 @@ describe('Merge-queue enrollment', () => {
     assert.deepEqual(rules.at(-2).parameters, queuedChecks());
     assert.deepEqual(rules.at(-1), { type: 'merge_queue', parameters: queue() });
   });
-  test('strict required checks remain required without a queue, and a queue forbids a strict up-to-date pin', () => {
+  test('strict required checks remain required without a queue, and a queue permits explicit strict policy', () => {
     const missingQueue = queuedPolicy(); delete missingQueue.merge_queue_by_repository;
     assert.throws(() => validateRequiredChecks(missingQueue, inventory));
     const stillStrict = queuedPolicy(); stillStrict.required_checks_by_repository['.github'].strict_required_status_checks_policy = true;
-    assert.throws(() => validateRequiredChecks(stillStrict, inventory));
+    validateRequiredChecks(stillStrict, inventory);
     const squash = queuedPolicy(); squash.merge_queue_by_repository['.github'].merge_method = 'SQUASH';
     assert.throws(() => validateRequiredChecks(squash, inventory));
   });
@@ -149,5 +149,46 @@ describe('Complete verification gate', () => {
     const needs = gate.match(/needs: \[([^\]]+)\]/)[1].split(',').map(s => s.trim());
     assert.deepEqual(needs.sort(), [...verificationJobs].sort());
     assert.match(gate, /run: node tools\/github\/verification-gate.mjs/);
+  });
+});
+
+describe('Blocked verification enrollment proposal', () => {
+  const active = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  const proposal = JSON.parse(readFileSync(new URL('../../config/github/proposals/141-verification-checks.json', import.meta.url)));
+  const candidate = () => ({ ...structuredClone(active), required_checks_by_repository: { ...structuredClone(active.required_checks_by_repository), ...structuredClone(proposal) } });
+  const fleet = { owner: 'Living-Proof-Labs', repositories: Object.keys(active.merge_queue_by_repository) };
+  test('proposal retains all four independent contexts without enrolling an unmerged prerequisite', () => {
+    assert.equal(active.required_checks_by_repository['livingproof-verification'], undefined);
+    assert.equal(active.required_checks_by_repository['livingproof-sim-gazebo'], undefined);
+    assert.deepEqual(Object.keys(active.required_checks_by_repository).sort(), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);
+    assert.deepEqual(proposal['livingproof-verification'].required_status_checks.map(c => c.context), ['checks', 'bundle-release-engine', 'renovate', 'verification']);
+    validateRequiredChecks(candidate(), fleet);
+  });
+  test('strict queued proposal preserves additional checks, PR protections and empty bypass', () => {
+    const desired = repositoryRuleset(candidate(), 'livingproof-verification');
+    const previous = repositoryRuleset(active, 'livingproof-verification');
+    previous.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count = 2;
+    previous.rules.push({type: 'required_status_checks', parameters: {required_status_checks: [{context: 'extra', integration_id: 77}], strict_required_status_checks_policy: false, do_not_enforce_on_create: false}});
+    const next = strengthenRuleset(previous, desired);
+    const checks = next.rules.find(r => r.type === 'required_status_checks').parameters;
+    assert.equal(checks.strict_required_status_checks_policy, true);
+    assert.equal(checks.do_not_enforce_on_create, false);
+    assert.deepEqual(checks.required_status_checks, [{context: 'extra', integration_id: 77}, ...proposal['livingproof-verification'].required_status_checks]);
+    assert.deepEqual(next.bypass_actors, []);
+    assert.equal(next.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count, 2);
+    assert.deepEqual(next.rules.find(r => r.type === 'merge_queue'), previous.rules.find(r => r.type === 'merge_queue'));
+    assert.equal(next.rules.find(r => r.type === 'merge_queue').parameters.grouping_strategy, 'ALLGREEN');
+    assert.deepEqual(strengthenRuleset(next, desired), next);
+  });
+  test('every proposed context rejects an absent or untrusted source and creation exemptions', () => {
+    for (let i = 0; i < 4; i++) for (const source of [undefined, null, 1, 15369, '15368']) {
+      const p = candidate(); p.required_checks_by_repository['livingproof-verification'].required_status_checks[i].integration_id = source;
+      assert.throws(() => validateRequiredChecks(p, fleet), /15368/);
+      assert.throws(() => repositoryRuleset(p, 'livingproof-verification'), /15368/);
+    }
+    for (const exempt of [undefined, true]) {
+      const p = candidate(); p.required_checks_by_repository['livingproof-verification'].do_not_enforce_on_create = exempt;
+      assert.throws(() => validateRequiredChecks(p, fleet), /creation/);
+    }
   });
 });
