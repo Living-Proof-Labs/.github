@@ -36,6 +36,15 @@ describe('Repository-specific required protection', () => {
       const p = policy(); mutate(p); assert.throws(() => validateRequiredChecks(p, inventory));
     }
   });
+  test('managed check sources require Actions app 15368 in validation and rendering', () => {
+    for (const source of [undefined, null, 1, 42, 15369, '15368']) {
+      const p = policy();
+      p.required_checks_by_repository['.github'].required_status_checks[0].integration_id = source;
+      assert.throws(() => validateRequiredChecks(p, inventory), /15368/);
+      assert.throws(() => repositoryRuleset(p, '.github'), /15368/);
+    }
+    validateRequiredChecks(policy(), inventory);
+  });
   test('union preserves extra checks, strengthens any-source checks, never changes conflicting source', () => {
     const previous = checks(); previous.required_status_checks = [{ context: 'extra', integration_id: 77 }, { context: 'Repository verification gate', integration_id: null }];
     previous.strict_required_status_checks_policy = false; previous.do_not_enforce_on_create = true;
