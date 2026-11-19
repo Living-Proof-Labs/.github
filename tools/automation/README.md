@@ -1,9 +1,16 @@
-# CI Automation: dormant bundle operations
+# CI Automation: blocked activation candidate
 
-Proposal for [verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105).
-Nothing here creates an App, installs it, changes permissions, creates an environment,
-or activates a workflow. The template deliberately remains outside `.github/workflows`.
-The reference manifest is outside `config/github/apps`, so bootstrap cannot enroll it.
+Work for [verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105).
+The reference template in this directory remains outside `.github/workflows` and
+cannot run on its own. The reference manifest remains outside `config/github/apps`.
+However, [draft #144](https://github.com/Living-Proof-Labs/.github/pull/144) includes
+an installed candidate at `.github/workflows/bundle-completion.yml`, an enrolled
+manifest at `config/github/apps/ci-automation.manifest.json`, and its access registry
+entry. **Merging #144 installs the hourly/manual writer on trusted main and is an
+activation step.** The schedule may run after merge; no later template-copy PR is
+needed. Keep this draft blocked until independent review, separately authorized
+protection application/readback and hosted enforcement evidence are complete.
+This change does not provision an App, key or environment, or grant permissions.
 Do not reuse the administration App or an all-repository agent key.
 
 ## Custody and execution
@@ -11,7 +18,7 @@ Do not reuse the administration App or an all-repository agent key.
 Confirmed service name: **CI Automation**, owned by Living Proof Labs. This is the
 general CI service identity; Renovate bundle completion is its first use case.
 Additional uses require separately reviewed adapters and scope decisions.
-Proposed installation: **selected repositories**,
+Recorded installation scope: **selected repositories**,
 initially only `Living-Proof-Labs/livingproof-verification`. `.github` does not need to
 be selected: its ordinary read-only workflow token checks out operations code and
 handles same-run artifacts. Keep the private key solely in `.github`'s dedicated
@@ -51,9 +58,13 @@ SHA/ref, run ID/attempt and timestamp. The same-run immutable artifact ID and re
 SHA-256 come from the successful publication job outputs, never candidate input.
 
 Queue downloads that exact artifact without a cross-run token. Admission requires
-trusted successful `checks` and `verification` check runs from GitHub Actions App 15368,
-bound through their check suites to unique successful `pull_request` runs of the two
-canonical workflow paths, on the exact published head and captured base. Public REST
+individual successful `checks`, `bundle-release-engine`, `renovate` and
+`verification` check runs from GitHub Actions App 15368. Each must have a unique
+check identity and the exact published head, bound through its suite to the unique
+successful `pull_request` run of its canonical workflow and captured base. A successful
+workflow summary does not substitute for a missing, skipped or neutral check. All four
+check identities and their trusted run/attempt identities are snapshotted and
+revalidated immediately before enqueue. Public REST
 reads carry no App credential; denial/rate limiting, missing, truncated, ambiguous,
 pending, failed, skipped or stale evidence refuses. No Checks/Actions grant is added.
 
@@ -108,13 +119,13 @@ permission inputs. This is a code/API requirement review, not a successful live 
 or enqueue permission probe. Confirm accepted grants and real enqueue behavior during
 separately authorized provisioning; do not broaden automatically on refusal.
 
-## Audit limitation and provisioning handoff
+## Audit limitation and activation handoff
 
 `config/github/app-access.json` requires real positive App/installation IDs and records
-installed identities. Leave it unchanged until registration/installation is authorized
-and their actual identities are known; never invent placeholder IDs. At that time add
-this manifest to registration enrollment and record the selected target and each
-permission justification in the access registry.
+installed identities. This candidate records the previously verified nonsecret App
+and installation IDs, selected target and permission justifications, and enrolls the
+manifest. Registry enrollment documents existing access; it is not a new permission
+grant or proof of live scope. Never invent placeholder IDs.
 
 The current audit compares registration/installation identity, accepted permissions,
 suspension and `repository_selection`. For `selected`, it explicitly returns
@@ -127,17 +138,18 @@ machine status as unverified until a separately reviewed authoritative full-memb
 collector exists. Do not turn manual evidence or narrowed visibility into a compliant
 machine result. Existing audit tests assert this refusal.
 
-Rivet handoff, all still pending:
+Remaining activation prerequisites:
 
 1. Independent review of both draft changes, including the trusted adapter output API.
-2. The App name is **CI Automation**. Owner confirms an available slug and approves
-   registration, initial selection, environment
-   branch policy, key custody/rotation/revocation and accepted permissions. No provisioning
-   is performed by this proposal. No bypass or Administration may be granted.
+2. Reconfirm the recorded **CI Automation** identity, selected installation scope,
+   environment branch policy, key custody/rotation/revocation and accepted permissions
+   using owner readback. No bypass or Administration may be granted.
 3. After merging the reviewed adapter, independently verify public read access using the
    workflow token and assess central/target main trust and environment restrictions.
-4. A separate activation PR installs only this central template; audit the existing
-   repository protections and record the informational-check risk without changing them.
+4. Separately authorize and apply the four-context strict, no-bypass protection
+   contract, then record fresh readback and successful/failing merge-group evidence.
+   This draft does not apply protections. Authorizing merge of #144 is authorizing
+   writer installation; keep it blocked until these prerequisites are satisfied.
 5. Demonstrate distinct reporter and verifier releases from discovery through automatic
    completion/normal queue/mainline reports/Pages. Preserve custom commits, demonstrate
    concurrent stale-head refusal, and link exact runs and publication evidence. Mocked
