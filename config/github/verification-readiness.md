@@ -43,7 +43,7 @@ at `.github` main `28cfb4b8c9891f1233e9fb818fc09d0e3e444fed`, every
 change/write list was empty. That preview checked the four enrolled repositories;
 it did not propose fleet enrollment. The active policy still contains those four.
 
-Verification main was refreshed at
+The initial verification source assessment used main at
 [`d3e36b11af8d034040f689cd2ac21709af934c17`](https://github.com/Living-Proof-Labs/livingproof-verification/tree/d3e36b11af8d034040f689cd2ac21709af934c17).
 Both `checks.yml` and `verify.yml` run unfiltered on pull requests and
 `merge_group: checks_requested`. Complete coverage requires **four** contexts:
@@ -56,11 +56,14 @@ Both `checks.yml` and `verify.yml` run unfiltered on pull requests and
 | `verification` | Lock guard, all ten scenario jobs, world and parameter-digest integrity |
 
 The last three are not covered by `checks`. Release, site publication and Pages
-are main-only publishing work, excluded from PR/queue verification. The gate on
-audited main rejects non-success results but accepts a nonempty subset of expected
-jobs. [The separate workflow prerequisite #166](https://github.com/Living-Proof-Labs/livingproof-verification/pull/166)
-must reject missing and unexpected jobs,
-and test pull-request and merge-group coverage, before enrollment.
+are main-only publishing work, excluded from PR/queue verification.
+[The workflow prerequisite #166](https://github.com/Living-Proof-Labs/livingproof-verification/pull/166)
+fixed acceptance of incomplete evidence and merged at
+`6814a4b689ba417cd0da4040862205ffa96fde2f`. Its complete exact-main
+[verify run 44631914027](https://github.com/Living-Proof-Labs/livingproof-verification/actions/runs/44631914027)
+succeeded. Missing and unexpected jobs now fail alongside non-success results;
+the regression covers pull-request and merge-group evidence. This establishes
+integrated workflow readiness, not live required-check enrollment.
 
 [The proposed entry](proposals/141-verification-checks.json) is deliberately outside
 `repository-policy.json`: no command loads it automatically. It requires all four
@@ -90,11 +93,21 @@ new head. Refreshed Gazebo main `9a63a07eef1a7fffec62d29cbbe460ed149c78e8`
 still lacks the merge-group trigger and aggregate gate. Reuse #56; do not enroll
 its gate before merge and main verification.
 
-Before promoting this proposal into active policy: independently review both
-final drafts, merge the workflow prerequisite, inspect its integrated main and
-exact-head hosted checks, reconcile #105 coverage, and recheck current open work.
-Then review an enrollment PR and a new protected settings preview with real
-additions. Settings application requires separate approval; subsequent live
+[Independent Standard review](https://github.com/Living-Proof-Labs/.github/issues/141#issuecomment-7024348902)
+found no blocking code findings at central #145
+`ffdae9f0ddbc9c4dc7d45fc13b7f503319eac15e` and verification #166
+`8047c2816350e49a7a88f6c8bca608f5d771711b`. Their exact-head workflows passed,
+including central [run 44630303989](https://github.com/Living-Proof-Labs/.github/actions/runs/44630303989).
+That review applies to those heads; this documentation delta needs independent
+review arranged by Keel.
+
+Before promoting this proposal into active policy: reconcile the four-context
+contract in #105 with the existing writer owner and recheck current open work.
+Accepting a superset of two contexts does not enforce the full four-context set.
+Then separately review verification-only enrollment and a new protected settings
+preview with real additions. Gazebo remains a later stage; its unmerged #56 does
+not block the verification-only slice. Settings application requires separate
+approval; subsequent live
 ruleset readback and successful/failing actual merge-group evidence remain pending.
 Local negative tests do not establish GitHub server queue behavior. The remaining
 fleet rows above are dated gaps, not repaired by this slice; the deprecated SDK
