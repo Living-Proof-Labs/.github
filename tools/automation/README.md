@@ -58,8 +58,11 @@ reads carry no App credential; denial/rate limiting, missing, truncated, ambiguo
 pending, failed, skipped or stale evidence refuses. No Checks/Actions grant is added.
 
 Admission also requires active no-bypass rulesets with strict required status contexts
-`checks` and `verification` attributed to App 15368, and an ALLGREEN merge queue. The
-existing PR and merge-group workflows supply these checks. Server enforcement provides
+`checks`, `bundle-release-engine`, `renovate` and `verification`, each attributed to
+GitHub Actions App 15368, and an ALLGREEN merge queue. All four must be present;
+accepting optional additional contexts is not sufficient. The first three contexts
+come from `checks.yml`, whose complete successful run is required above; `verification`
+comes from `verify.yml`. Existing PR and merge-group workflows supply these checks. Server enforcement provides
 fresh merge-group verification for a base race after the client's final base read;
 client checks alone cannot atomically lease the base. Missing protections cause refusal;
 this proposal never applies them. Queue retains `expectedHeadOid` and `jump: false`.
