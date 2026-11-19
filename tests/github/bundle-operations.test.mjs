@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { compareApp } from '../../tools/github/audit-app-access.mjs';
+import { loadManifestDirectory } from '../../tools/github/manifest-directory.mjs';
 import { authorize, verifyToken, target } from '../../tools/automation/bundle-target.mjs';
 const context = {GITHUB_REPOSITORY:'Living-Proof-Labs/.github', GITHUB_REF:'refs/heads/main', GITHUB_EVENT_NAME:'schedule', GITHUB_SHA:'a'.repeat(40), GITHUB_WORKFLOW_REF:'Living-Proof-Labs/.github/.github/workflows/bundle-completion.yml@refs/heads/main'};
 test('only the reviewed target and trusted scheduled/manual context authorize', () => {
@@ -56,11 +58,35 @@ test('installed workflow matches the reviewed template and preserves credential 
   assert.match(template,/cancel-in-progress: false/);
 });
 
-test('reference manifest is unenrolled and contains only the proposed minimum grants', () => {
+test('enrolled CI Automation manifest preserves the reviewed minimum grants', () => {
   const manifest=JSON.parse(readFileSync(new URL('../../config/github/app-reference-manifests/ci-automation.manifest.json',import.meta.url)));
   assert.deepEqual(manifest.default_permissions,{metadata:'read',contents:'write',workflows:'write',pull_requests:'write'});
   assert.equal(manifest.name,'CI Automation');
   assert.equal(manifest.public,false);
   assert.deepEqual(manifest.default_events,[]);
-  assert.equal(existsSync(new URL('../../config/github/apps/ci-automation.manifest.json',import.meta.url)),false);
+  const enrolled=JSON.parse(readFileSync(new URL('../../config/github/apps/ci-automation.manifest.json',import.meta.url)));
+  assert.deepEqual(enrolled,manifest);
+});
+
+
+test('verified CI Automation identity enrolls only the selected target without claiming membership compliance', () => {
+  const config=JSON.parse(readFileSync(new URL('../../config/github/app-access.json',import.meta.url)));
+  const app=config.apps.find(app => app.agent === 'ci-automation');
+  assert.equal(app.app_id,5829119);
+  assert.equal(app.app_slug,'living-proof-labs-ci-automation');
+  assert.equal(app.installation_id,183589516);
+  assert.equal(app.manifest,'config/github/apps/ci-automation.manifest.json');
+  assert.equal(app.repository_selection,'selected');
+  assert.deepEqual(app.repositories,[target]);
+  assert.deepEqual(app.permissions,{metadata:'read',contents:'write',workflows:'write',pull_requests:'write'});
+  assert.deepEqual(Object.keys(app.justifications).sort(),Object.keys(app.permissions).sort());
+  const enrolled=loadManifestDirectory().config.apps.find(item => item.agent === 'ci-automation');
+  assert.deepEqual(enrolled.identity,{app_id:5829119,app_slug:'living-proof-labs-ci-automation'});
+  const result=compareApp(config,app,
+    {id:app.app_id,slug:app.app_slug,owner:{login:config.owner},permissions:app.permissions},
+    {id:app.installation_id,app_id:app.app_id,account:{login:config.owner},target_type:'Organization',suspended_at:null,repository_selection:'selected',permissions:app.permissions});
+  assert.equal(result.registration.status,'compliant');
+  assert.equal(result.installation.status,'compliant');
+  assert.equal(result.scope.status,'unverified');
+  assert.equal(result.status,'unverified');
 });

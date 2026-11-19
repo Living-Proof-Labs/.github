@@ -12,7 +12,7 @@ test('reviewed config matches manifest and excludes Administration',()=>{
  assert.equal(validateAccess(config),config);
  for(const app of config.apps){
   assert.equal(app.permissions.administration,undefined);
-  assert.equal(app.permissions.discussions,'write');
+  assert.equal(app.permissions.discussions,app.agent === 'ci-automation' ? undefined : 'write');
   const manifest=JSON.parse(readFileSync(new URL('../../'+app.manifest,import.meta.url)));
   assert.equal(comparePermissions(app.permissions,manifest.default_permissions).status,'compliant');
  }

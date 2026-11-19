@@ -135,6 +135,30 @@
       "repository_selection": "all",
       "repositories": [],
       "scope_reason": "Owner explicitly confirmed all current and future organization repositories on 2026-11-14. This records approved scope, not proof of accepted operation permissions or a completed live audit."
+    },
+    {
+      "agent": "ci-automation",
+      "app_id": 5829119,
+      "app_slug": "living-proof-labs-ci-automation",
+      "installation_id": 183589516,
+      "manifest": "config/github/apps/ci-automation.manifest.json",
+      "permissions": {
+        "metadata": "read",
+        "contents": "write",
+        "workflows": "write",
+        "pull_requests": "write"
+      },
+      "justifications": {
+        "metadata": "Read repository identity and verify the effective token repository scope.",
+        "contents": "Publish validated descendant bundle commits with an exact-head lease and retain write access for normal queue entry.",
+        "workflows": "Publish approved bundle updates that include .github/workflows/verify.yml; omitted from the queue token.",
+        "pull_requests": "Read proposal eligibility and request normal expected-head merge queue entry."
+      },
+      "repository_selection": "selected",
+      "repositories": [
+        "Living-Proof-Labs/livingproof-verification"
+      ],
+      "scope_reason": "Owner settings readback recorded on 2026-11-19 in livingproof-verification#105 (issuecomment-7003485417) confirms installation 183589516 selects only livingproof-verification (repository ID 1442523227). This records approved scope; selected membership remains machine-unverified. No bypass is granted."
     }
   ]
 }
