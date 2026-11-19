@@ -21,9 +21,11 @@ test('token must expose exactly the reviewed single repository', async () => {
 test('unauthorized target is refused before any authenticated read', async () => {
   await assert.rejects(verifyToken('other/repository',context,async()=>assert.fail('read attempted')));
 });
-test('dormant workflow isolates credentials and explicitly narrows both token requests', () => {
-  const template = readFileSync(new URL('../../tools/automation/bundle-completion.yml',import.meta.url),'utf8');
-  assert.equal(existsSync(new URL('../../.github/workflows/bundle-completion.yml',import.meta.url)),false);
+test('installed workflow matches the reviewed template and preserves credential isolation', () => {
+  const template = readFileSync(new URL('../../.github/workflows/bundle-completion.yml',import.meta.url),'utf8');
+  const dormant = readFileSync(new URL('../../tools/automation/bundle-completion.yml',import.meta.url),'utf8');
+  const executable = text => text.replace(/ # v[0-9.]+/g,'').split('\n').filter(line => !line.startsWith('#')).join('\n');
+  assert.equal(executable(template), executable(dormant));
   const prepare=template.split('  prepare:')[1].split('  publish:')[0];
   assert.doesNotMatch(prepare,/secrets\.|environment:|create-github-app-token/);
   for (const job of ['publish','queue']) {
@@ -46,7 +48,12 @@ test('dormant workflow isolates credentials and explicitly narrows both token re
   assert.match(template,/name: trusted-bundle-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
   assert.match(template,/DIGEST: \$\{\{ needs.prepare.outputs.digest \}\}/);
   assert.match(template,/HEAD: \$\{\{ needs.publish.outputs.head \}\}/);
-  assert.doesNotMatch(template,/secrets: inherit|BUNDLE_WRITER_TOKEN/);
+  assert.doesNotMatch(template,/secrets: inherit|BUNDLE_WRITER_TOKEN|pull_request_target:|workflow_call:/);
+  assert.equal((template.match(/persist-credentials: false/g)||[]).length,6);
+  assert.equal((template.match(/ref: \$\{\{ github.sha \}\}/g)||[]).length,3);
+  assert.equal((template.match(/github.repository == 'Living-Proof-Labs\/\.github' && github.ref == 'refs\/heads\/main'/g)||[]).length,3);
+  assert.match(template,/permissions:\n  contents: read/);
+  assert.match(template,/cancel-in-progress: false/);
 });
 
 test('reference manifest is unenrolled and contains only the proposed minimum grants', () => {
