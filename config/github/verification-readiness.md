@@ -58,7 +58,8 @@ Both `checks.yml` and `verify.yml` run unfiltered on pull requests and
 The last three are not covered by `checks`. Release, site publication and Pages
 are main-only publishing work, excluded from PR/queue verification. The gate on
 audited main rejects non-success results but accepts a nonempty subset of expected
-jobs. The separate workflow prerequisite must reject missing and unexpected jobs,
+jobs. [The separate workflow prerequisite #166](https://github.com/Living-Proof-Labs/livingproof-verification/pull/166)
+must reject missing and unexpected jobs,
 and test pull-request and merge-group coverage, before enrollment.
 
 [The proposed entry](proposals/141-verification-checks.json) is deliberately outside
@@ -85,7 +86,9 @@ not the earlier handoff head `c85bb2ea601b335da5ba6ffd1fec6bc9e2ff54b3`.
 Its [PR run](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/actions/runs/44497212748)
 reports successful verify, publish-tests and Gazebo verification gate; deploy-docs
 is skipped on PRs. This is not merged-main readiness or independent review of the
-new head. Reuse #56; do not enroll its gate before merge and main verification.
+new head. Refreshed Gazebo main `9a63a07eef1a7fffec62d29cbbe460ed149c78e8`
+still lacks the merge-group trigger and aggregate gate. Reuse #56; do not enroll
+its gate before merge and main verification.
 
 Before promoting this proposal into active policy: independently review both
 final drafts, merge the workflow prerequisite, inspect its integrated main and
