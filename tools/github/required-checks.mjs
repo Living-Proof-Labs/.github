@@ -15,7 +15,7 @@ export function validateChecks(parameters, trusted = false) {
     if (!check || Object.keys(check).some(k => !['context', 'integration_id'].includes(k)) ||
         typeof check.context !== 'string' || !check.context.trim() || check.context !== check.context.trim() || /[\r\n]/.test(check.context) || contexts.has(check.context) ||
         (check.integration_id != null && (!Number.isSafeInteger(check.integration_id) || check.integration_id <= 0)) ||
-        (trusted && !Number.isSafeInteger(check.integration_id))) fail('Required checks need unique contexts and trusted positive integration IDs; no write.');
+        (trusted && check.integration_id !== 15368)) fail('Required checks need unique contexts and valid sources; managed checks require GitHub Actions app 15368; no write.');
     contexts.add(check.context);
   }
 }
