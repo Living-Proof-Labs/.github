@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { compareApp } from '../../tools/github/audit-app-access.mjs';
@@ -49,7 +50,11 @@ test('installed workflow matches the reviewed template and preserves credential 
   assert.equal((template.match(/permission-workflows: write/g)||[]).length,1);
   assert.match(template,/name: trusted-bundle-\$\{\{ github.run_id \}\}-\$\{\{ github.run_attempt \}\}/);
   assert.match(template,/DIGEST: \$\{\{ needs.prepare.outputs.digest \}\}/);
-  assert.match(template,/HEAD: \$\{\{ needs.publish.outputs.head \}\}/);
+  assert.match(template,/RECEIPT_DIGEST: \$\{\{ needs.publish.outputs.receipt_digest \}\}/);
+  assert.match(template,/artifact-ids: \$\{\{ needs.publish.outputs.receipt_artifact \}\}/);
+  assert.match(template,/receipt_artifact: \$\{\{ steps.receipt.outputs.artifact-id \}\}/);
+  assert.match(template,/retention-days: 1/);
+  assert.doesNotMatch(template,/run-id:|github-token:/);
   assert.doesNotMatch(template,/secrets: inherit|BUNDLE_WRITER_TOKEN|pull_request_target:|workflow_call:/);
   assert.equal((template.match(/persist-credentials: false/g)||[]).length,6);
   assert.equal((template.match(/ref: \$\{\{ github.sha \}\}/g)||[]).length,3);
@@ -89,4 +94,15 @@ test('verified CI Automation identity enrolls only the selected target without c
   assert.equal(result.installation.status,'compliant');
   assert.equal(result.scope.status,'unverified');
   assert.equal(result.status,'unverified');
+});
+
+
+test('recovery rejects missing artifact identity before download can default to all artifacts', () => {
+  const workflow=readFileSync(new URL('../../.github/workflows/bundle-completion.yml',import.meta.url),'utf8');
+  const step=workflow.split('name: Validate publication evidence outputs')[1];
+  const script=step.match(/run: \|\n((?:          .+\n)+)/)[1].replace(/^          /gm,'');
+  for (const [id,digest,valid] of [['123','a'.repeat(64),true],['','a'.repeat(64),false],['all','a'.repeat(64),false],['0','a'.repeat(64),false],['123','',false],['123','head',false]]) {
+    const result=spawnSync('bash',['-eu','-c',script],{env:{...process.env,ARTIFACT_ID:id,RECEIPT_DIGEST:digest}});
+    assert.equal(result.status === 0,valid);
+  }
 });

@@ -44,13 +44,42 @@ is passed through job outputs or uploaded. Abrupt runner loss can prevent revoca
 installation tokens expire after one hour.
 
 Publication verifies the prepare digest, same-run artifact name (run ID and attempt),
-main/head/branch/file allowlists and lease before producing validated head/PR/branch
-outputs via verification's `bundle_operations.py`. Queue consumes those outputs only,
-with the existing `expectedHeadOid` and `jump: false`. Optional CI is informational;
-configured GitHub protections are authoritative. Do not add status gates or bypasses.
-If publication or enqueue has an uncertain outcome, inspect the remote before retry.
-A failed queue may be rerun from retained successful job outputs; do not rerun the
-entire publication flow to recover. Recovery after output expiration is not implemented.
+main/head/branch/file allowlists and lease before producing validated outputs through
+verification's `bundle_operations.py`. It then saves a publication receipt containing
+the repository, PR, branch, completion head, captured base, plan digest, central workflow
+SHA/ref, run ID/attempt and timestamp. The same-run immutable artifact ID and receipt
+SHA-256 come from the successful publication job outputs, never candidate input.
+
+Queue downloads that exact artifact without a cross-run token. Admission requires
+trusted successful `checks` and `verification` check runs from GitHub Actions App 15368,
+bound through their check suites to unique successful `pull_request` runs of the two
+canonical workflow paths, on the exact published head and captured base. Public REST
+reads carry no App credential; denial/rate limiting, missing, truncated, ambiguous,
+pending, failed, skipped or stale evidence refuses. No Checks/Actions grant is added.
+
+Admission also requires active no-bypass rulesets with strict required status contexts
+`checks` and `verification` attributed to App 15368, and an ALLGREEN merge queue. The
+existing PR and merge-group workflows supply these checks. Server enforcement provides
+fresh merge-group verification for a base race after the client's final base read;
+client checks alone cannot atomically lease the base. Missing protections cause refusal;
+this proposal never applies them. Queue retains `expectedHeadOid` and `jump: false`.
+
+Queue waits for not-yet-reported or pending CI with at most 25 admission reads, one
+minute apart. Failed/skipped/ambiguous checks, inaccessible evidence, protection
+failures and uncertain mutations are never automatically retried. The 30-minute
+job timeout remains below installation-token expiry. After a failed queue job, rerun **failed jobs only** on the original workflow run. Its
+successful publication outputs identify the immutable receipt, even when run attempt
+changes. The receipt allows at most two additional attempts and expires after 24 hours;
+artifact retention is one day. Queue first reads current PR/queue state: already queued
+at the recorded head is a no-op; an uncertain read or changed head/base refuses. Each
+retry revalidates CI and protections; never repeat publication as recovery. This avoids
+rediscovering a completion through Renovate's single-original-commit discovery filter.
+
+If publication succeeded but output/receipt persistence was interrupted, or the receipt
+expired/is unavailable, automatic recovery refuses. Inspect the remote and seek a new
+reviewed recovery decision in issue #105; do not fabricate a receipt or republish. A
+closed/merged PR likewise refuses without mutation. No claim is made that a partial
+upload, lost output or changed base can be recovered automatically.
 Only one writer may be activated: concurrency groups are repository-local, so the old
 verification-local template must remain dormant even though its group name matches.
 
