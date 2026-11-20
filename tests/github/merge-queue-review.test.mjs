@@ -85,6 +85,7 @@ describe('Merge-queue review contracts', () => {
     assert.deepEqual(names, [
       'apply-repository-settings.yml',
       'bootstrap-agent-apps.yml',
+      'bundle-completion.yml',
       'collect-classic-protections.yml',
       'keel-comment-pilot.yml',
       'verify.yml',

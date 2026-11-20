@@ -1,0 +1,183 @@
+# SPDX-License-Identifier: Apache-2.0
+# Activation of the reviewed central template; see livingproof-verification issue 105.
+name: Complete selected repository bundles
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '19 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: verification-bundle-writer
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    outputs:
+      main: ${{ steps.resolve.outputs.main }}
+      candidate: ${{ steps.discover.outputs.candidate }}
+      digest: ${{ steps.prepare.outputs.digest }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          path: operations
+          persist-credentials: false
+      - run: node operations/tools/automation/bundle-target.mjs authorize Living-Proof-Labs/livingproof-verification
+      - id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main=$(gh api repos/Living-Proof-Labs/livingproof-verification/git/ref/heads/main --jq .object.sha)
+          [[ "$main" =~ ^[0-9a-f]{40}$ ]]
+          echo "main=$main" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: Living-Proof-Labs/livingproof-verification
+          ref: ${{ steps.resolve.outputs.main }}
+          path: adapter
+          persist-credentials: false
+      - id: discover
+        working-directory: adapter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAIN: ${{ steps.resolve.outputs.main }}
+        run: |
+          echo "candidate=$(python3 tools/bundle_proposal.py discover --main "$MAIN")" >> "$GITHUB_OUTPUT"
+      - if: steps.discover.outputs.candidate != '{}'
+        working-directory: adapter
+        run: |
+          python3 -m venv "$RUNNER_TEMP/tests"
+          "$RUNNER_TEMP/tests/bin/pip" install --require-hashes --no-deps -r .github/requirements/tests.txt
+      - id: prepare
+        if: steps.discover.outputs.candidate != '{}'
+        working-directory: adapter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAIN: ${{ steps.resolve.outputs.main }}
+          PR: ${{ fromJSON(steps.discover.outputs.candidate).pr }}
+          HEAD: ${{ fromJSON(steps.discover.outputs.candidate).head }}
+        run: |
+          "$RUNNER_TEMP/tests/bin/python" tools/bundle_proposal.py prepare \
+            --pr "$PR" --head "$HEAD" --main "$MAIN" --output "$RUNNER_TEMP/bundle.json" \
+            > "$RUNNER_TEMP/prepare-output"
+          digest=$(tail -n 1 "$RUNNER_TEMP/prepare-output")
+          [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - if: steps.discover.outputs.candidate != '{}'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: trusted-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/bundle.json
+          retention-days: 1
+          if-no-files-found: error
+  publish:
+    needs: prepare
+    if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main' && needs.prepare.outputs.candidate != '{}'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    environment: ci-automation
+    outputs:
+      receipt_digest: ${{ steps.publish.outputs.receipt_digest }}
+      receipt_artifact: ${{ steps.receipt.outputs.artifact-id }}
+      head: ${{ steps.publish.outputs.head }}
+      pr: ${{ steps.publish.outputs.pr }}
+      branch: ${{ steps.publish.outputs.branch }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          path: operations
+          persist-credentials: false
+      - run: node operations/tools/automation/bundle-target.mjs authorize Living-Proof-Labs/livingproof-verification
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: Living-Proof-Labs/livingproof-verification
+          ref: ${{ needs.prepare.outputs.main }}
+          path: adapter
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: trusted-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/candidate
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.CI_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.CI_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: Living-Proof-Labs
+          repositories: livingproof-verification
+          permission-metadata: read
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+      - run: node operations/tools/automation/bundle-target.mjs verify-token Living-Proof-Labs/livingproof-verification
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+      - id: publish
+        working-directory: adapter
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          DIGEST: ${{ needs.prepare.outputs.digest }}
+        run: |
+          python3 tools/bundle_operations.py publish \
+            --plan "$RUNNER_TEMP/candidate/bundle.json" --sha256 "$DIGEST" \
+            --receipt "$RUNNER_TEMP/publication.json" >> "$GITHUB_OUTPUT"
+      - id: receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publication.json
+          retention-days: 1
+          if-no-files-found: error
+  queue:
+    needs: [prepare, publish]
+    if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main' && needs.prepare.outputs.candidate != '{}'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    environment: ci-automation
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          path: operations
+          persist-credentials: false
+      - run: node operations/tools/automation/bundle-target.mjs authorize Living-Proof-Labs/livingproof-verification
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: Living-Proof-Labs/livingproof-verification
+          ref: ${{ needs.prepare.outputs.main }}
+          path: adapter
+          persist-credentials: false
+      - name: Validate publication evidence outputs
+        env:
+          ARTIFACT_ID: ${{ needs.publish.outputs.receipt_artifact }}
+          RECEIPT_DIGEST: ${{ needs.publish.outputs.receipt_digest }}
+        run: |
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$RECEIPT_DIGEST" =~ ^[0-9a-f]{64}$ ]]
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.publish.outputs.receipt_artifact }}
+          path: ${{ runner.temp }}/publication
+          merge-multiple: true
+      - id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.CI_AUTOMATION_APP_ID }}
+          private-key: ${{ secrets.CI_AUTOMATION_APP_PRIVATE_KEY }}
+          owner: Living-Proof-Labs
+          repositories: livingproof-verification
+          permission-metadata: read
+          permission-contents: write
+          permission-pull-requests: write
+      - run: node operations/tools/automation/bundle-target.mjs verify-token Living-Proof-Labs/livingproof-verification
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+      - working-directory: adapter
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RECEIPT_DIGEST: ${{ needs.publish.outputs.receipt_digest }}
+        run: python3 tools/bundle_queue.py --receipt "$RUNNER_TEMP/publication/publication.json" --sha256 "$RECEIPT_DIGEST"

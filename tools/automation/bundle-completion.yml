@@ -80,6 +80,8 @@ jobs:
     timeout-minutes: 10
     environment: ci-automation
     outputs:
+      receipt_digest: ${{ steps.publish.outputs.receipt_digest }}
+      receipt_artifact: ${{ steps.receipt.outputs.artifact-id }}
       head: ${{ steps.publish.outputs.head }}
       pr: ${{ steps.publish.outputs.pr }}
       branch: ${{ steps.publish.outputs.branch }}
@@ -121,12 +123,20 @@ jobs:
           DIGEST: ${{ needs.prepare.outputs.digest }}
         run: |
           python3 tools/bundle_operations.py publish \
-            --plan "$RUNNER_TEMP/candidate/bundle.json" --sha256 "$DIGEST" >> "$GITHUB_OUTPUT"
+            --plan "$RUNNER_TEMP/candidate/bundle.json" --sha256 "$DIGEST" \
+            --receipt "$RUNNER_TEMP/publication.json" >> "$GITHUB_OUTPUT"
+      - id: receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publication.json
+          retention-days: 1
+          if-no-files-found: error
   queue:
     needs: [prepare, publish]
     if: github.repository == 'Living-Proof-Labs/.github' && github.ref == 'refs/heads/main' && needs.prepare.outputs.candidate != '{}'
     runs-on: ubuntu-26.04
-    timeout-minutes: 10
+    timeout-minutes: 30
     environment: ci-automation
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -141,6 +151,18 @@ jobs:
           ref: ${{ needs.prepare.outputs.main }}
           path: adapter
           persist-credentials: false
+      - name: Validate publication evidence outputs
+        env:
+          ARTIFACT_ID: ${{ needs.publish.outputs.receipt_artifact }}
+          RECEIPT_DIGEST: ${{ needs.publish.outputs.receipt_digest }}
+        run: |
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$RECEIPT_DIGEST" =~ ^[0-9a-f]{64}$ ]]
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.publish.outputs.receipt_artifact }}
+          path: ${{ runner.temp }}/publication
+          merge-multiple: true
       - id: token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
@@ -157,7 +179,5 @@ jobs:
       - working-directory: adapter
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
-          HEAD: ${{ needs.publish.outputs.head }}
-          PR: ${{ needs.publish.outputs.pr }}
-          BRANCH: ${{ needs.publish.outputs.branch }}
-        run: python3 tools/bundle_queue.py --pr "$PR" --head "$HEAD" --branch "$BRANCH"
+          RECEIPT_DIGEST: ${{ needs.publish.outputs.receipt_digest }}
+        run: python3 tools/bundle_queue.py --receipt "$RUNNER_TEMP/publication/publication.json" --sha256 "$RECEIPT_DIGEST"

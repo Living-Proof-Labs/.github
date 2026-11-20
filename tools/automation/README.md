@@ -1,9 +1,16 @@
-# CI Automation: dormant bundle operations
+# CI Automation: blocked activation candidate
 
-Proposal for [verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105).
-Nothing here creates an App, installs it, changes permissions, creates an environment,
-or activates a workflow. The template deliberately remains outside `.github/workflows`.
-The reference manifest is outside `config/github/apps`, so bootstrap cannot enroll it.
+Work for [verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105).
+The reference template in this directory remains outside `.github/workflows` and
+cannot run on its own. The reference manifest remains outside `config/github/apps`.
+However, [draft #144](https://github.com/Living-Proof-Labs/.github/pull/144) includes
+an installed candidate at `.github/workflows/bundle-completion.yml`, an enrolled
+manifest at `config/github/apps/ci-automation.manifest.json`, and its access registry
+entry. **Merging #144 installs the hourly/manual writer on trusted main and is an
+activation step.** The schedule may run after merge; no later template-copy PR is
+needed. Keep this draft blocked until independent review, separately authorized
+protection application/readback and hosted enforcement evidence are complete.
+This change does not provision an App, key or environment, or grant permissions.
 Do not reuse the administration App or an all-repository agent key.
 
 ## Custody and execution
@@ -11,7 +18,7 @@ Do not reuse the administration App or an all-repository agent key.
 Confirmed service name: **CI Automation**, owned by Living Proof Labs. This is the
 general CI service identity; Renovate bundle completion is its first use case.
 Additional uses require separately reviewed adapters and scope decisions.
-Proposed installation: **selected repositories**,
+Recorded installation scope: **selected repositories**,
 initially only `Living-Proof-Labs/livingproof-verification`. `.github` does not need to
 be selected: its ordinary read-only workflow token checks out operations code and
 handles same-run artifacts. Keep the private key solely in `.github`'s dedicated
@@ -44,13 +51,49 @@ is passed through job outputs or uploaded. Abrupt runner loss can prevent revoca
 installation tokens expire after one hour.
 
 Publication verifies the prepare digest, same-run artifact name (run ID and attempt),
-main/head/branch/file allowlists and lease before producing validated head/PR/branch
-outputs via verification's `bundle_operations.py`. Queue consumes those outputs only,
-with the existing `expectedHeadOid` and `jump: false`. Optional CI is informational;
-configured GitHub protections are authoritative. Do not add status gates or bypasses.
-If publication or enqueue has an uncertain outcome, inspect the remote before retry.
-A failed queue may be rerun from retained successful job outputs; do not rerun the
-entire publication flow to recover. Recovery after output expiration is not implemented.
+main/head/branch/file allowlists and lease before producing validated outputs through
+verification's `bundle_operations.py`. It then saves a publication receipt containing
+the repository, PR, branch, completion head, captured base, plan digest, central workflow
+SHA/ref, run ID/attempt and timestamp. The same-run immutable artifact ID and receipt
+SHA-256 come from the successful publication job outputs, never candidate input.
+
+Queue downloads that exact artifact without a cross-run token. Admission requires
+individual successful `checks`, `bundle-release-engine`, `renovate` and
+`verification` check runs from GitHub Actions App 15368. Each must have a unique
+check identity and the exact published head, bound through its suite to the unique
+successful `pull_request` run of its canonical workflow and captured base. A successful
+workflow summary does not substitute for a missing, skipped or neutral check. All four
+check identities and their trusted run/attempt identities are snapshotted and
+revalidated immediately before enqueue. Public REST
+reads carry no App credential; denial/rate limiting, missing, truncated, ambiguous,
+pending, failed, skipped or stale evidence refuses. No Checks/Actions grant is added.
+
+Admission also requires active no-bypass rulesets with strict required status contexts
+`checks`, `bundle-release-engine`, `renovate` and `verification`, each attributed to
+GitHub Actions App 15368, and an ALLGREEN merge queue. All four must be present;
+accepting optional additional contexts is not sufficient. The first three contexts
+come from `checks.yml`, whose complete successful run is required above; `verification`
+comes from `verify.yml`. Existing PR and merge-group workflows supply these checks. Server enforcement provides
+fresh merge-group verification for a base race after the client's final base read;
+client checks alone cannot atomically lease the base. Missing protections cause refusal;
+this proposal never applies them. Queue retains `expectedHeadOid` and `jump: false`.
+
+Queue waits for not-yet-reported or pending CI with at most 25 admission reads, one
+minute apart. Failed/skipped/ambiguous checks, inaccessible evidence, protection
+failures and uncertain mutations are never automatically retried. The 30-minute
+job timeout remains below installation-token expiry. After a failed queue job, rerun **failed jobs only** on the original workflow run. Its
+successful publication outputs identify the immutable receipt, even when run attempt
+changes. The receipt allows at most two additional attempts and expires after 24 hours;
+artifact retention is one day. Queue first reads current PR/queue state: already queued
+at the recorded head is a no-op; an uncertain read or changed head/base refuses. Each
+retry revalidates CI and protections; never repeat publication as recovery. This avoids
+rediscovering a completion through Renovate's single-original-commit discovery filter.
+
+If publication succeeded but output/receipt persistence was interrupted, or the receipt
+expired/is unavailable, automatic recovery refuses. Inspect the remote and seek a new
+reviewed recovery decision in issue #105; do not fabricate a receipt or republish. A
+closed/merged PR likewise refuses without mutation. No claim is made that a partial
+upload, lost output or changed base can be recovered automatically.
 Only one writer may be activated: concurrency groups are repository-local, so the old
 verification-local template must remain dormant even though its group name matches.
 
@@ -76,13 +119,13 @@ permission inputs. This is a code/API requirement review, not a successful live 
 or enqueue permission probe. Confirm accepted grants and real enqueue behavior during
 separately authorized provisioning; do not broaden automatically on refusal.
 
-## Audit limitation and provisioning handoff
+## Audit limitation and activation handoff
 
 `config/github/app-access.json` requires real positive App/installation IDs and records
-installed identities. Leave it unchanged until registration/installation is authorized
-and their actual identities are known; never invent placeholder IDs. At that time add
-this manifest to registration enrollment and record the selected target and each
-permission justification in the access registry.
+installed identities. This candidate records the previously verified nonsecret App
+and installation IDs, selected target and permission justifications, and enrolls the
+manifest. Registry enrollment documents existing access; it is not a new permission
+grant or proof of live scope. Never invent placeholder IDs.
 
 The current audit compares registration/installation identity, accepted permissions,
 suspension and `repository_selection`. For `selected`, it explicitly returns
@@ -95,17 +138,18 @@ machine status as unverified until a separately reviewed authoritative full-memb
 collector exists. Do not turn manual evidence or narrowed visibility into a compliant
 machine result. Existing audit tests assert this refusal.
 
-Rivet handoff, all still pending:
+Remaining activation prerequisites:
 
 1. Independent review of both draft changes, including the trusted adapter output API.
-2. The App name is **CI Automation**. Owner confirms an available slug and approves
-   registration, initial selection, environment
-   branch policy, key custody/rotation/revocation and accepted permissions. No provisioning
-   is performed by this proposal. No bypass or Administration may be granted.
+2. Reconfirm the recorded **CI Automation** identity, selected installation scope,
+   environment branch policy, key custody/rotation/revocation and accepted permissions
+   using owner readback. No bypass or Administration may be granted.
 3. After merging the reviewed adapter, independently verify public read access using the
    workflow token and assess central/target main trust and environment restrictions.
-4. A separate activation PR installs only this central template; audit the existing
-   repository protections and record the informational-check risk without changing them.
+4. Separately authorize and apply the four-context strict, no-bypass protection
+   contract, then record fresh readback and successful/failing merge-group evidence.
+   This draft does not apply protections. Authorizing merge of #144 is authorizing
+   writer installation; keep it blocked until these prerequisites are satisfied.
 5. Demonstrate distinct reporter and verifier releases from discovery through automatic
    completion/normal queue/mainline reports/Pages. Preserve custom commits, demonstrate
    concurrent stale-head refusal, and link exact runs and publication evidence. Mocked
