@@ -13,8 +13,9 @@ const root = path.resolve(import.meta.dirname, '../..');
 const baselinePolicy = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/settings-migration-plans.json', import.meta.url)));
 describe('Local settings ownership', () => {
-for (const mode of ['compliant', 'drift']) test(`local policy preserves old complete ${mode} plans for every registered repository`, async () => {
-  const report = await runInventory({ api: fixtureApi(mode, baselinePolicy), inventory, policy: baselinePolicy, revision: 'a'.repeat(40), dryRun: true });
+const baselineInventory = { ...inventory, repositories: inventory.repositories.filter(name => name !== 'livingproof-health') };
+for (const mode of ['compliant', 'drift']) test(`local policy preserves old complete ${mode} plans for every pre-health registered repository`, async () => {
+  const report = await runInventory({ api: fixtureApi(mode, baselinePolicy, baselineInventory), inventory: baselineInventory, policy: baselinePolicy, revision: 'a'.repeat(40), dryRun: true });
   const digest = createHash('sha256').update(JSON.stringify(report.plan.repositories)).digest('hex');
   assert.equal(digest, baseline[mode].repositories_sha256);
   assert.equal(report.plan.repositories.length, baseline[mode].repository_count);
@@ -60,7 +61,7 @@ describe('Selected required-check enrollment', () => {
       min_entries_to_merge: 0, min_entries_to_merge_wait_minutes: 0
     }])));
   });
-  test('pilot-to-fleet preview adds exactly 19 queue rules without changing required checks or other settings', async () => {
+  test('pilot-to-fleet preview adds queue rules for all non-root repositories without changing required checks or other settings', async () => {
     const fleet = structuredClone(policy);
     fleet.required_checks_by_repository = { '.github': policy.required_checks_by_repository['.github'] };
     const pilot = structuredClone(fleet);
@@ -82,7 +83,7 @@ describe('Selected required-check enrollment', () => {
       assert.deepEqual(ruleset.write.body.conditions,pilot.main_ruleset.conditions);
       assert.deepEqual(ruleset.write.body.bypass_actors,[]);
     }
-    assert.equal(newPlan.plan.repositories.filter(r=>r.ruleset.write).length,19);
+    assert.equal(newPlan.plan.repositories.filter(r=>r.ruleset.write).length, inventory.repositories.length - 1);
   });
   test('existing stronger rules survive; unavailable bypass evidence cannot become a live plan', async () => {
     const api = fixtureApi('compliant',baselinePolicy), get=api.get;
