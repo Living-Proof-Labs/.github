@@ -53,7 +53,10 @@ describe('Selected required-check enrollment', () => {
     }, ...Object.fromEntries(['livingproof-booster-t1','livingproof-unitree-g1','livingproof-unitree-go1'].map(name => [name, {
       required_status_checks: [{ context: 'Robot verification gate', integration_id: 15368 }],
       strict_required_status_checks_policy: false, do_not_enforce_on_create: false
-    }])) });
+    }])), 'livingproof-verification': {
+      required_status_checks: ['checks', 'bundle-release-engine', 'renovate', 'verification'].map(context => ({context, integration_id: 15368})),
+      strict_required_status_checks_policy: true, do_not_enforce_on_create: false
+    } });
     assert.deepEqual(merge_queue_by_repository, Object.fromEntries(inventory.repositories.map(name => [name, {
       check_response_timeout_minutes: 60, grouping_strategy: 'ALLGREEN',
       max_entries_to_build: 5, max_entries_to_merge: 5, merge_method: 'MERGE',

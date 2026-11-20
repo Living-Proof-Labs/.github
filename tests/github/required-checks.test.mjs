@@ -152,21 +152,23 @@ describe('Complete verification gate', () => {
   });
 });
 
-describe('Blocked verification enrollment proposal', () => {
+describe('Stacked verification-only enrollment proposal', () => {
   const active = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
   const proposal = JSON.parse(readFileSync(new URL('../../config/github/proposals/141-verification-checks.json', import.meta.url)));
   const candidate = () => ({ ...structuredClone(active), required_checks_by_repository: { ...structuredClone(active.required_checks_by_repository), ...structuredClone(proposal) } });
   const fleet = { owner: 'Living-Proof-Labs', repositories: Object.keys(active.merge_queue_by_repository) };
-  test('proposal retains all four independent contexts without enrolling an unmerged prerequisite', () => {
-    assert.equal(active.required_checks_by_repository['livingproof-verification'], undefined);
+  test('enrollment retains all four independent contexts and excludes other fleet rows', () => {
+    assert.deepEqual(active.required_checks_by_repository['livingproof-verification'], proposal['livingproof-verification']);
     assert.equal(active.required_checks_by_repository['livingproof-sim-gazebo'], undefined);
-    assert.deepEqual(Object.keys(active.required_checks_by_repository).sort(), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);
+    assert.deepEqual(Object.keys(active.required_checks_by_repository).sort(), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1', 'livingproof-verification']);
     assert.deepEqual(proposal['livingproof-verification'].required_status_checks.map(c => c.context), ['checks', 'bundle-release-engine', 'renovate', 'verification']);
     validateRequiredChecks(candidate(), fleet);
   });
   test('strict queued proposal preserves additional checks, PR protections and empty bypass', () => {
     const desired = repositoryRuleset(candidate(), 'livingproof-verification');
-    const previous = repositoryRuleset(active, 'livingproof-verification');
+    const beforeEnrollment = structuredClone(active);
+    delete beforeEnrollment.required_checks_by_repository['livingproof-verification'];
+    const previous = repositoryRuleset(beforeEnrollment, 'livingproof-verification');
     previous.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count = 2;
     previous.rules.push({type: 'required_status_checks', parameters: {required_status_checks: [{context: 'extra', integration_id: 77}], strict_required_status_checks_policy: false, do_not_enforce_on_create: false}});
     const next = strengthenRuleset(previous, desired);
@@ -189,6 +191,31 @@ describe('Blocked verification enrollment proposal', () => {
     for (const exempt of [undefined, true]) {
       const p = candidate(); p.required_checks_by_repository['livingproof-verification'].do_not_enforce_on_create = exempt;
       assert.throws(() => validateRequiredChecks(p, fleet), /creation/);
+    }
+  });
+});
+
+
+describe('Verification-only enrollment preservation', () => {
+  const policy = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
+  test('the four prior enrollments keep their exact required-check parameters', () => {
+    for (const name of ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']) {
+      assert.deepEqual(policy.required_checks_by_repository[name], {
+        required_status_checks: [{context: name === '.github' ? 'Repository verification gate' : 'Robot verification gate', integration_id: 15368}],
+        strict_required_status_checks_policy: false, do_not_enforce_on_create: false
+      });
+    }
+  });
+  test('conflicting managed sources and undisclosed or nonempty bypass refuse reconciliation', () => {
+    const desired = repositoryRuleset(policy, 'livingproof-verification');
+    for (const context of ['checks', 'bundle-release-engine', 'renovate', 'verification']) {
+      const previous = structuredClone(desired);
+      previous.rules.find(r => r.type === 'required_status_checks').parameters.required_status_checks.find(c => c.context === context).integration_id = 77;
+      assert.throws(() => strengthenRuleset(previous, desired), /conflicts/);
+    }
+    for (const bypass of [undefined, [{actor_id: 1, actor_type: 'Integration', bypass_mode: 'always'}]]) {
+      const previous = structuredClone(desired); previous.bypass_actors = bypass;
+      assert.throws(() => strengthenRuleset(previous, desired), /bypass/);
     }
   });
 });
