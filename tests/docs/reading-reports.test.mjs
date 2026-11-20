@@ -27,7 +27,7 @@ test('the guide links the dated evidence and current report/manual destinations 
   const external = [...guide.matchAll(/\]\((https?:\/\/[^)]+)\)/g)].map((match) => match[1]);
   assert.deepEqual(external.sort(), [
     'https://docs.livingprooflabs.com/livingproof-verification/',
-    'https://docs.livingprooflabs.com/livingproof-verification/booster-t1/stock-mujoco-corner-left/runs/44253837813/',
+    'https://docs.livingprooflabs.com/livingproof-verification/reports/booster-t1/stock-mujoco-corner-left/runs/44253837813/',
     'https://docs.livingprooflabs.com/capability-verifier/',
     'https://docs.livingprooflabs.com/livingproof-capability-report/',
   ].sort());
