@@ -68,6 +68,28 @@
       "strict_required_status_checks_policy": false,
       "do_not_enforce_on_create": false
     },
+    "livingproof-verification": {
+      "required_status_checks": [
+        {
+          "context": "checks",
+          "integration_id": 15368
+        },
+        {
+          "context": "bundle-release-engine",
+          "integration_id": 15368
+        },
+        {
+          "context": "renovate",
+          "integration_id": 15368
+        },
+        {
+          "context": "verification",
+          "integration_id": 15368
+        }
+      ],
+      "strict_required_status_checks_policy": true,
+      "do_not_enforce_on_create": false
+    },
     "livingproof-booster-t1": {
       "required_status_checks": [
         { "context": "Robot verification gate", "integration_id": 15368 }
