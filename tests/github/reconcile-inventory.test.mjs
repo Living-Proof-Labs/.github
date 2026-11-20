@@ -540,7 +540,7 @@ describe('Required-check enrollment through the controller', () => {
 });
 
 
-test('fleet queue saved plan writes only 19 rulesets once and final preview is compliant', async () => {
+test('fleet queue saved plan writes non-root rulesets once and final preview is compliant', async () => {
   const f=fixture();
   f.policy=JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
   // Preserve this historical queue-only rollout fixture.
@@ -549,12 +549,13 @@ test('fleet queue saved plan writes only 19 rulesets once and final preview is c
   f.states['.github'].ruleset.rules.push(
     {type:'required_status_checks',parameters:f.policy.required_checks_by_repository['.github']},
     {type:'merge_queue',parameters:f.policy.merge_queue_by_repository['.github']});
+  const expectedWrites = canonical.repositories.length - 1;
   const preview=await f.preview();
   assert.equal(preview.failures,0); assert.equal(f.writes.length,0);
-  assert.equal(preview.plan.repositories.filter(r=>r.ruleset.write).length,19);
+  assert.equal(preview.plan.repositories.filter(r=>r.ruleset.write).length, expectedWrites);
   const applied=await f.apply(preview.plan);
-  assert.equal(applied.failures,0); assert.equal(f.writes.length,19);
-  assert.equal(new Set(f.writes.map(w=>w.resource)).size,19);
+  assert.equal(applied.failures,0); assert.equal(f.writes.length, expectedWrites);
+  assert.equal(new Set(f.writes.map(w=>w.resource)).size, expectedWrites);
   for(const write of f.writes) {
     assert.equal(write.method,'PUT'); assert.match(write.resource,/\/rulesets\/1$/);
     assert.ok(!write.resource.includes('/.github/'));
