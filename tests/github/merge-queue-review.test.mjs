@@ -27,6 +27,7 @@ describe('Merge-queue review contracts', () => {
       'livingproof-evaluator',
       'livingproof-evaluator-run',
       'livingproof-evaluator-scenario',
+      'livingproof-health',
       'livingproof-sim-gazebo',
       'livingproof-sim-mujoco',
       'livingproof-unitree-g1',
@@ -37,7 +38,7 @@ describe('Merge-queue review contracts', () => {
       'unitree-foxglove-sdk',
       'website',
     ]);
-    assert.equal(inventory.repositories.length, 20);
+    assert.equal(inventory.repositories.length, 21);
     validatePolicy(policy);
     validateRequiredChecks(policy, inventory);
     assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);

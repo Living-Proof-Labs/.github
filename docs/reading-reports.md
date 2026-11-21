@@ -55,7 +55,7 @@ applies to corner reports.
 The reported 95% confidence interval expresses uncertainty in the success tally,
 not a separate pass condition or a guarantee about deployment.
 
-For a concrete, dated example, the [T1 left-corner run from 18 November 2026](https://docs.livingprooflabs.com/livingproof-verification/booster-t1/stock-mujoco-corner-left/runs/44253837813/)
+For a concrete, dated example, the [T1 left-corner run from 18 November 2026](https://docs.livingprooflabs.com/livingproof-verification/reports/booster-t1/stock-mujoco-corner-left/runs/44253837813/)
 records one pass out of one simulated trial, with one required. Its Wilson 95%
 interval is approximately 21–100%. That is evidence of one success, not proof
 of reliable physical-robot performance. Repeating an identical deterministic
