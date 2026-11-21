@@ -101,7 +101,7 @@ describe('Selected required-check enrollment', () => {
     assert.equal(rules[2].parameters.required_approving_review_count,2);
     assert.ok(rules.some(r=>r.type==='required_signatures'));
     assert.deepEqual(rules.find(r=>r.type==='required_status_checks').parameters.required_status_checks,[{context:'Existing trusted gate',integration_id:42},...policy.required_checks_by_repository['.github'].required_status_checks]);
-    assert.equal(rules.find(r=>r.type==='required_status_checks').parameters.strict_required_status_checks_policy,false);
+    assert.equal(rules.find(r=>r.type==='required_status_checks').parameters.strict_required_status_checks_policy,true);
     assert.deepEqual(rules.find(r=>r.type==='merge_queue').parameters, policy.merge_queue_by_repository['.github']);
     api.get=async resource=>{const value=await get(resource);if(resource.endsWith('/.github/rulesets/1'))delete value.bypass_actors;return value;};
     const incomplete=await runInventory({api,inventory,policy,revision:'a'.repeat(40),dryRun:true});

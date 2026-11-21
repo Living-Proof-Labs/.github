@@ -41,7 +41,6 @@ export function strengthenRuleset(existing, desired) {
     if (!previous) { next.rules.push(structuredClone(rule)); continue; }
     if (rule.type === 'required_status_checks') {
       previous.parameters = strengthenChecks(previous.parameters, rule.parameters);
-      if (desired.rules.some(r => r.type === 'merge_queue')) previous.parameters.strict_required_status_checks_policy = false;
       continue;
     }
     if (rule.type === 'merge_queue') { previous.parameters = strengthenMergeQueue(previous.parameters, rule.parameters); continue; }

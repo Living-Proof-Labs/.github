@@ -43,7 +43,7 @@ export function validateRequiredChecks(policy, inventory) {
       registeredName(name, inventory, 'Required-check');
       validateChecks(parameters, true);
       if (queues?.[name]) {
-        if (parameters.strict_required_status_checks_policy !== false || parameters.do_not_enforce_on_create !== false) fail('Managed required checks with a merge queue must not require up-to-date branches and must be enforced on creation.');
+        if (parameters.do_not_enforce_on_create !== false) fail('Managed required checks with a merge queue must be enforced on creation.');
       } else if (parameters.strict_required_status_checks_policy !== true || parameters.do_not_enforce_on_create !== false) fail('Managed required checks must be strict and enforced on creation.');
     }
   }
