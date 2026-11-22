@@ -124,7 +124,7 @@ test('an extra directory table row fails', () => {
   assert.ok(check(dir).some((e) => e.includes('project directory has extra row extra')));
 });
 
-for (const [label, replacement] of [['Deprecated pending removal', 'Not yet published'], ['This site', 'Manual'], ['Maintainer guide', 'Manual']]) {
+for (const [label, replacement] of [['This site', 'Manual'], ['Maintainer guide', 'Manual']]) {
   test(`directory preserves the declared ${label} destination`, () => {
     const dir = copy();
     edit(dir, 'docs/index.md', (text) => text.replace(label, replacement));

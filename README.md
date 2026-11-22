@@ -161,8 +161,8 @@ site. Publication remains separately authorized.
 
 Audits never auto-remediate drift. The apply workflow always previews first;
 the only workflow choice is preview or protected apply. Both use the complete
-checked-in inventory, including `unitree-foxglove-sdk`. Its exclusion in the older
-Pages-only command was task-specific, not a standing settings exception.
+checked-in inventory. The archived `unitree-foxglove-sdk` repository is outside
+the active settings inventory and remains available as a historical reference.
 
 Use `task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-plan.json`
 to inspect the exact changes. After review, use the same task with
