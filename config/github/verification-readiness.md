@@ -105,8 +105,9 @@ review arranged by Keel.
 Before promoting this proposal into active policy: reconcile the four-context
 contract in #105 with the existing writer owner and recheck current open work.
 Accepting a superset of two contexts does not enforce the full four-context set.
-Then separately review verification-only enrollment and a new protected settings
-preview with real additions. Gazebo remains a later stage; its unmerged #56 does
+Then separately review verification-only enrollment and a new settings
+preview from `main`. `repository-administration` is limited to `main` and has
+no required reviewers. Gazebo remains a later stage; its unmerged #56 does
 not block the verification-only slice. Settings application runs from `main` on
 `repository-administration`, which has no required reviewers; subsequent live
 ruleset readback and successful/failing actual merge-group evidence remain pending.

@@ -162,7 +162,8 @@ site. Publication remains separately authorized.
 | Apply repository settings | Manually dispatched trusted-main workflow | Previews every registered repository (`apply=false`), then applies its saved plan (`apply=true`); both start from `main` with no required reviewers |
 
 Audits never auto-remediate drift. The apply workflow always previews first;
-the only workflow choice is preview or protected apply. Both use the complete
+the only workflow choice is preview (`apply=false`) or apply (`apply=true`).
+Both start from `main`, and `repository-administration` has no required reviewers. Both use the complete
 checked-in inventory. The archived `unitree-foxglove-sdk` repository is outside
 the active settings inventory and remains available as a historical reference.
 
@@ -190,7 +191,8 @@ replacement. Missing named repository rulesets are created. Updates preserve
 extra rules and unknown parameters, retain higher review counts and stricter
 review flags, intersect allowed merge methods, retain existing branch coverage,
 and activate enforcement. Every security-sensitive action is disclosed in the
-saved plan and must match fresh evidence before the protected apply. No ruleset
+saved plan and must match fresh evidence before apply. Apply starts from `main`;
+`repository-administration` is limited to `main` and has no required reviewers. No ruleset
 is deleted and inherited rulesets are never edited.
 
 Existing bypass actors, excluded branches, unknown ownership, incomplete
@@ -213,11 +215,13 @@ attempt is followed by another complete read-only audit, with artifacts retained
 the `repository-administration` environment. That environment is restricted to
 `main` and has no required reviewers. Preview (`apply=false`) and apply
 (`apply=true`) both start from `main` without an environment reviewer. The
-protection is pull-request review plus that main-only branch rule. The planner
+`.github` `main` branch requires 0 approving reviews (ruleset 26190028,
+`required_approving_review_count` 0). The protection is the merge queue and the
+required `Repository verification gate` check, plus that main-only branch rule. The planner
 disables REST writes and GraphQL mutations; the token itself technically permits
 administration writes. Dispatching preview does not apply settings. Inaccessible
 fields still remain unresolved. Review the disclosed verified subset and the
-unresolved entries in the pull request and in the preview artifact.
+unresolved entries in the preview artifact.
 GitHub offers no atomic compare-and-swap for these endpoints, so an external
 change in the final read/write interval remains possible. Workflow concurrency
 serializes this workflow only. No content deployment or live-manual verification

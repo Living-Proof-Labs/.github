@@ -37,7 +37,7 @@ result. Local regression tests exercise the actual shell gate against success,
 failure, cancelled, skipped, neutral, missing and unknown results.
 
 Remaining: reviewed policy merge, a fresh full-inventory
-preview from `main`, apply/readback, and a queue trial after enforcement.
+protected preview and approval, apply/readback, and a queue trial after enforcement.
 A green earlier settings audit only proved the baseline configured at that time.
 Release-after-test gating is tracked separately in the three robot repositories.
 
@@ -213,9 +213,9 @@ If a new required contract is requested, keep these evidence questions separate:
 3. Does a separately authorized policy change preserve stronger existing rules,
    contexts, branch coverage and bypass boundaries? A queue-only rollout does not
    itself select more required checks.
-4. Before any further live change, inspect a fresh bound all-inventory plan.
-   `repository-administration` is restricted to `main` and has no required reviewers.
-   Retain strict readback; do not reuse the completed fleet apply plan or broaden credentials.
+4. Before any further live change, inspect a fresh bound all-inventory plan and
+   obtain precise action-time and protected-environment approval. Retain strict
+   readback; do not reuse the completed fleet apply plan or broaden credentials.
 5. Record actual queue trials separately from settings enforcement. Future trial
    or contract evidence gaps do not undo the verified queue delivery above and
    are not invented gates on informational work or this documentation PR.

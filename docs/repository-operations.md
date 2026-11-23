@@ -136,8 +136,10 @@ apply (`apply=true`) both start from `main` without waiting for a reviewer.
 Preview requests a short-lived Administration write / Pages read token because
 GitHub withholds ruleset bypass actors without write-level access. Its planner
 disables REST writes and GraphQL mutations. Apply uses the same environment
-with Pages write access. The protection is pull-request review of the policy
-plus this main-only deployment branch rule: only `main` can use
+with Pages write access. The `.github` `main` branch requires 0 approving
+reviews (ruleset 26190028, `required_approving_review_count` 0). The protection
+is the merge queue and the required `Repository verification gate` check, plus
+this main-only deployment branch rule: only `main` can use
 `REPO_ADMIN_APP_PRIVATE_KEY`. The shared App key can mint broader tokens, so
 trusted-main access remains a security boundary; see the [App guide](github-app-bootstrap.md).
 
@@ -284,8 +286,9 @@ This fleet queue change does not select that check or complete that issue.
 A policy merge alone is not a live apply. Follow the [fleet rollout boundary](fleet-queue-rollout.md)
 and review a fresh trusted-main all-inventory bound plan before dispatching
 apply (`apply=true`) from `main`. `repository-administration` is restricted to
-`main` and has no required reviewers. The protection is pull-request review
-plus that main-only branch rule.
+`main` and has no required reviewers. The `.github` `main` branch requires 0
+approving reviews (ruleset 26190028). The protection is the merge queue and the
+required `Repository verification gate` check, plus that main-only branch rule.
 No old pilot plan is reusable; no new credentials or grants are needed.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)

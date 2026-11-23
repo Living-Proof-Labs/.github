@@ -59,10 +59,13 @@ Configure these two environments in `.github`.
    secret. Preview (`apply=false`) and apply (`apply=true`) both use this
    environment and start from `main` without waiting for a reviewer.
 
-The protection is pull-request review plus the main-only deployment branch
-rule. Only `main` can use `REPO_ADMIN_APP_PRIVATE_KEY`. Settings changes are
-reviewed in the pull request, and the preview job shows the dry run before
-apply is dispatched. The environment adds no reviewer.
+The `.github` `main` branch requires 0 approving reviews. Ruleset 26190028,
+"Protect main: pull requests only", sets `required_approving_review_count` to 0
+and requires the merge queue plus the `Repository verification gate` check.
+The protection is that merge queue and required check, plus the main-only
+deployment branch rule. Only `main` can use `REPO_ADMIN_APP_PRIVATE_KEY`.
+The preview job shows the dry run before apply is dispatched. The environment
+adds no reviewer.
 
 The existing strict audit receives Administration write and
 Pages read to reveal managed ruleset data. The normal preview requests
