@@ -201,6 +201,7 @@ fresh clone to a rendered report. Then find the project for your part of the wor
 | Scenario evaluator | Deterministic per-trial results from observation JSON at v1.2.1. Records observation, manifest, and graded-threshold digests. Gherkin vocabulary, MCAP reading, and bindings remain unfinished. | [livingproof-evaluator-scenario](https://github.com/Living-Proof-Labs/livingproof-evaluator-scenario) | [Manual](https://docs.livingprooflabs.com/livingproof-evaluator-scenario/) |
 | Capability reporter | Validates evidence bundles and renders the verifier's stored grades as JSON, HTML and CSV reports. | [livingproof-capability-report](https://github.com/Living-Proof-Labs/livingproof-capability-report) | [Manual](https://docs.livingprooflabs.com/livingproof-capability-report/) |
 | LivingProof | The command-line entry point and its installed plugins. | [livingproof](https://github.com/Living-Proof-Labs/livingproof) | [Manual](https://docs.livingprooflabs.com/livingproof/) |
+| Health observation | Time-indexed robot wellness and health observation plugin. | [livingproof-health](https://github.com/Living-Proof-Labs/livingproof-health) | Not yet published |
 | Common library | Shared version and provenance utilities. | [livingproof-common](https://github.com/Living-Proof-Labs/livingproof-common) | [Manual](https://docs.livingprooflabs.com/livingproof-common/) |
 | MuJoCo simulator | The simulator the delivered robot verification runs in. | [livingproof-sim-mujoco](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco) | [Manual](https://docs.livingprooflabs.com/livingproof-sim-mujoco/) |
 | Gazebo simulator | A second simulator; robot verification support is unfinished. | [livingproof-sim-gazebo](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo) | [Manual](https://docs.livingprooflabs.com/livingproof-sim-gazebo/) |
@@ -208,11 +209,13 @@ fresh clone to a rendered report. Then find the project for your part of the wor
 | Unitree G1 | Robot package for the Unitree G1 humanoid. | [livingproof-unitree-g1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1) | [Manual](https://docs.livingprooflabs.com/livingproof-unitree-g1/) |
 | Unitree Go1 | Robot package for the Unitree Go1 quadruped. | [livingproof-unitree-go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1) | [Manual](https://docs.livingprooflabs.com/livingproof-unitree-go1/) |
 | Booster T1 | Robot package for the Booster T1 humanoid. | [livingproof-booster-t1](https://github.com/Living-Proof-Labs/livingproof-booster-t1) | [Manual](https://docs.livingprooflabs.com/livingproof-booster-t1/) |
-| Unitree Foxglove SDK | Robot visualization example. | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk) | Deprecated pending removal |
 | Collaboration guidelines | Shared contribution and engineering standards for every project. | [collaboration-guidelines](https://github.com/Living-Proof-Labs/collaboration-guidelines) | [Manual](https://docs.livingprooflabs.com/collaboration-guidelines/) |
 | Organization directory | This documentation source and the repository inventory. | [.github](https://github.com/Living-Proof-Labs/.github) | [This site](https://docs.livingprooflabs.com/) |
 | Documentation site publisher | Builds and deploys docs.livingprooflabs.com. | [living-proof-labs.github.io](https://github.com/Living-Proof-Labs/living-proof-labs.github.io) | [Maintainer guide](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/blob/main/README.md) |
 | Website | The Living Proof Labs website. | [website](https://github.com/Living-Proof-Labs/website) | [Website](https://livingprooflabs.com/) |
+
+Archived reference: [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk),
+a robot visualization example, remains available for historical reference.
 
 Each manual is published independently. Its source can be newer than its package
 release; check Version and source before installation.

@@ -13,6 +13,7 @@
     "livingproof-evaluator",
     "livingproof-evaluator-run",
     "livingproof-evaluator-scenario",
+    "livingproof-health",
     "livingproof-sim-gazebo",
     "livingproof-sim-mujoco",
     "livingproof-unitree-g1",
@@ -20,7 +21,6 @@
     "livingproof-verification",
     "livingproof-worlds",
     "robot-capability-specs",
-    "unitree-foxglove-sdk",
     "website"
   ]
 }

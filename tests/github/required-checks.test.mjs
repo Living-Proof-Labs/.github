@@ -112,12 +112,12 @@ describe('Merge-queue enrollment', () => {
     previous.merge_method = 'REBASE';
     assert.throws(() => strengthenMergeQueue(previous, queue()), /method conflicts/);
   });
-  test('a queued enrollment relaxes an existing strict pin and keeps extra checks', () => {
+  test('a queued enrollment preserves an existing strict pin and extra checks', () => {
     const existing = structuredClone(baseline.main_ruleset);
     existing.rules.push({ type: 'required_status_checks', parameters: { required_status_checks: [{ context: 'extra', integration_id: 77 }], strict_required_status_checks_policy: true, do_not_enforce_on_create: false } });
     const next = strengthenRuleset(existing, repositoryRuleset(queuedPolicy(), '.github'));
     const checksRule = next.rules.find(r => r.type === 'required_status_checks');
-    assert.equal(checksRule.parameters.strict_required_status_checks_policy, false);
+    assert.equal(checksRule.parameters.strict_required_status_checks_policy, true);
     assert.deepEqual(checksRule.parameters.required_status_checks.map(c => c.context), ['extra', 'Repository verification gate']);
     assert.deepEqual(next.rules.find(r => r.type === 'merge_queue').parameters, queue());
   });
@@ -180,6 +180,14 @@ describe('Stacked verification-only enrollment proposal', () => {
     assert.equal(next.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count, 2);
     assert.deepEqual(next.rules.find(r => r.type === 'merge_queue'), previous.rules.find(r => r.type === 'merge_queue'));
     assert.equal(next.rules.find(r => r.type === 'merge_queue').parameters.grouping_strategy, 'ALLGREEN');
+    assert.deepEqual(strengthenRuleset(next, desired), next);
+  });
+  test('non-strict queued policy never weakens a stricter observed ruleset', () => {
+    const desired = repositoryRuleset(active, '.github');
+    const previous = structuredClone(desired);
+    previous.rules.find(r => r.type === 'required_status_checks').parameters.strict_required_status_checks_policy = true;
+    const next = strengthenRuleset(previous, desired);
+    assert.deepEqual(next, previous);
     assert.deepEqual(strengthenRuleset(next, desired), next);
   });
   test('every proposed context rejects an absent or untrusted source and creation exemptions', () => {

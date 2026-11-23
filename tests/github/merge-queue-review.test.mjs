@@ -6,6 +6,8 @@ import path from 'node:path';
 import { validateRequiredChecks, repositoryRuleset, validateMergeQueue } from '../../tools/github/required-checks.mjs';
 import { run as legacyRun, readPolicyFile, validatePolicy } from '../../tools/github/apply-repo-policy.mjs';
 import { run as legacySync } from '../../tools/github/repository-settings.mjs';
+import { writeSettings } from '../../tools/github/reconcile-inventory.mjs';
+import { runPages } from '../../tools/github/setup-pages.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const policy = readPolicyFile();
@@ -27,6 +29,7 @@ describe('Merge-queue review contracts', () => {
       'livingproof-evaluator',
       'livingproof-evaluator-run',
       'livingproof-evaluator-scenario',
+      'livingproof-health',
       'livingproof-sim-gazebo',
       'livingproof-sim-mujoco',
       'livingproof-unitree-g1',
@@ -34,7 +37,6 @@ describe('Merge-queue review contracts', () => {
       'livingproof-verification',
       'livingproof-worlds',
       'robot-capability-specs',
-      'unitree-foxglove-sdk',
       'website',
     ]);
     assert.equal(inventory.repositories.length, 20);
@@ -65,6 +67,22 @@ describe('Merge-queue review contracts', () => {
         assert.ok(!types.includes('required_status_checks'));
       }
     }
+  });
+
+  test('the archived unitree-foxglove-sdk cannot be targeted by settings commands', async () => {
+    const repo = 'unitree-foxglove-sdk';
+    const forbidden = () => { assert.fail('Retired repository reached the GitHub transport.'); };
+    const api = { get: forbidden, write: forbidden, graphql: forbidden };
+    assert.throws(() => legacySync({ policy, inventory, flags: { repository: repo, apply: true }, api }),
+      /Repository is not declared/);
+    await assert.rejects(legacyRun({ policy, inventory, org: inventory.owner, repo, dryRun: false, httpsOnly: true, api }),
+      /not in the canonical inventory/);
+    await assert.rejects(runPages({ policy, inventory, repo, dryRun: false, fullInventory: true, api }),
+      /excluded/);
+    await assert.rejects(writeSettings(api, inventory, repo, policy, { method: 'PATCH' }),
+      /Unregistered write refused/);
+    assert.match(readFileSync(path.join(root, 'docs/index.md'), 'utf8'),
+      /Archived reference: \[unitree-foxglove-sdk\]\(https:\/\/github\.com\/Living-Proof-Labs\/unitree-foxglove-sdk\)/);
   });
 
   test('the required verification workflow reports the same gate on merge_group', () => {

@@ -141,6 +141,11 @@
       "summary": "Command-line entry point"
     },
     {
+      "repository": "livingproof-health",
+      "title": "Health observation",
+      "summary": "Time-indexed robot wellness and health observation plugin"
+    },
+    {
       "repository": "livingproof-common",
       "title": "Shared library",
       "summary": "Shared version and provenance utilities"
@@ -174,14 +179,6 @@
       "repository": "livingproof-booster-t1",
       "title": "Booster T1",
       "summary": "Robot package: humanoid"
-    },
-    {
-      "repository": "unitree-foxglove-sdk",
-      "title": "Unitree Foxglove SDK",
-      "summary": "Deprecated pending removal",
-      "documentation": {
-        "label": "Deprecated pending removal"
-      }
     },
     {
       "repository": "collaboration-guidelines",
