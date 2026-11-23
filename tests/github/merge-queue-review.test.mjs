@@ -42,7 +42,7 @@ describe('Merge-queue review contracts', () => {
     assert.equal(inventory.repositories.length, 20);
     validatePolicy(policy);
     validateRequiredChecks(policy, inventory);
-    assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);
+    assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1', 'verification-reports-action']);
     assert.deepEqual(Object.keys(policy.merge_queue_by_repository), inventory.repositories);
     assert.equal(policy.required_checks_by_repository['.github'].strict_required_status_checks_policy, false);
     assert.deepEqual(

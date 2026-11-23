@@ -17,6 +17,12 @@ The current policy adds `Robot verification gate`, trusted to GitHub Actions App
 `livingproof-unitree-go1`. Other existing queue enrollment and protections are
 unchanged. This is a proposed enforcement stage, not a live-apply claim.
 
+The policy also requires `Repository verification gate`, trusted to the same App
+`15368`, for `verification-reports-action`, whose `verify.yml` `verification-gate`
+job reports it. It was already enrolled in the merge queue. Like the stage above,
+this is proposed until the settings preview and apply run after the action
+repository's gate merges.
+
 Prerequisites merged through the queue:
 
 | Repository | Prerequisite | Merge revision | Exact-head Test evidence |
