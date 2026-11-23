@@ -13,7 +13,11 @@ const root = path.resolve(import.meta.dirname, '../..');
 const baselinePolicy = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/settings-migration-plans.json', import.meta.url)));
 describe('Local settings ownership', () => {
-const baselineInventory = { ...inventory, repositories: inventory.repositories.filter(name => name !== 'livingproof-health') };
+// The migration evidence predates Health and still includes the now-archived repository.
+const baselineInventory = { ...inventory, repositories: [
+  ...inventory.repositories.filter(name => name !== 'livingproof-health' && name !== 'website'),
+  'unitree-foxglove-sdk', 'website',
+] };
 for (const mode of ['compliant', 'drift']) test(`local policy preserves old complete ${mode} plans for every pre-health registered repository`, async () => {
   const report = await runInventory({ api: fixtureApi(mode, baselinePolicy, baselineInventory), inventory: baselineInventory, policy: baselinePolicy, revision: 'a'.repeat(40), dryRun: true });
   const digest = createHash('sha256').update(JSON.stringify(report.plan.repositories)).digest('hex');

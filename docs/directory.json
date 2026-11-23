@@ -181,14 +181,6 @@
       "summary": "Robot package: humanoid"
     },
     {
-      "repository": "unitree-foxglove-sdk",
-      "title": "Unitree Foxglove SDK",
-      "summary": "Deprecated pending removal",
-      "documentation": {
-        "label": "Deprecated pending removal"
-      }
-    },
-    {
       "repository": "collaboration-guidelines",
       "title": "Collaboration guidelines",
       "summary": "Contributor guidance"
