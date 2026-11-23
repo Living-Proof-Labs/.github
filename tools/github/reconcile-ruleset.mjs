@@ -7,6 +7,37 @@ const methods = new Set(['merge', 'squash', 'rebase']);
 const payloadKeys = ['name', 'target', 'enforcement', 'conditions', 'bypass_actors', 'rules'];
 const payload = value => Object.fromEntries(payloadKeys.map(key => [key, structuredClone(value[key])]));
 const fail = message => { throw new Error(message); };
+// GitHub's ruleset create response echoes these pull-request parameters when the
+// request omits them. Observed after POST on livingproof-health (run 45007455420)
+// and verification-reports-action (run 45262504725). bypass_actors was [] on both
+// the written body and the readback; these three fields were the mismatch.
+const echoedPullRequestDefaults = {
+  required_reviewers: [],
+  dismissal_restriction: { enabled: false, allowed_actors: [] },
+  require_extra_approval_for_unattributed_changes: true,
+};
+function withoutEchoedPullRequestDefaults(observed, written) {
+  const copy = structuredClone(observed);
+  const sent = (written?.rules ?? []).find(rule => rule?.type === 'pull_request')?.parameters ?? {};
+  for (const rule of copy.rules ?? []) {
+    if (rule?.type !== 'pull_request' || !rule.parameters || typeof rule.parameters !== 'object' || Array.isArray(rule.parameters)) continue;
+    for (const [key, fallback] of Object.entries(echoedPullRequestDefaults)) {
+      if (!Object.hasOwn(sent, key) && equal(rule.parameters[key], fallback)) delete rule.parameters[key];
+    }
+  }
+  return copy;
+}
+function rulesetDiff(actual, expected, path = '') {
+  if (equal(actual, expected)) return [];
+  const objectLike = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  if (objectLike(actual) && objectLike(expected)) {
+    return [...new Set([...Object.keys(actual), ...Object.keys(expected)])].sort().flatMap(key => rulesetDiff(actual[key], expected[key], path ? `${path}.${key}` : key));
+  }
+  if (Array.isArray(actual) && Array.isArray(expected)) {
+    return Array.from({ length: Math.max(actual.length, expected.length) }, (_, index) => rulesetDiff(actual[index], expected[index], `${path}[${index}]`)).flat();
+  }
+  return [`${path || '$'}: read ${JSON.stringify(actual)} != written ${JSON.stringify(expected)}`];
+}
 function validateRules(value) {
   if (!Array.isArray(value.rules) || value.rules.some(rule => !rule || typeof rule.type !== 'string') || new Set(value.rules.map(r => r.type)).size !== value.rules.length) fail('Ruleset rules are incomplete or duplicate; no write.');
 }
@@ -94,6 +125,18 @@ export async function applyRuleset(api, inventory, name, policy, approved) {
   const { method, path, body } = current.write;
   await api.write(method, path, body);
   const after = await rulesetPlan(api, inventory, name, policy);
-  if (!equal(after.identity, current.identity) || after.write || !equal(payload(after.before ?? {}), body) || (current.before && after.before.id !== current.before.id)) fail('Ruleset readback failed; inspect fresh evidence before retry.');
+  const comparable = withoutEchoedPullRequestDefaults(payload(after.before ?? {}), body);
+  const sameIdentity = equal(after.identity, current.identity);
+  const sameId = !current.before || after.before?.id === current.before.id;
+  const sameBody = equal(comparable, body);
+  if (!sameIdentity || after.write || !sameBody || !sameId) {
+    const details = [];
+    if (!sameIdentity) details.push(`Identity read ${JSON.stringify(after.identity)} != ${JSON.stringify(current.identity)}.`);
+    if (!sameId) details.push(`Ruleset id read ${JSON.stringify(after.before?.id)} != ${JSON.stringify(current.before?.id)}.`);
+    if (after.write) details.push(`Remaining action: ${after.write.method} ${after.write.path}.`);
+    const diff = rulesetDiff(comparable, body);
+    if (diff.length) details.push(`Diff: ${diff.join('; ')}.`);
+    fail(`Ruleset readback failed; inspect fresh evidence before retry.${details.length ? ` ${details.join(' ')}` : ''}`);
+  }
   return { status: 'verified', action: current.write, after };
 }

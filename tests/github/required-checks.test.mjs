@@ -123,6 +123,75 @@ describe('Merge-queue enrollment', () => {
   });
 });
 
+describe('Ruleset create readback', () => {
+  const name = 'verification-reports-action';
+  const inv = { owner: 'Living-Proof-Labs', repositories: [name] };
+  const createPolicy = () => ({ ...structuredClone(baseline), merge_queue_by_repository: { [name]: queue() } });
+  const repo = { id: 1468383587, full_name: `Living-Proof-Labs/${name}`, default_branch: 'main', archived: false, disabled: false, visibility: 'public' };
+  function client(alter) {
+    let state = null;
+    const writes = [];
+    const api = {
+      async get(path) {
+        if (path.endsWith(`/${name}`)) return repo;
+        if (path.includes('/rulesets?')) return state ? [{ id: state.id, name: state.name, source: repo.full_name, source_type: 'Repository' }] : [];
+        if (state && path.endsWith(`/rulesets/${state.id}`)) return structuredClone(state);
+        throw new Error(`unexpected read ${path}`);
+      },
+      async write(method, path, body) {
+        writes.push({ method, path, body });
+        state = {
+          id: 27935581, source_type: 'Repository', source: repo.full_name, ...structuredClone(body),
+          conditions: { ref_name: { exclude: [], include: ['~DEFAULT_BRANCH'] } }
+        };
+        const pull = state.rules.find(rule => rule.type === 'pull_request');
+        // Exact pull-request object returned by GET after the 2026-11-23 creates.
+        pull.parameters = {
+          required_approving_review_count: pull.parameters.required_approving_review_count,
+          dismiss_stale_reviews_on_push: false,
+          required_reviewers: [],
+          require_code_owner_review: false,
+          dismissal_restriction: { enabled: false, allowed_actors: [] },
+          require_last_push_approval: false,
+          required_review_thread_resolution: false,
+          require_extra_approval_for_unattributed_changes: true,
+          allowed_merge_methods: ['merge']
+        };
+        alter?.(state);
+      }
+    };
+    return { api, writes };
+  }
+  test('POST readback accepts echoed empty reviewers and inert pull-request defaults', async () => {
+    const { api, writes } = client();
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    assert.equal(approved.before, null);
+    assert.equal(approved.write.method, 'POST');
+    assert.deepEqual(approved.write.body.bypass_actors, []);
+    const sent = approved.write.body.rules.find(rule => rule.type === 'pull_request').parameters;
+    assert.equal(Object.hasOwn(sent, 'required_reviewers'), false);
+    assert.equal(Object.hasOwn(sent, 'dismissal_restriction'), false);
+    assert.equal(Object.hasOwn(sent, 'require_extra_approval_for_unattributed_changes'), false);
+    const result = await applyRuleset(api, inv, name, p, approved);
+    assert.equal(result.status, 'verified');
+    assert.equal(writes.length, 1);
+    const again = await rulesetPlan(api, inv, name, p);
+    assert.equal(again.write, null);
+    await applyRuleset(api, inv, name, p, again);
+    assert.equal(writes.length, 1);
+  });
+  test('a written pull-request value that reads back differently fails with a diff', async () => {
+    const { api, writes } = client(state => {
+      state.rules.find(rule => rule.type === 'pull_request').parameters.required_approving_review_count = 2;
+    });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    await assert.rejects(applyRuleset(api, inv, name, p, approved), /Ruleset readback failed[\s\S]*Diff: rules\[2\]\.parameters\.required_approving_review_count: read 2 != written 0/);
+    assert.equal(writes.length, 1);
+  });
+});
+
 describe('Complete verification gate', () => {
   const evidence = event => Object.fromEntries(verificationJobs.map(job => [job, { result: (job === 'trusted-repository-settings' && (event === 'pull_request' || event === 'merge_group')) || (job === 'repository-settings' && event !== 'pull_request' && event !== 'merge_group') ? 'skipped' : 'success' }]));
   for (const event of ['pull_request', 'merge_group', 'push', 'schedule', 'workflow_dispatch']) {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pagesOnlyApi, parseArgs, runPages } from '../../tools/github/setup-pages.mjs';
+import { pagesOnlyApi, parseArgs, runPages, pagesHttpsRetryDelays } from '../../tools/github/setup-pages.mjs';
 import { GitHubApiError } from '../../tools/github/apply-repo-policy.mjs';
 
 const inventory = { schema_version: 1, owner: 'Living-Proof-Labs', repositories: ['alpha', 'beta', 'website', 'unitree-foxglove-sdk'] };
@@ -149,6 +149,79 @@ test('CLI validates mode, plan files, duplicates and unknown or broad scope opti
     ['--repo', 'alpha', '--dry-run', '--apply'], ['--repo', 'alpha', '--repo', 'beta'],
     ['--org', 'Other'], ['--policy', 'other.json'], ['--apply-pages'], ['--repo']]) assert.throws(() => parseArgs(args));
   assert.equal(parseArgs(['--repo', 'alpha', '--dry-run', '--plan-output', 'preview.json'])['--repo'], 'alpha');
+});
+
+function pageFault(f, when) {
+  let pagesGets = 0;
+  const original = f.api.get;
+  f.api.get = async resource => {
+    if (String(resource).endsWith('/pages')) {
+      pagesGets += 1;
+      const error = when(pagesGets);
+      if (error) throw error;
+    }
+    return original(resource);
+  };
+  const waits = [];
+  const logs = [];
+  return {
+    waits, logs, reads: () => pagesGets,
+    run(plan) {
+      return runPages({ ...f.args, dryRun: false, expectedPlan: plan, wait: async ms => { waits.push(ms); }, log: message => logs.push(message) });
+    }
+  };
+}
+const serverError = () => new GitHubApiError(502, 'Server Error', 'GET', `${base}/pages`);
+
+test('Pages HTTPS retries HTTP 502 then succeeds without another write', async () => {
+  const f = fixture({ build_type: 'workflow', cname: null, https_enforced: true, source: { branch: 'main', path: '/' } });
+  const plan = await preview(f);
+  const attempt = pageFault(f, n => n === 2 ? serverError() : null);
+  const result = await attempt.run(plan);
+  assert.equal(result.verified, true);
+  assert.deepEqual(attempt.waits, [pagesHttpsRetryDelays[0]]);
+  assert.match(attempt.logs.join('\n'), /HTTP 502 \(Server Error\)/);
+  assert.equal(f.state.writes.length, 0);
+});
+
+test('Pages HTTPS retries a network failure then succeeds', async () => {
+  const f = fixture({ build_type: 'workflow', cname: null, https_enforced: true, source: { branch: 'main', path: '/' } });
+  const plan = await preview(f);
+  const attempt = pageFault(f, n => n === 2 ? new GitHubApiError(0, 'fetch failed', 'GET', `${base}/pages`) : null);
+  const result = await attempt.run(plan);
+  assert.equal(result.verified, true);
+  assert.deepEqual(attempt.waits, [pagesHttpsRetryDelays[0]]);
+  assert.match(attempt.logs.join('\n'), /HTTP 0 \(fetch failed\)/);
+});
+
+test('persistent Pages HTTP 502 fails after the bounded attempts', async () => {
+  const f = fixture({ build_type: 'workflow', cname: null, https_enforced: true, source: { branch: 'main', path: '/' } });
+  const plan = await preview(f);
+  const attempt = pageFault(f, n => n > 1 ? serverError() : null);
+  const attempts = pagesHttpsRetryDelays.length + 1;
+  await assert.rejects(attempt.run(plan), error => {
+    assert.match(error.message, new RegExp(`Pages HTTPS failed after ${attempts} attempts: HTTP 502 \\(Server Error\\)`));
+    return true;
+  });
+  assert.deepEqual(attempt.waits, pagesHttpsRetryDelays);
+  assert.equal(attempt.reads(), attempts + 1);
+  assert.equal(attempt.logs.length, pagesHttpsRetryDelays.length);
+  assert.equal(f.state.writes.length, 0);
+});
+
+test('Pages HTTP 4xx is not retried', async () => {
+  const f = fixture({ build_type: 'workflow', cname: null, https_enforced: true, source: { branch: 'main', path: '/' } });
+  const plan = await preview(f);
+  const attempt = pageFault(f, n => n > 1 ? new GitHubApiError(403, 'forbidden', 'GET', `${base}/pages`) : null);
+  await assert.rejects(attempt.run(plan), error => {
+    assert.match(error.message, /^Pages HTTPS failed: HTTP 403 /);
+    assert.doesNotMatch(error.message, /after /);
+    return true;
+  });
+  assert.deepEqual(attempt.waits, []);
+  assert.equal(attempt.logs.length, 0);
+  assert.equal(attempt.reads(), 2);
+  assert.equal(f.state.writes.length, 0);
 });
 
 test('successful malformed Pages responses never authorize creation', async () => {
