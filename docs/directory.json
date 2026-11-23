@@ -136,6 +136,11 @@
       "summary": "Renders the verifier's stored grades"
     },
     {
+      "repository": "verification-reports-action",
+      "title": "Verification reports action",
+      "summary": "Reusable GitHub Action that runs robot capability verification and produces a traceable report"
+    },
+    {
       "repository": "livingproof",
       "title": "LivingProof",
       "summary": "Command-line entry point"
