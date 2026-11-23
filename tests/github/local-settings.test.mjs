@@ -13,9 +13,9 @@ const root = path.resolve(import.meta.dirname, '../..');
 const baselinePolicy = JSON.parse(readFileSync(new URL('./fixtures/reconciliation-policy.json', import.meta.url)));
 const baseline = JSON.parse(readFileSync(new URL('./fixtures/settings-migration-plans.json', import.meta.url)));
 describe('Local settings ownership', () => {
-// The migration evidence predates Health and still includes the now-archived repositories.
+// The migration evidence predates Health and verification-reports-action and still includes the now-archived repositories.
 const baselineInventory = { ...inventory, repositories: [
-  ...inventory.repositories.filter(name => name !== 'livingproof-health' && name !== 'website')
+  ...inventory.repositories.filter(name => name !== 'livingproof-health' && name !== 'verification-reports-action' && name !== 'website')
     .flatMap(name => name === 'livingproof-unitree-go1' ? [name, 'livingproof-verification'] : [name]),
   'unitree-foxglove-sdk', 'website',
 ] };
