@@ -65,7 +65,8 @@ succeeded. Missing and unexpected jobs now fail alongside non-success results;
 the regression covers pull-request and merge-group evidence. This establishes
 integrated workflow readiness, not live required-check enrollment.
 
-[The proposed entry](proposals/141-verification-checks.json) is deliberately outside
+The proposed entry (`proposals/141-verification-checks.json`, removed when
+#141 closed and the repository was archived) was deliberately outside
 `repository-policy.json`: no command loads it automatically. It requires all four
 contexts from Actions app **15368**, strict checks and enforcement on creation.
 The validator now permits an explicit strict choice with a queue, and reconciliation

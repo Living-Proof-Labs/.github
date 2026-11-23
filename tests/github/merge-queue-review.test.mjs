@@ -34,12 +34,11 @@ describe('Merge-queue review contracts', () => {
       'livingproof-sim-mujoco',
       'livingproof-unitree-g1',
       'livingproof-unitree-go1',
-      'livingproof-verification',
       'livingproof-worlds',
       'robot-capability-specs',
       'website',
     ]);
-    assert.equal(inventory.repositories.length, 20);
+    assert.equal(inventory.repositories.length, 19);
     validatePolicy(policy);
     validateRequiredChecks(policy, inventory);
     assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);

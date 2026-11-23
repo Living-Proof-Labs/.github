@@ -193,7 +193,6 @@ fresh clone to a rendered report. Then find the project for your part of the wor
 
 | Project | Description | Repository | Manual |
 | --- | --- | --- | --- |
-| Robot verification | Verification definitions and the published robot reports: the latest grade, run history and evidence per robot and variant. | [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification) | [Robot reports](https://docs.livingprooflabs.com/livingproof-verification/) |
 | Robot capability specifications | Write or review capability requirements, conditions and acceptance criteria, plus the robot manifest schema. | [robot-capability-specs](https://github.com/Living-Proof-Labs/robot-capability-specs) | [Manual](https://docs.livingprooflabs.com/robot-capability-specs/) |
 | Capability verifier | Runs trials, keeps portable evidence and grades it. | [capability-verifier](https://github.com/Living-Proof-Labs/capability-verifier) | [Manual](https://docs.livingprooflabs.com/capability-verifier/) |
 | Evaluator contract | Shared contract definitions at v1.0.0 (`schema/defs.schema.json`). Observable vocabulary and observation bindings remain design work. | [livingproof-evaluator](https://github.com/Living-Proof-Labs/livingproof-evaluator) | [Manual](https://docs.livingprooflabs.com/livingproof-evaluator/) |

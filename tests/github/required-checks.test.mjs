@@ -152,28 +152,31 @@ describe('Complete verification gate', () => {
   });
 });
 
-describe('Blocked verification enrollment proposal', () => {
+describe('Strict queued required-check candidate', () => {
+  // Inline candidate (formerly the #141 livingproof-verification proposal, removed when that
+  // repository was archived) keeps strict queued enrollment covered on a registered repository.
+  const repo = 'livingproof-worlds';
   const active = JSON.parse(readFileSync(new URL('../../config/github/repository-policy.json', import.meta.url)));
-  const proposal = JSON.parse(readFileSync(new URL('../../config/github/proposals/141-verification-checks.json', import.meta.url)));
+  const proposal = { [repo]: { required_status_checks: ['checks', 'bundle-release-engine', 'renovate', 'verification'].map(context => ({ context, integration_id: 15368 })), strict_required_status_checks_policy: true, do_not_enforce_on_create: false } };
   const candidate = () => ({ ...structuredClone(active), required_checks_by_repository: { ...structuredClone(active.required_checks_by_repository), ...structuredClone(proposal) } });
   const fleet = { owner: 'Living-Proof-Labs', repositories: Object.keys(active.merge_queue_by_repository) };
-  test('proposal retains all four independent contexts without active enrollment', () => {
-    assert.equal(active.required_checks_by_repository['livingproof-verification'], undefined);
+  test('candidate retains all four independent contexts without active enrollment', () => {
+    assert.equal(active.required_checks_by_repository[repo], undefined);
     assert.equal(active.required_checks_by_repository['livingproof-sim-gazebo'], undefined);
     assert.deepEqual(Object.keys(active.required_checks_by_repository).sort(), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);
-    assert.deepEqual(proposal['livingproof-verification'].required_status_checks.map(c => c.context), ['checks', 'bundle-release-engine', 'renovate', 'verification']);
+    assert.deepEqual(proposal[repo].required_status_checks.map(c => c.context), ['checks', 'bundle-release-engine', 'renovate', 'verification']);
     validateRequiredChecks(candidate(), fleet);
   });
-  test('strict queued proposal preserves additional checks, PR protections and empty bypass', () => {
-    const desired = repositoryRuleset(candidate(), 'livingproof-verification');
-    const previous = repositoryRuleset(active, 'livingproof-verification');
+  test('strict queued candidate preserves additional checks, PR protections and empty bypass', () => {
+    const desired = repositoryRuleset(candidate(), repo);
+    const previous = repositoryRuleset(active, repo);
     previous.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count = 2;
     previous.rules.push({type: 'required_status_checks', parameters: {required_status_checks: [{context: 'extra', integration_id: 77}], strict_required_status_checks_policy: false, do_not_enforce_on_create: false}});
     const next = strengthenRuleset(previous, desired);
     const checks = next.rules.find(r => r.type === 'required_status_checks').parameters;
     assert.equal(checks.strict_required_status_checks_policy, true);
     assert.equal(checks.do_not_enforce_on_create, false);
-    assert.deepEqual(checks.required_status_checks, [{context: 'extra', integration_id: 77}, ...proposal['livingproof-verification'].required_status_checks]);
+    assert.deepEqual(checks.required_status_checks, [{context: 'extra', integration_id: 77}, ...proposal[repo].required_status_checks]);
     assert.deepEqual(next.bypass_actors, []);
     assert.equal(next.rules.find(r => r.type === 'pull_request').parameters.required_approving_review_count, 2);
     assert.deepEqual(next.rules.find(r => r.type === 'merge_queue'), previous.rules.find(r => r.type === 'merge_queue'));
@@ -188,14 +191,14 @@ describe('Blocked verification enrollment proposal', () => {
     assert.deepEqual(next, previous);
     assert.deepEqual(strengthenRuleset(next, desired), next);
   });
-  test('every proposed context rejects an absent or untrusted source and creation exemptions', () => {
+  test('every candidate context rejects an absent or untrusted source and creation exemptions', () => {
     for (let i = 0; i < 4; i++) for (const source of [undefined, null, 1, 15369, '15368']) {
-      const p = candidate(); p.required_checks_by_repository['livingproof-verification'].required_status_checks[i].integration_id = source;
+      const p = candidate(); p.required_checks_by_repository[repo].required_status_checks[i].integration_id = source;
       assert.throws(() => validateRequiredChecks(p, fleet), /15368/);
-      assert.throws(() => repositoryRuleset(p, 'livingproof-verification'), /15368/);
+      assert.throws(() => repositoryRuleset(p, repo), /15368/);
     }
     for (const exempt of [undefined, true]) {
-      const p = candidate(); p.required_checks_by_repository['livingproof-verification'].do_not_enforce_on_create = exempt;
+      const p = candidate(); p.required_checks_by_repository[repo].do_not_enforce_on_create = exempt;
       assert.throws(() => validateRequiredChecks(p, fleet), /creation/);
     }
   });
