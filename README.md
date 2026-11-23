@@ -29,7 +29,7 @@ together here; no settings source is downloaded from collaboration-guidelines.
 | Inspect settings drift | `task github:settings:report` | Read-only report; does not fail for existing drift |
 | Enforce settings policy | `task github:settings:check` | Read-only audit that fails for drift or unverified state |
 | Preview the local policy | `task github:settings:reconcile -- --dry-run` | Plans every canonical inventory repository; no writes |
-| Apply reviewed policy | Protected repository-settings workflow | Requires a bound preview and separate environment approval |
+| Apply reviewed policy | Repository-settings workflow on `main` | Bound preview (`apply=false`), then apply (`apply=true`); both start from `main` with no required reviewers |
 
 If Task is not installed, run `bash tools/setup.sh` once, then use
 `bash tools/task.sh <task>`. The local setup uses no `sudo`, does not modify
@@ -98,9 +98,11 @@ The preview follows the full inventory, so inspect any unrelated drift rather
 than assuming every proposed action is authorized by the enrollment change.
 
 The [repository operations guide](docs/repository-operations.md) documents trusted
-main execution, saved-plan binding, the protected `repository-administration`
-approval, partial failures and final strict readback. A source merge never applies
-settings. Manual observations remain distinct from API-backed checks.
+main execution, saved-plan binding, and the `repository-administration`
+environment (restricted to `main`, with no required reviewers), plus partial
+failures and final strict readback. Preview (`apply=false`) and apply
+(`apply=true`) both start from `main` without an environment reviewer. A source
+merge never applies settings. Manual observations remain distinct from API-backed checks.
 
 Legacy `scripts/apply-repo-policy --dry-run` / `--apply` and legacy apply flags
 refuse this enrolled policy because they cannot honor the complete protection
@@ -157,7 +159,7 @@ site. Publication remains separately authorized.
 | --- | --- | --- |
 | Pull-request report | Pull requests | Informational and secret-free; it never changes settings |
 | Strict audit | Trusted `main`, manual dispatch, and daily schedule | Fails for observable drift, access errors, or unverified required state |
-| Apply repository settings | Manually dispatched trusted-main workflow | Previews every registered repository, then applies its saved plan after environment approval |
+| Apply repository settings | Manually dispatched trusted-main workflow | Previews every registered repository (`apply=false`), then applies its saved plan (`apply=true`); both start from `main` with no required reviewers |
 
 Audits never auto-remediate drift. The apply workflow always previews first;
 the only workflow choice is preview or protected apply. Both use the complete
@@ -208,11 +210,14 @@ Partial failures do not roll back successful writes or hide later repositories;
 apply exits unsuccessfully and requires a fresh preview to retry. Every apply
 attempt is followed by another complete read-only audit, with artifacts retained
 14 days. Preview uses a short-lived Administration write / Pages read token behind
-the protected `repository-administration` environment. The planner disables REST
-writes and GraphQL mutations; the token itself technically permits administration
-writes. Approving preview authorizes reads only, not a settings apply. Inaccessible
-fields still remain unresolved. A reviewer
-approves the disclosed verified subset as well as the unresolved entries.
+the `repository-administration` environment. That environment is restricted to
+`main` and has no required reviewers. Preview (`apply=false`) and apply
+(`apply=true`) both start from `main` without an environment reviewer. The
+protection is pull-request review plus that main-only branch rule. The planner
+disables REST writes and GraphQL mutations; the token itself technically permits
+administration writes. Dispatching preview does not apply settings. Inaccessible
+fields still remain unresolved. Review the disclosed verified subset and the
+unresolved entries in the pull request and in the preview artifact.
 GitHub offers no atomic compare-and-swap for these endpoints, so an external
 change in the final read/write interval remains possible. Workflow concurrency
 serializes this workflow only. No content deployment or live-manual verification

@@ -52,17 +52,23 @@ Configure these two environments in `.github`.
 1. Create **`repository-audit`**. Restrict deployments to `main`; do **not**
    add a required reviewer. Add `REPO_ADMIN_APP_CLIENT_ID` as an environment
    variable and the PEM as `REPO_ADMIN_APP_PRIVATE_KEY` environment secret.
-   This lets the post-merge and daily strict audits run without a daily owner
-   approval prompt, including their ruleset-bypass checks.
-2. Create **`repository-administration`**. Restrict deployments to `main`, add
-   the owner as a required reviewer, and add the same Client ID variable and
-   PEM secret. This environment gates both manually dispatched preview and apply jobs.
+   This lets the post-merge and daily strict audits run from `main` without a
+   daily owner prompt, including their ruleset-bypass checks.
+2. Create **`repository-administration`**. Restrict deployments to `main` and
+   do **not** add a required reviewer. Add the same Client ID variable and PEM
+   secret. Preview (`apply=false`) and apply (`apply=true`) both use this
+   environment and start from `main` without waiting for a reviewer.
 
-The tradeoff is intentional: the existing strict audit receives Administration write and
-Pages read to reveal managed ruleset data. The protected normal preview requests
+The protection is pull-request review plus the main-only deployment branch
+rule. Only `main` can use `REPO_ADMIN_APP_PRIVATE_KEY`. Settings changes are
+reviewed in the pull request, and the preview job shows the dry run before
+apply is dispatched. The environment adds no reviewer.
+
+The existing strict audit receives Administration write and
+Pages read to reveal managed ruleset data. The normal preview requests
 a short-lived Administration write / Pages read token for the same visibility.
 Its planner disables REST writes and GraphQL mutations, although the token has
-write authority. Preview approval authorizes reads only. Unavailable protection
+write authority. Dispatching preview does not apply settings. Unavailable protection
 details remain unverified, not evidence of existing bypass actors. The apply
 job requests Administration write and Pages write. The same App key is present
 in both environments, so the audit environment could mint broader tokens if
@@ -71,21 +77,23 @@ credential authority. It runs
 only trusted `main` code and its task is read-only, but anyone able to merge
 malicious workflow code to `main` could misuse that token. Keep `main` write
 access limited to trusted maintainers and retain the selected-repository App
-installation scope. The write workflow adds an independent reviewer gate.
+installation scope.
 
 Then use **Actions → Apply repository settings → Run workflow** on `main`.
-The only input is **Apply**, false by default. Every run previews every repository
+The only input is **Apply**, false by default. Preview (`apply=false`) and
+apply (`apply=true`) both start from `main` with no required reviewers. Every
+run previews every repository
 in the canonical inventory, including Pages setup and HTTPS. Registration defines
 the selection; adding a repository neither applies it nor expands access.
 
 Review the complete preview artifact and job summary, including unresolved
-entries, before approving the protected apply job. The same source revision and
+entries, before dispatching apply (`apply=true`) on `main`. The same source revision and
 saved plan are used for both jobs. Inventory, implementation, policy or revision
 changes refuse apply; changed writable repository evidence blocks that repository
 while others continue. Writes have fresh preconditions and readback. Unknown
 immutable state does not authorize writes. Rulesets are reconciled through separately bound actions that preserve stronger
-review requirements, extra rules and branch coverage. The protected approval
-covers the exact disclosed creations/updates; no ruleset deletion is permitted.
+review requirements, extra rules and branch coverage. The reviewed pull request
+and that preview cover the exact disclosed creations/updates; no ruleset deletion is permitted.
 Inherited rulesets, existing bypass actors/exclusions and incompatible or
 unreadable state remain unresolved. If apply reveals previously unreadable
 ruleset details, it cannot add that unreviewed action; other reviewed changes
@@ -97,7 +105,7 @@ Only HTTPS repository exemptions are supported in the pinned manifest, using
 Cloudflare exception remains unmanaged.
 
 A preview may produce a complete plan with unresolved outcomes. Its original
-failure is recorded in the summary. Approval authorizes only disclosed, verified
+failure is recorded in the summary. The reviewed plan covers only disclosed, verified
 changes; unknown state is never compliant. Partial apply fails explicitly,
 continues other repositories, and requires a fresh preview before retry. Each
 apply is followed by complete readback. JSON, JUnit and summaries are retained

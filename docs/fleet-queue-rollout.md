@@ -65,9 +65,11 @@ The separate collaboration-guidelines#89 automerge proposal need not wait here.
    newly observed required checks, strict-check incompatibility, stronger existing
    queues, and unknown/unresolved evidence. Resolve material differences; do not
    silently broaden the approved scope or remove existing protections.
-4. Show Aaron the exact resulting plan and obtain confirmation immediately before
-   live application, plus the required protected-environment approval. The broad
-   rollout direction is not a substitute for that exact-plan confirmation.
+4. Review the exact resulting plan in the preview. `repository-administration` is
+   restricted to `main` and has no required reviewers. Preview (`apply=false`) and
+   apply (`apply=true`) start from `main` without an environment reviewer. The
+   protection is pull-request review plus that main-only branch rule. The broad
+   rollout direction is not a substitute for that exact plan.
 5. Apply only that saved plan through the existing protected controller; retain
    strict full-inventory readback and actual queue trials. Report settings
    enforcement separately from which tests are required and from robot outcomes.

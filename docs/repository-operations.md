@@ -93,8 +93,9 @@ immutable-release state, Pages setup and HTTPS. Repository-specific HTTPS
 exceptions come from the local policy manifest with validated names and reasons.
 The `website` exemption leaves HTTPS unmanaged, never disabled.
 
-Review the JSON plan and per-repository summary before approving
-`repository-administration`. The plan binds source, implementation bytes,
+Review the JSON plan and per-repository summary before dispatching apply.
+`repository-administration` is restricted to `main` and has no required reviewers.
+The plan binds source, implementation bytes,
 inventory, policy, identity and writable observations. Global binding changes
 refuse all writes; stale repository evidence blocks that repository, while later
 entries continue. Every write has a fresh state check and readback. After a successful settings
@@ -129,13 +130,16 @@ task github:settings:reconcile -- --dry-run --plan-output artifacts/settings-pla
 task github:settings:reconcile -- --apply --expected-plan artifacts/settings-plan.json
 ```
 
-Preview and apply both use the protected `repository-administration` environment.
+Preview and apply both use the `repository-administration` environment. It is
+restricted to `main` and has no required reviewers. Preview (`apply=false`) and
+apply (`apply=true`) both start from `main` without waiting for a reviewer.
 Preview requests a short-lived Administration write / Pages read token because
 GitHub withholds ruleset bypass actors without write-level access. Its planner
-disables REST writes and GraphQL mutations. Preview approval authorizes reads
-only; apply requires a separate approval of its saved plan and Pages write access.
-The shared App key can mint broader tokens, so trusted-main access remains a
-security boundary; see the [App guide](github-app-bootstrap.md).
+disables REST writes and GraphQL mutations. Apply uses the same environment
+with Pages write access. The protection is pull-request review of the policy
+plus this main-only deployment branch rule: only `main` can use
+`REPO_ADMIN_APP_PRIVATE_KEY`. The shared App key can mint broader tokens, so
+trusted-main access remains a security boundary; see the [App guide](github-app-bootstrap.md).
 
 Partial failures and certificate-not-ready remain unresolved, with a nonzero
 apply exit and full-inventory readback. JSON, JUnit and summaries are retained
@@ -194,8 +198,9 @@ requires the full native amd64/arm64 Test matrix to succeed, including on
 gate. The queue tests the combined candidate commit; strict branch-update checks
 remain disabled. This is pipeline health, not a passing robot capability verdict.
 
-The robot policy still requires a fresh protected preview, review of every action,
-explicit apply approval and live readback. The current rollout evidence and
+The robot policy still requires a fresh preview from `main`, review of every action
+in that preview, and live readback. `repository-administration` is restricted to
+`main` and has no required reviewers. The current rollout evidence and
 remaining verification are recorded in [the ledger](required-check-rollout.md).
 
 The `.github` pilot has retained real queue-trial evidence:
@@ -205,7 +210,7 @@ Fleet queues are **live and verified across all 20 repositories** by
 [apply and strict readback 43829155236](https://github.com/Living-Proof-Labs/.github/actions/runs/43829155236).
 See the [delivery and historical candidate ledger](required-check-rollout.md) and the
 [fleet queue rollout](fleet-queue-rollout.md) for delivered scope,
-required-contract readiness and the fresh-plan approval boundary.
+required-contract readiness and the fresh-plan review boundary.
 
 The selected context is this repository's **Repository verification gate** in
 `verify.yml`. It always runs after all six verification jobs, requires success
@@ -277,8 +282,10 @@ repository-local prerequisites; informational checks need not be promoted or awa
 This fleet queue change does not select that check or complete that issue.
 
 A policy merge alone is not a live apply. Follow the [fleet rollout boundary](fleet-queue-rollout.md)
-and review a fresh trusted-main all-inventory bound plan before obtaining Aaron's
-confirmation immediately before application and protected environment approval.
+and review a fresh trusted-main all-inventory bound plan before dispatching
+apply (`apply=true`) from `main`. `repository-administration` is restricted to
+`main` and has no required reviewers. The protection is pull-request review
+plus that main-only branch rule.
 No old pilot plan is reusable; no new credentials or grants are needed.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)
@@ -295,14 +302,15 @@ Existing stronger rules, conditions and bypass
 boundaries remain controlled by the unchanged resolver. Hidden bypass values
 remain unknown; never substitute an empty list. Any unexpected required contract,
 strict-check incompatibility, unreadable evidence or unrelated drift must be
-resolved and disclosed before exact plan approval. See [fleet rollout](fleet-queue-rollout.md).
+resolved and disclosed in the fresh preview before apply. See [fleet rollout](fleet-queue-rollout.md).
 
 ### Read-only classic branch protection evidence
 
 For fleet queue rollout ([#98](https://github.com/Living-Proof-Labs/.github/issues/98)),
 run **Collect classic branch protection evidence** only after its reviewed workflow
-has merged to trusted `main`. It requires the existing `repository-administration`
-environment approval and narrows the existing settings App token to Administration
+has merged to trusted `main`. It uses the existing `repository-administration`
+environment, which is restricted to `main` and has no required reviewers, and
+narrows the existing settings App token to Administration
 read. It has no apply input or mutation step and uses no pull-request secrets.
 
 Download `classic-protection-evidence/report.json` from that run. It records the
@@ -315,7 +323,8 @@ evidence. An unreadable repository is never counted as clean.
 
 This snapshot does not certify queue readiness or replace inherited ruleset reads.
 Reconcile actual required contracts with queue-SHA workflow evidence; informational
-checks do not become mandatory. Collect fresh evidence alongside the protected
-full-inventory bound preview, review every proposed action, and obtain Aaron's exact
-live-plan approval before any apply. Neither an artifact nor a green collection run
+checks do not become mandatory. Collect fresh evidence alongside the
+full-inventory bound preview and review every proposed action before any apply.
+`repository-administration` is restricted to `main` and has no required reviewers.
+Neither an artifact nor a green collection run
 authorizes settings changes. Do not reuse superseded previews.
