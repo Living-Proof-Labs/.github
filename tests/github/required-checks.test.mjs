@@ -128,14 +128,21 @@ describe('Ruleset create readback', () => {
   const inv = { owner: 'Living-Proof-Labs', repositories: [name] };
   const createPolicy = () => ({ ...structuredClone(baseline), merge_queue_by_repository: { [name]: queue() } });
   const repo = { id: 1468383587, full_name: `Living-Proof-Labs/${name}`, default_branch: 'main', archived: false, disabled: false, visibility: 'public' };
-  function client(alter, { hideLists = 0, notFoundGets = 0 } = {}) {
+  function client(alter, { hideLists = 0, notFoundGets = 0, serverErrors = 0 } = {}) {
     let state = null;
     let hiddenLists = 0;
     let hiddenGets = 0;
+    let serverErrorReads = 0;
     const writes = [];
     const api = {
       async get(path) {
         if (path.endsWith(`/${name}`)) return repo;
+        if (state && path.includes('/rulesets') && serverErrorReads < serverErrors) {
+          serverErrorReads += 1;
+          const error = new Error('Server Error');
+          error.status = 502;
+          throw error;
+        }
         if (path.includes('/rulesets?')) {
           if (!state || hiddenLists < hideLists) {
             if (state) hiddenLists += 1;
@@ -246,6 +253,19 @@ describe('Ruleset create readback', () => {
     const p = createPolicy();
     const approved = await rulesetPlan(api, inv, name, p);
     await assert.rejects(applyRuleset(api, inv, name, p, approved, { wait: async ms => { waits.push(ms); } }), /Ruleset readback failed; ruleset was not found after 4 attempts/);
+    assert.deepEqual(waits, rulesetReadbackDelays);
+    assert.equal(writes.length, 1);
+  });
+  test('a persistent ruleset HTTP 5xx fails with the status', async () => {
+    const waits = [];
+    const { api, writes } = client(undefined, { serverErrors: 10 });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    await assert.rejects(applyRuleset(api, inv, name, p, approved, { wait: async ms => { waits.push(ms); } }), error => {
+      assert.match(error.message, /Ruleset readback failed; HTTP 5xx \(status 502\) after 4 attempts/);
+      assert.doesNotMatch(error.message, /not found/);
+      return true;
+    });
     assert.deepEqual(waits, rulesetReadbackDelays);
     assert.equal(writes.length, 1);
   });

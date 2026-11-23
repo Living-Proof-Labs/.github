@@ -145,10 +145,11 @@ export async function applyRuleset(api, inventory, name, policy, approved, { wai
   const { method, path, body } = current.write;
   await api.write(method, path, body);
   const attempts = rulesetReadbackDelays.length + 1;
+  let retryNote = 'could not find the ruleset yet';
   for (let attempt = 0; attempt < attempts; attempt++) {
     if (attempt) {
       const delay = rulesetReadbackDelays[attempt - 1];
-      log(`Ruleset readback attempt ${attempt} could not find the ruleset yet; retrying in ${delay}ms.`);
+      log(`Ruleset readback attempt ${attempt} ${retryNote}; retrying in ${delay}ms.`);
       await wait(delay);
     }
     let after;
@@ -156,11 +157,17 @@ export async function applyRuleset(api, inventory, name, policy, approved, { wai
       after = await rulesetPlan(api, inventory, name, policy, { readback: true });
     } catch (error) {
       if (!retryableReadbackStatus(error)) throw error;
-      if (attempt === attempts - 1) fail(`Ruleset readback failed; ruleset was not found after ${attempts} attempts.`);
+      const status = Number(error.status);
+      if (attempt === attempts - 1) {
+        if (status >= 500 && status <= 599) fail(`Ruleset readback failed; HTTP 5xx (status ${status}) after ${attempts} attempts.`);
+        fail(`Ruleset readback failed; ruleset was not found after ${attempts} attempts.`);
+      }
+      retryNote = status >= 500 ? `got HTTP ${status}` : 'could not find the ruleset yet';
       continue;
     }
     if (!after.before) {
       if (attempt === attempts - 1) fail(`Ruleset readback failed; ruleset was not found after ${attempts} attempts.`);
+      retryNote = 'could not find the ruleset yet';
       continue;
     }
     // Found. The proven cause is the echoed defaults, compared here without another wait.
