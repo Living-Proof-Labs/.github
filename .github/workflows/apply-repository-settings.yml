@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       apply:
-        description: Apply this run's full-inventory preview after protected approval (review all unresolved results)
+        description: Apply this run's full-inventory preview (review unresolved results). Preview and apply both start from main; the environment has no required reviewers.
         required: true
         default: false
         type: boolean

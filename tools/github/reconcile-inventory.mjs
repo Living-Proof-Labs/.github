@@ -25,7 +25,7 @@ Known general settings, sponsorships, immutable releases and Pages (including
 HTTPS) are reconciled. Repository-specific required checks and merge queues, when configured,
 are added without removing stronger existing protection. Website's policy HTTPS exemption remains unmanaged.
 Unknown immutable state never authorizes a write. Rulesets are reconciled without weakening stronger existing protection.
-Each security-sensitive action must match its saved preview and protected approval.
+Each security-sensitive action must match its saved preview. The repository-administration environment is limited to main and has no required reviewers.
 Failures and readback are reported for every repository; no rollback or automatic
 retry of writes after partial failure. Post-write reads alone may retry three times
 (1, 2, 4 seconds), only while the complete known pre-write snapshot persists.

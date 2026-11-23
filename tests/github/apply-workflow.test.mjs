@@ -38,7 +38,7 @@ test('PR audit stays secret-free while trusted main audit is environment-gated',
   assert.match(verification, /github\.event_name != 'pull_request' && github\.event_name != 'merge_group' && github\.ref == 'refs\/heads\/main'/);
 });
 
-test('daily strict audit is unattended while apply remains reviewer-gated', () => {
+test('daily strict audit is unattended while apply uses the main-only administration environment', () => {
   assert.match(verification, /schedule:[\s\S]*cron: '17 16 \* \* \*'/);
   const trustedAudit = verification.match(/  trusted-repository-settings:[\s\S]*/)?.[0];
   assert.ok(trustedAudit);

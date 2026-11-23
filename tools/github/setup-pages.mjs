@@ -19,8 +19,10 @@ preview, checks state again before each write, and verifies the result.
 Only POST/PUT /repos/Living-Proof-Labs/NAME/pages are allowed: build_type=workflow
 and https_enforced=true. Existing custom domains are preserved. HTTPS exemptions
 come from the local policy. No credentials or permissions are provisioned.
-GH_TOKEN is read only from the environment. Certificate/access failures fail;
-review a fresh preview before retrying a partially completed operation.
+GH_TOKEN is read only from the environment. Certificate and access failures
+(HTTP 4xx) fail immediately. Transient HTTP 5xx and network errors are retried
+with bounded backoff. Review a fresh preview before retrying a partially
+completed operation.
 This configures Pages; it does not dispatch or verify a documentation deployment.
 
 Example (preview only):
@@ -107,7 +109,58 @@ async function snapshot(api, base) {
 
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
-export async function runPages({ api, inventory, repo, policy, dryRun, expectedPlan, fullInventory = false }) {
+// One try plus these waits. Only HTTP 5xx and network failures (status 0) are retried.
+export const pagesHttpsRetryDelays = [1000, 2000, 4000];
+const waitFor = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+function pagesFailureText(report) {
+  return report.repositories.flatMap(item => item.failures.map(failure => failure.message)).join('; ');
+}
+
+function httpStatus(message) {
+  const match = String(message).match(/HTTP (\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function isRetryablePagesMessage(message) {
+  const status = httpStatus(message);
+  if (status === null) return /network|fetch failed|ECONNRESET|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|socket hang up/i.test(message);
+  return status === 0 || (status >= 500 && status <= 599);
+}
+
+function isRetryablePagesError(error) {
+  if (error instanceof GitHubApiError) return error.status === 0 || (error.status >= 500 && error.status <= 599);
+  return isRetryablePagesMessage(error?.message ?? '');
+}
+
+async function enforcePagesHttps(args, { wait, log }) {
+  const attempts = pagesHttpsRetryDelays.length + 1;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    let report;
+    try {
+      report = await runHttps(args);
+    } catch (error) {
+      if (!isRetryablePagesError(error) || attempt === attempts) throw error;
+      const delay = pagesHttpsRetryDelays[attempt - 1];
+      log(`Pages HTTPS attempt ${attempt} failed (${error.message}); retrying in ${delay}ms.`);
+      await wait(delay);
+      continue;
+    }
+    if (!report.failures) return report;
+    const text = pagesFailureText(report);
+    const retryable = report.repositories.every(item => item.failures.every(failure => isRetryablePagesMessage(failure.message)));
+    if (!retryable || attempt === attempts) {
+      const prefix = attempt > 1 ? `Pages HTTPS failed after ${attempt} attempts: ` : 'Pages HTTPS failed: ';
+      throw new Error(`${prefix}${text}. Review a fresh preview.`);
+    }
+    const delay = pagesHttpsRetryDelays[attempt - 1];
+    log(`Pages HTTPS attempt ${attempt} failed (${text}); retrying in ${delay}ms.`);
+    await wait(delay);
+  }
+  throw new Error('Pages HTTPS failed. Review a fresh preview.');
+}
+
+export async function runPages({ api, inventory, repo, policy, dryRun, expectedPlan, fullInventory = false, wait = waitFor, log = console.error }) {
   const base = scope(inventory, repo, fullInventory);
   validatePages(policy?.pages);
   const decision = pagesHttpsEnforced(policy, repo);
@@ -142,12 +195,11 @@ export async function runPages({ api, inventory, repo, policy, dryRun, expectedP
   }
   // Reuse the HTTPS-only controller, including exemption and certificate errors.
   // Wrap its writer with our field/target guard and a fresh state precondition.
-  const https = await runHttps({ policy, org: inventory.owner, repo, dryRun: false,
+  await enforcePagesHttps({ policy, org: inventory.owner, repo, dryRun: false,
     listed: [{ name: repo }], api: { get: scoped.get, write: async (...args) => {
       await assertCurrent();
       return scoped.write(...args);
-    } } });
-  if (https.failures) throw new Error(`Pages HTTPS failed: ${https.repositories.flatMap(item => item.failures.map(f => f.message)).join('; ')}. Review a fresh preview.`);
+    } } }, { wait, log });
   const after = await snapshot(scoped, base);
   if (after.id !== before.id || after.default_branch !== before.default_branch ||
       after.site?.build_type !== 'workflow' || after.site.cname !== (before.site?.cname ?? null) ||

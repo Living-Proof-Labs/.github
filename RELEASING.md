@@ -32,8 +32,9 @@ A version does **not** identify:
 
 Publishing a release **does not run `apply-repository-settings`** and does not
 change any live setting. That workflow stays manual
-(`workflow_dispatch`) and needs its own protected-environment approval every
-time it applies anything. A release also **implies no environment approval**:
+(`workflow_dispatch`). Preview (`apply=false`) and apply (`apply=true`) both
+start from `main` on `repository-administration`, which is restricted to `main`
+and has no required reviewers. A release also **implies no environment approval**:
 the `repository-audit` and `repository-administration` environments are not used
 by the release job, and nothing here widens their access. A release job has only
 `contents: write` for tagging and creating the Release; it gets no secrets, no

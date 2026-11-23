@@ -105,10 +105,11 @@ review arranged by Keel.
 Before promoting this proposal into active policy: reconcile the four-context
 contract in #105 with the existing writer owner and recheck current open work.
 Accepting a superset of two contexts does not enforce the full four-context set.
-Then separately review verification-only enrollment and a new protected settings
-preview with real additions. Gazebo remains a later stage; its unmerged #56 does
-not block the verification-only slice. Settings application requires separate
-approval; subsequent live
+Then separately review verification-only enrollment and a new settings
+preview from `main`. `repository-administration` is limited to `main` and has
+no required reviewers. Gazebo remains a later stage; its unmerged #56 does
+not block the verification-only slice. Settings application runs from `main` on
+`repository-administration`, which has no required reviewers; subsequent live
 ruleset readback and successful/failing actual merge-group evidence remain pending.
 Local negative tests do not establish GitHub server queue behavior. The remaining
 fleet rows above are dated gaps, not repaired by this slice; the deprecated SDK
@@ -134,9 +135,10 @@ exception remains unchanged.
 5. `unitree-foxglove-sdk` is a deliberate deprecated exception. Do not restart its
    legacy workflow, add a fake passing gate, or claim full-fleet enforcement.
 6. After workflow changes merge, separately review policy entries, preview the
-   protected settings workflow, obtain concrete application approval, apply,
-   inspect rulesets, and demonstrate real merge-group gate runs. None of those
-   live operations are part of these drafts.
+   settings workflow from `main` (`apply=false`), then apply (`apply=true`).
+   `repository-administration` is restricted to `main` and has no required
+   reviewers. Inspect rulesets and demonstrate real merge-group gate runs. None
+   of those live operations are part of these drafts.
 
 ## Release-pin audit
 
