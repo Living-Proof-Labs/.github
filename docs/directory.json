@@ -3,12 +3,6 @@
   "description": "Root documentation directory. Every repository must be in config/github/repositories.json; docs/index.md must link each repository and manual in its project directory table.",
   "manuals": [
     {
-      "repository": "livingproof-verification",
-      "title": "Robot verification reports",
-      "url": "https://docs.livingprooflabs.com/livingproof-verification/",
-      "scope": "Published robot reports: the latest grade, run history and evidence per robot and variant"
-    },
-    {
       "repository": "livingproof",
       "title": "LivingProof",
       "url": "https://docs.livingprooflabs.com/livingproof/",
@@ -100,11 +94,6 @@
     }
   ],
   "projects": [
-    {
-      "repository": "livingproof-verification",
-      "title": "Robot verification",
-      "summary": "Verification definitions, locks and the published robot reports"
-    },
     {
       "repository": "robot-capability-specs",
       "title": "Robot capability specifications",
