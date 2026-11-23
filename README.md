@@ -217,7 +217,8 @@ the `repository-administration` environment. That environment is restricted to
 (`apply=true`) both start from `main` without an environment reviewer. The
 `.github` `main` branch requires 0 approving reviews (ruleset 26190028,
 `required_approving_review_count` 0). The protection is the merge queue and the
-required `Repository verification gate` check, plus that main-only branch rule. The planner
+required `Repository verification gate` check, plus that main-only branch rule.
+Anyone who can dispatch the workflow on `main` can run apply. The planner
 disables REST writes and GraphQL mutations; the token itself technically permits
 administration writes. Dispatching preview does not apply settings. Inaccessible
 fields still remain unresolved. Review the disclosed verified subset and the

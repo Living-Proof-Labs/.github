@@ -66,7 +66,7 @@ The separate collaboration-guidelines#89 automerge proposal need not wait here.
    queues, and unknown/unresolved evidence. Resolve material differences; do not
    silently broaden the approved scope or remove existing protections.
 4. Show Aaron the exact resulting plan and obtain confirmation immediately before
-   live application, plus the required protected-environment approval. The broad
+   live application. The broad
    rollout direction is not a substitute for that exact-plan confirmation.
 5. Apply only that saved plan through the existing protected controller; retain
    strict full-inventory readback and actual queue trials. Report settings

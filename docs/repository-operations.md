@@ -140,7 +140,8 @@ with Pages write access. The `.github` `main` branch requires 0 approving
 reviews (ruleset 26190028, `required_approving_review_count` 0). The protection
 is the merge queue and the required `Repository verification gate` check, plus
 this main-only deployment branch rule: only `main` can use
-`REPO_ADMIN_APP_PRIVATE_KEY`. The shared App key can mint broader tokens, so
+`REPO_ADMIN_APP_PRIVATE_KEY`. Anyone who can dispatch the workflow on `main`
+can run apply. The shared App key can mint broader tokens, so
 trusted-main access remains a security boundary; see the [App guide](github-app-bootstrap.md).
 
 Partial failures and certificate-not-ready remain unresolved, with a nonzero
@@ -289,6 +290,7 @@ apply (`apply=true`) from `main`. `repository-administration` is restricted to
 `main` and has no required reviewers. The `.github` `main` branch requires 0
 approving reviews (ruleset 26190028). The protection is the merge queue and the
 required `Repository verification gate` check, plus that main-only branch rule.
+Anyone who can dispatch the workflow on `main` can run apply.
 No old pilot plan is reusable; no new credentials or grants are needed.
 
 GitHub's [required-check troubleshooting](https://docs.github.com/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks)

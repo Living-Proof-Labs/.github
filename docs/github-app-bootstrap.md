@@ -63,7 +63,8 @@ The `.github` `main` branch requires 0 approving reviews. Ruleset 26190028,
 "Protect main: pull requests only", sets `required_approving_review_count` to 0
 and requires the merge queue plus the `Repository verification gate` check.
 The protection is that merge queue and required check, plus the main-only
-deployment branch rule. Only `main` can use `REPO_ADMIN_APP_PRIVATE_KEY`.
+deployment branch rule. Anyone who can dispatch the workflow on `main` can run
+apply. Only `main` can use `REPO_ADMIN_APP_PRIVATE_KEY`.
 The preview job shows the dry run before apply is dispatched. The environment
 adds no reviewer.
 
