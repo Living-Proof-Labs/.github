@@ -322,7 +322,7 @@ describe('Strict queued required-check candidate', () => {
   test('candidate retains all four independent contexts without active enrollment', () => {
     assert.equal(active.required_checks_by_repository[repo], undefined);
     assert.equal(active.required_checks_by_repository['livingproof-sim-gazebo'], undefined);
-    assert.deepEqual(Object.keys(active.required_checks_by_repository).sort(), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1']);
+    assert.deepEqual(Object.keys(active.required_checks_by_repository).sort(), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1', 'verification-reports-action']);
     assert.deepEqual(proposal[repo].required_status_checks.map(c => c.context), ['checks', 'bundle-release-engine', 'renovate', 'verification']);
     validateRequiredChecks(candidate(), fleet);
   });
