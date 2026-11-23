@@ -3,7 +3,7 @@ import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateRequiredChecks, repositoryRuleset, strengthenChecks, strengthenMergeQueue } from '../../tools/github/required-checks.mjs';
-import { strengthenRuleset, rulesetPlan, applyRuleset } from '../../tools/github/reconcile-ruleset.mjs';
+import { strengthenRuleset, rulesetPlan, applyRuleset, rulesetReadbackDelays } from '../../tools/github/reconcile-ruleset.mjs';
 import { run as legacyRun, validatePolicy } from '../../tools/github/apply-repo-policy.mjs';
 import { run as legacySync } from '../../tools/github/repository-settings.mjs';
 import { verifyResults, verificationJobs } from '../../tools/github/verification-gate.mjs';
@@ -128,14 +128,30 @@ describe('Ruleset create readback', () => {
   const inv = { owner: 'Living-Proof-Labs', repositories: [name] };
   const createPolicy = () => ({ ...structuredClone(baseline), merge_queue_by_repository: { [name]: queue() } });
   const repo = { id: 1468383587, full_name: `Living-Proof-Labs/${name}`, default_branch: 'main', archived: false, disabled: false, visibility: 'public' };
-  function client(alter) {
+  function client(alter, { hideLists = 0, notFoundGets = 0 } = {}) {
     let state = null;
+    let hiddenLists = 0;
+    let hiddenGets = 0;
     const writes = [];
     const api = {
       async get(path) {
         if (path.endsWith(`/${name}`)) return repo;
-        if (path.includes('/rulesets?')) return state ? [{ id: state.id, name: state.name, source: repo.full_name, source_type: 'Repository' }] : [];
-        if (state && path.endsWith(`/rulesets/${state.id}`)) return structuredClone(state);
+        if (path.includes('/rulesets?')) {
+          if (!state || hiddenLists < hideLists) {
+            if (state) hiddenLists += 1;
+            return [];
+          }
+          return [{ id: state.id, name: state.name, source: repo.full_name, source_type: 'Repository' }];
+        }
+        if (state && path.endsWith(`/rulesets/${state.id}`)) {
+          if (hiddenGets < notFoundGets) {
+            hiddenGets += 1;
+            const error = new Error('Not Found');
+            error.status = 404;
+            throw error;
+          }
+          return structuredClone(state);
+        }
         throw new Error(`unexpected read ${path}`);
       },
       async write(method, path, body) {
@@ -188,6 +204,60 @@ describe('Ruleset create readback', () => {
     const p = createPolicy();
     const approved = await rulesetPlan(api, inv, name, p);
     await assert.rejects(applyRuleset(api, inv, name, p, approved), /Ruleset readback failed[\s\S]*Diff: rules\[2\]\.parameters\.required_approving_review_count: read 2 != written 0/);
+    assert.equal(writes.length, 1);
+  });
+  test('null bypass_actors is unreadable and passes readback', async () => {
+    const { api, writes } = client(state => { state.bypass_actors = null; });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    assert.equal((await applyRuleset(api, inv, name, p, approved)).status, 'verified');
+    assert.equal(writes.length, 1);
+  });
+  test('absent bypass_actors is unreadable and passes readback', async () => {
+    const { api, writes } = client(state => { delete state.bypass_actors; });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    assert.equal((await applyRuleset(api, inv, name, p, approved)).status, 'verified');
+    assert.equal(writes.length, 1);
+  });
+  test('a different readable bypass_actors fails', async () => {
+    const waits = [];
+    const { api, writes } = client(state => {
+      state.bypass_actors = [{ actor_id: 5, actor_type: 'Team', bypass_mode: 'always' }];
+    });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    await assert.rejects(applyRuleset(api, inv, name, p, approved, { wait: async ms => { waits.push(ms); } }), /Ruleset readback failed[\s\S]*Diff:[\s\S]*bypass_actors/);
+    assert.deepEqual(waits, []);
+    assert.equal(writes.length, 1);
+  });
+  test('a ruleset that is not found, then found and matching, passes', async () => {
+    const waits = [];
+    const { api, writes } = client(undefined, { notFoundGets: 1 });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    assert.equal((await applyRuleset(api, inv, name, p, approved, { wait: async ms => { waits.push(ms); } })).status, 'verified');
+    assert.deepEqual(waits, [rulesetReadbackDelays[0]]);
+    assert.equal(writes.length, 1);
+  });
+  test('a ruleset that stays missing fails after the bounded reads', async () => {
+    const waits = [];
+    const { api, writes } = client(undefined, { hideLists: 10 });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    await assert.rejects(applyRuleset(api, inv, name, p, approved, { wait: async ms => { waits.push(ms); } }), /Ruleset readback failed; ruleset was not found after 4 attempts/);
+    assert.deepEqual(waits, rulesetReadbackDelays);
+    assert.equal(writes.length, 1);
+  });
+  test('a stable mismatch is not retried', async () => {
+    const waits = [];
+    const { api, writes } = client(state => {
+      state.rules.find(rule => rule.type === 'pull_request').parameters.required_approving_review_count = 2;
+    });
+    const p = createPolicy();
+    const approved = await rulesetPlan(api, inv, name, p);
+    await assert.rejects(applyRuleset(api, inv, name, p, approved, { wait: async ms => { waits.push(ms); } }), /Ruleset readback failed[\s\S]*Diff: rules\[2\]\.parameters\.required_approving_review_count: read 2 != written 0/);
+    assert.deepEqual(waits, []);
     assert.equal(writes.length, 1);
   });
 });

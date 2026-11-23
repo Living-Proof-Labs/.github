@@ -7,15 +7,22 @@ const methods = new Set(['merge', 'squash', 'rebase']);
 const payloadKeys = ['name', 'target', 'enforcement', 'conditions', 'bypass_actors', 'rules'];
 const payload = value => Object.fromEntries(payloadKeys.map(key => [key, structuredClone(value[key])]));
 const fail = message => { throw new Error(message); };
-// GitHub's ruleset create response echoes these pull-request parameters when the
-// request omits them. Observed after POST on livingproof-health (run 45007455420)
-// and verification-reports-action (run 45262504725). bypass_actors was [] on both
-// the written body and the readback; these three fields were the mismatch.
+// The proven cause is the echoed defaults. GitHub's ruleset create response adds
+// these pull-request parameters when the request omits them. Observed after POST
+// on livingproof-health (run 45007455420) and verification-reports-action
+// (run 45262504725). bypass_actors was [] on both sides of those failures.
 const echoedPullRequestDefaults = {
   required_reviewers: [],
   dismissal_restriction: { enabled: false, allowed_actors: [] },
   require_extra_approval_for_unattributed_changes: true,
 };
+// Re-read only when the ruleset is not visible yet or GitHub returns 5xx.
+// A stable mismatch, including the echoed defaults above, is not retried.
+export const rulesetReadbackDelays = [1000, 2000, 4000];
+const waitFor = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+function snapshotPayload(value) {
+  return Object.fromEntries(payloadKeys.map(key => [key, Object.hasOwn(value, key) ? structuredClone(value[key]) : null]));
+}
 function withoutEchoedPullRequestDefaults(observed, written) {
   const copy = structuredClone(observed);
   const sent = (written?.rules ?? []).find(rule => rule?.type === 'pull_request')?.parameters ?? {};
@@ -26,6 +33,17 @@ function withoutEchoedPullRequestDefaults(observed, written) {
     }
   }
   return copy;
+}
+function readbackComparable(observed, written) {
+  const source = Object.fromEntries(payloadKeys.map(key => [key, observed[key]]));
+  // Null or absent bypass_actors means the App cannot read them. That is unreadable, not a mismatch.
+  // A readable array that differs from the written body still fails.
+  if (!Array.isArray(source.bypass_actors)) source.bypass_actors = written.bypass_actors;
+  return withoutEchoedPullRequestDefaults(source, written);
+}
+function retryableReadbackStatus(error) {
+  const status = Number(error?.status);
+  return status === 404 || (status >= 500 && status <= 599);
 }
 function rulesetDiff(actual, expected, path = '') {
   if (equal(actual, expected)) return [];
@@ -86,7 +104,7 @@ export function strengthenRuleset(existing, desired) {
   return next;
 }
 
-export async function rulesetPlan(api, inventory, name, policy) {
+export async function rulesetPlan(api, inventory, name, policy, options = {}) {
   if (!inventory.repositories.includes(name) || inventory.owner !== 'Living-Proof-Labs') fail('Ruleset target not registered.');
   validateRequiredChecks(policy, inventory);
   const desiredPolicy = repositoryRuleset(policy, name);
@@ -108,14 +126,16 @@ export async function rulesetPlan(api, inventory, name, policy) {
     if (item.source_type !== 'Repository' || item.source !== repo.full_name) fail('Inherited or unverified ruleset ownership; no write.');
     const full = await api.get(`${base}/rulesets/${item.id}`);
     if (full?.id !== item.id || full.source_type !== 'Repository' || full.source !== repo.full_name || full.name !== item.name) fail('Ruleset identity changed; no write.');
-    before = { id: full.id, ...payload(full) };
+    before = { id: full.id, ...(options.readback ? snapshotPayload(full) : payload(full)) };
   }
+  // Readback compares the body itself. Planning still refuses an unreadable bypass list before any write.
+  if (options.readback) return { identity: { id: repo.id, full_name: repo.full_name, default_branch: repo.default_branch }, before, write: null };
   const desired = strengthenRuleset(before, desiredPolicy);
   const write = before && equal(payload(before), desired) ? null : { method: before ? 'PUT' : 'POST', path: `${base}/rulesets${before ? `/${before.id}` : ''}`, body: desired };
   return { identity: { id: repo.id, full_name: repo.full_name, default_branch: repo.default_branch }, before, write };
 }
 
-export async function applyRuleset(api, inventory, name, policy, approved) {
+export async function applyRuleset(api, inventory, name, policy, approved, { wait = waitFor, log = console.error } = {}) {
   const current = await rulesetPlan(api, inventory, name, policy);
   if (!equal(current, approved)) fail('Ruleset action differs from reviewed preview; no ruleset write.');
   if (!current.write) return { status: 'compliant', after: current };
@@ -124,19 +144,39 @@ export async function applyRuleset(api, inventory, name, policy, approved) {
   if (!equal(await rulesetPlan(api, inventory, name, policy), current)) fail('Ruleset state changed before write; stopped.');
   const { method, path, body } = current.write;
   await api.write(method, path, body);
-  const after = await rulesetPlan(api, inventory, name, policy);
-  const comparable = withoutEchoedPullRequestDefaults(payload(after.before ?? {}), body);
-  const sameIdentity = equal(after.identity, current.identity);
-  const sameId = !current.before || after.before?.id === current.before.id;
-  const sameBody = equal(comparable, body);
-  if (!sameIdentity || after.write || !sameBody || !sameId) {
-    const details = [];
-    if (!sameIdentity) details.push(`Identity read ${JSON.stringify(after.identity)} != ${JSON.stringify(current.identity)}.`);
-    if (!sameId) details.push(`Ruleset id read ${JSON.stringify(after.before?.id)} != ${JSON.stringify(current.before?.id)}.`);
-    if (after.write) details.push(`Remaining action: ${after.write.method} ${after.write.path}.`);
-    const diff = rulesetDiff(comparable, body);
-    if (diff.length) details.push(`Diff: ${diff.join('; ')}.`);
-    fail(`Ruleset readback failed; inspect fresh evidence before retry.${details.length ? ` ${details.join(' ')}` : ''}`);
+  const attempts = rulesetReadbackDelays.length + 1;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt) {
+      const delay = rulesetReadbackDelays[attempt - 1];
+      log(`Ruleset readback attempt ${attempt} could not find the ruleset yet; retrying in ${delay}ms.`);
+      await wait(delay);
+    }
+    let after;
+    try {
+      after = await rulesetPlan(api, inventory, name, policy, { readback: true });
+    } catch (error) {
+      if (!retryableReadbackStatus(error)) throw error;
+      if (attempt === attempts - 1) fail(`Ruleset readback failed; ruleset was not found after ${attempts} attempts.`);
+      continue;
+    }
+    if (!after.before) {
+      if (attempt === attempts - 1) fail(`Ruleset readback failed; ruleset was not found after ${attempts} attempts.`);
+      continue;
+    }
+    // Found. The proven cause is the echoed defaults, compared here without another wait.
+    const comparable = readbackComparable(after.before, body);
+    const sameIdentity = equal(after.identity, current.identity);
+    const sameId = !current.before || after.before.id === current.before.id;
+    const sameBody = equal(comparable, body);
+    if (!sameIdentity || !sameBody || !sameId) {
+      const details = [];
+      if (!sameIdentity) details.push(`Identity read ${JSON.stringify(after.identity)} != ${JSON.stringify(current.identity)}.`);
+      if (!sameId) details.push(`Ruleset id read ${JSON.stringify(after.before.id)} != ${JSON.stringify(current.before?.id)}.`);
+      const diff = rulesetDiff(comparable, body);
+      if (diff.length) details.push(`Diff: ${diff.join('; ')}.`);
+      fail(`Ruleset readback failed; inspect fresh evidence before retry.${details.length ? ` ${details.join(' ')}` : ''}`);
+    }
+    return { status: 'verified', action: current.write, after };
   }
-  return { status: 'verified', action: current.write, after };
+  fail(`Ruleset readback failed; ruleset was not found after ${attempts} attempts.`);
 }
