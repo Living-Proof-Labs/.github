@@ -48,13 +48,18 @@ The loop below shows how they connect.
 
 ## From a requirement to the next improvement
 
-**Continuous integration runs MuJoCo hallway verification today.** A change in
-[livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
-runs the walk-hallway scenario for the pinned Unitree G1, Go1 and Booster T1
-configurations, keeps the evidence, grades it and publishes the report. Recorded
-fixtures also run in continuous integration. Gazebo is not connected to that loop
-yet. Physical robot runs need their own hardware execution environment and controls.
-We do not control hardware from continuous integration today.
+**Continuous integration runs MuJoCo hallway verification today.** Each robot
+repository runs
+[verification-reports-action](https://github.com/Living-Proof-Labs/verification-reports-action#readme)
+and publishes its own report section for the pinned Unitree G1, Go1 and Booster
+T1 configurations. Renovate bumps the pinned inputs, and that pull request
+re-runs the robot's report. The Action refuses to run when provenance fails
+([verification-reports-action #4](https://github.com/Living-Proof-Labs/verification-reports-action/issues/4));
+that check is still open. The run keeps the evidence, grades it and publishes
+the report. Recorded fixtures also run in continuous integration. Gazebo is not
+connected to that loop yet. Physical robot runs need their own hardware
+execution environment and controls. We do not control hardware from continuous
+integration today.
 
 This is the loop. MuJoCo simulation runs it now; Gazebo, hardware and diagnosis
 are still next:

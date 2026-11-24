@@ -1,5 +1,8 @@
 # Fleet verification readiness — 19 November 2026
 
+`livingproof-verification` was archived on 2026-11-24. The references below are
+historical.
+
 Initial source audit for [#140](https://github.com/Living-Proof-Labs/.github/issues/140)
 and [#141](https://github.com/Living-Proof-Labs/.github/issues/141).
 The canonical inventory is `config/github/repositories.json`; this is a dated
@@ -29,7 +32,7 @@ fresh fleet-wide audit; the bounded refresh below covers verification and Gazebo
 | [livingproof-sim-mujoco](https://github.com/Living-Proof-Labs/livingproof-sim-mujoco/tree/d39114ce155bf62f506569b02cc9b25b7e3356ff) | verify.yml: aggregate needed | no; verify, test-arm64, publish-tests; fork-only publication skip | add merge_group and completeness gate | skip; malformed-SHA hardening remains |
 | [livingproof-unitree-g1](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/tree/cdab1cfe50351bc8611cab5dbb6d1a1b23cc179f) | test.yml: Robot verification gate | yes; test | enrolled | fails stale read (manual.yml) |
 | [livingproof-unitree-go1](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/tree/fe48f8bda30aa0a65bd01b06107fc76874195f35) | test.yml: Robot verification gate | yes; test | enrolled | fails stale read (docs.yml) |
-| [livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification/tree/0012f7572d8607c222d9233fddb3e6cd53ee9243) | verify.yml: verification; checks.yml: checks, bundle-release-engine, renovate | yes; verification aggregates locks and ten scenarios; separate checks not included in that gate | stage only after all four check contexts are confirmed; coordinate #143 | site publication uses a separate history/deployment path; not assessed by freshness scan |
+| [archived livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification/tree/0012f7572d8607c222d9233fddb3e6cd53ee9243) (repository archived 2026-11-24) | verify.yml: verification; checks.yml: checks, bundle-release-engine, renovate | yes; verification aggregates locks and ten scenarios; separate checks not included in that gate | stage only after all four check contexts are confirmed; coordinate #143 | site publication uses a separate history/deployment path; not assessed by freshness scan |
 | [livingproof-worlds](https://github.com/Living-Proof-Labs/livingproof-worlds/tree/df5ba0916f04171140de6746bbacc4f3a4013ba1) | verify.yml: verify | no; unconditional; manual build separate | add merge_group; decide manual coverage | fails stale read (manual.yml) |
 | [robot-capability-specs](https://github.com/Living-Proof-Labs/robot-capability-specs/tree/9db79d2801c1668169db5c86d87f5c9b8b7a2332) | verify.yml: verify | no; unconditional | add merge_group | skip; malformed-SHA hardening remains |
 | [unitree-foxglove-sdk](https://github.com/Living-Proof-Labs/unitree-foxglove-sdk/tree/2afda1bbad7c9c2f549e7cfca16ad6c1012262a3) | none proposed | no; legacy ci/locomotion remain in source | EXCEPTION: deprecated; do not revive or enroll | not applicable |
@@ -43,8 +46,9 @@ at `.github` main `28cfb4b8c9891f1233e9fb818fc09d0e3e444fed`, every
 change/write list was empty. That preview checked the four enrolled repositories;
 it did not propose fleet enrollment. The active policy still contains those four.
 
-The initial verification source assessment used main at
-[`d3e36b11af8d034040f689cd2ac21709af934c17`](https://github.com/Living-Proof-Labs/livingproof-verification/tree/d3e36b11af8d034040f689cd2ac21709af934c17).
+The initial verification source assessment used archived livingproof-verification
+main (repository archived 2026-11-24) at
+[`d3e36b11af8d034040f689cd2ac21709af934c17`](https://github.com/Living-Proof-Labs/livingproof-verification/tree/d3e36b11af8d034040f689cd2ac21709af934c17) (archived).
 Both `checks.yml` and `verify.yml` run unfiltered on pull requests and
 `merge_group: checks_requested`. Complete coverage requires **four** contexts:
 
@@ -57,10 +61,11 @@ Both `checks.yml` and `verify.yml` run unfiltered on pull requests and
 
 The last three are not covered by `checks`. Release, site publication and Pages
 are main-only publishing work, excluded from PR/queue verification.
-[The workflow prerequisite #166](https://github.com/Living-Proof-Labs/livingproof-verification/pull/166)
+[The archived workflow prerequisite #166](https://github.com/Living-Proof-Labs/livingproof-verification/pull/166)
+(repository archived 2026-11-24)
 fixed acceptance of incomplete evidence and merged at
 `6814a4b689ba417cd0da4040862205ffa96fde2f`. Its complete exact-main
-[verify run 44631914027](https://github.com/Living-Proof-Labs/livingproof-verification/actions/runs/44631914027)
+[archived verify run 44631914027](https://github.com/Living-Proof-Labs/livingproof-verification/actions/runs/44631914027)
 succeeded. Missing and unexpected jobs now fail alongside non-success results;
 the regression covers pull-request and merge-group evidence. This establishes
 integrated workflow readiness, not live required-check enrollment.
@@ -75,8 +80,9 @@ ALLGREEN queue, extra checks, PR protections and empty bypass remain intact.
 The non-strict choice for existing queued entries remains supported.
 
 This expands the two-context minimum in
-[verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105),
-[#160](https://github.com/Living-Proof-Labs/livingproof-verification/pull/160)
+[archived verification #105](https://github.com/Living-Proof-Labs/livingproof-verification/issues/105)
+(repository archived 2026-11-24),
+[archived #160](https://github.com/Living-Proof-Labs/livingproof-verification/pull/160)
 (head `f8fbb3be0952dce1dadb49e4e6134d19e3558905`) and
 [central #144](https://github.com/Living-Proof-Labs/.github/pull/144)
 (head `867481d3b6be5372f6bdc91e90d552a882e45e26`). Those drafts remain owned
