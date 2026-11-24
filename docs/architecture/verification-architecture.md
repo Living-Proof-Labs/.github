@@ -8,11 +8,16 @@ a report people can inspect. The same contracts support local development,
 automated workflows, and future customer-owned verification projects.
 
 This page describes the delivered architecture (as of November 2026) and its
-tracked migrations. It is not a claim that every integration or hardware
-deployment is complete: physical robots are not supported, and Gazebo is not yet
-connected. The evaluator contract and the deterministic scenario evaluator are
-published packages. Vocabulary, recording, bindings, and human or agent
-evaluation remain tracked migrations.
+tracked migrations. The Action is the way each robot repository publishes its
+own report; Unitree G1, Go1 and Booster T1 are being moved onto
+[verification-reports-action](https://github.com/Living-Proof-Labs/verification-reports-action/blob/v2.1.0/README.md)
+([.github #164](https://github.com/Living-Proof-Labs/.github/issues/164),
+[.github #173](https://github.com/Living-Proof-Labs/.github/issues/173)).
+It is not a claim that every integration or hardware deployment is complete:
+physical robots are not supported, and Gazebo is not yet connected. The
+evaluator contract and the deterministic scenario evaluator are published
+packages. Vocabulary, recording, bindings, and human or agent evaluation remain
+tracked migrations.
 
 ## Start here
 
@@ -68,7 +73,7 @@ results; it does not copy the execution, evaluation, or rendering engines.
 | Component | Responsibility | Boundary |
 | --- | --- | --- |
 | `.github` | Organization view, inventory, and this architecture | Does not become a verification engine |
-| Verification consumer | One selected baseline, verification lock, run/series selection, and publication settings | Delivered as [`livingproof-verification`](https://github.com/Living-Proof-Labs/livingproof-verification), which publishes the [robot reports](https://docs.livingprooflabs.com/livingproof-verification/); [verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) (verifier-owned lock) is still open |
+| Verification consumer | One selected baseline, verification lock, run/series selection, and publication settings | The Action is the way each robot repository publishes its own report; G1, Go1 and T1 are being moved onto [`verification-reports-action`](https://github.com/Living-Proof-Labs/verification-reports-action/blob/v2.1.0/README.md) ([.github #164](https://github.com/Living-Proof-Labs/.github/issues/164), [.github #173](https://github.com/Living-Proof-Labs/.github/issues/173)). Renovate is intended to bump the pinned inputs. Provenance checking is being added ([verification-reports-action #4](https://github.com/Living-Proof-Labs/verification-reports-action/issues/4), in review). [verifier #20](https://github.com/Living-Proof-Labs/capability-verifier/issues/20) (verifier-owned lock) is still open |
 | Robot repository | Robot manifest, adapter, assets, feature flags, simulator compatibility, and contract tests | Does not own the cross-robot verification baseline after the manifest migration |
 | `livingproof` | Discovery, installation, and local invocation of installed tools | Is not a required hop for an automated workflow |
 | `capability-verifier` | Resolve the lock, execute trials, retain evidence, and produce authoritative grades and comparisons | Remains the orchestration and grading authority. An internal grading interface is still open ([capability-verifier #21](https://github.com/Living-Proof-Labs/capability-verifier/issues/21)). Calling evaluators through the contract is still open ([capability-verifier #51](https://github.com/Living-Proof-Labs/capability-verifier/issues/51)) |
@@ -136,7 +141,7 @@ flowchart TD
 | Record | What it records | Authority |
 | --- | --- | --- |
 | Verification definition | Selected robot configuration, world, scenario, policy, and series intent | Consumer |
-| Verification lock | Reviewed versions, commits, digests, and compatibility choices | Consumer (`livingproof-verification/verifications/*.lock.json`) |
+| Verification lock | Reviewed versions, commits, digests, and compatibility choices | Intended design: robot repository (`verifications/*.lock.json`, beside each definition) |
 | Resolved run manifest | Exact executable inputs, planned trial identities, and **expected** media/evidence-link artifact names | Verifier |
 | Evidence record | **Actual** artifacts, checksums, timestamps, and pass, missing, or error status for every planned seed | Providers and verifier |
 | Assessment | Evidence sufficiency, authoritative grade, rationale, and comparison result | Verifier. The scenario evaluator writes a separate per-trial result |
@@ -149,8 +154,8 @@ trial is listed by seed and is not silently removed from a series.
 An evidence checksum, lock hash, and source-run link preserve provenance after
 an Actions artifact expires. They do not make expired evidence retrievable, so
 the published reports keep their own copies of the evidence they link
-([livingproof-verification #11](https://github.com/Living-Proof-Labs/livingproof-verification/issues/11),
-done).
+([archived livingproof-verification #11](https://github.com/Living-Proof-Labs/livingproof-verification/issues/11),
+repository archived 2026-11-24, done).
 
 Series comparison requires compatible inputs, versions, metrics, and
 missing-trial treatment. Equal random seeds across engines do not prove equal
@@ -159,16 +164,26 @@ it never authorizes physical deployment.
 
 ## Current implementation
 
-The verification consumer is delivered. On every push to `main`,
-[`livingproof-verification`](https://github.com/Living-Proof-Labs/livingproof-verification)
-calls the verifier's pinned reusable `walk-hallway.yml` workflow for each reviewed
-definition and lock, then publishes the
-[robot reports](https://docs.livingprooflabs.com/livingproof-verification/) to
-GitHub Pages: the latest grade, run history and provenance per robot and variant.
-The [live index](https://docs.livingprooflabs.com/livingproof-verification/) lists
-which robots and variants are published and their latest grades. `capability-verifier`
-grades and writes the assessment into the bundle; `livingproof-capability-report`
-(render-only since v2.0.0) only validates and renders it.
+[verification-reports-action](https://github.com/Living-Proof-Labs/verification-reports-action/blob/v2.1.0/README.md)
+is the way each robot repository publishes its own report. Unitree G1, Go1 and
+Booster T1 are being moved onto it
+([.github #164](https://github.com/Living-Proof-Labs/.github/issues/164),
+[.github #173](https://github.com/Living-Proof-Labs/.github/issues/173)).
+At [v2.1.0](https://github.com/Living-Proof-Labs/verification-reports-action/releases/tag/v2.1.0)
+the reusable workflow reads the caller's definitions and sibling lock files and
+uploads a `verification-report` artifact. The site step can then place a
+single-robot `reports/` section in that repository's documentation: an index of
+the latest result per scenario, per-scenario history, and a retained page per
+run. Renovate is intended to bump the pinned inputs in the robot repository.
+Provenance checking is being added
+([verification-reports-action #4](https://github.com/Living-Proof-Labs/verification-reports-action/issues/4),
+in review). The released workflow records the lock's verifier commit and does
+not compare it yet.
+[Archived livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
+(repository archived 2026-11-24) is the retired central consumer.
+`capability-verifier` grades and writes the assessment into the bundle;
+`livingproof-capability-report` (render-only since v2.0.0) only validates and
+renders it.
 
 Two evaluator packages are published beside that path.
 [`livingproof-evaluator` v1.0.0](https://github.com/Living-Proof-Labs/livingproof-evaluator/releases/tag/v1.0.0)
@@ -184,10 +199,9 @@ complete observation binding remain unfinished. The published robot reports
 still show the verifier's stored grade. Package checks and draft corner
 scenarios stay separate from a delivered robot capability result.
 
-The robot repositories (G1, Go1, T1) also call the same reusable workflow from
-their own CI. `livingproof` remains the local discovery, installation, and
-invocation layer; its local path and the reusable workflow use the same contracts
-and verification engine.
+`livingproof` remains the local discovery, installation, and invocation layer;
+its local path and the verifier workflows the Action calls use the same
+contracts and verification engine.
 
 ### Historical snapshot (October 2026)
 
@@ -211,12 +225,17 @@ have since changed as described above.
 - Gazebo cannot yet run robot verification; its adapter work
   ([livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4))
   is unfinished.
-- The [live index](https://docs.livingprooflabs.com/livingproof-verification/)
-  publishes three MuJoCo hallway variants: Unitree G1 stock
-  (`unitree-g1` / `stock-mujoco-hallway`), Unitree Go1 playground
-  (`unitree-go1` / `playground-mujoco-hallway`) and Booster T1 stock
-  (`booster-t1` / `stock-mujoco-hallway`). Further robots and variants are not
-  on it yet.
+- The archived verification site's index
+  ([archived livingproof-verification](https://docs.livingprooflabs.com/livingproof-verification/),
+  repository archived 2026-11-24) lists three MuJoCo hallway variants from that
+  publication: Unitree G1 stock (`unitree-g1` / `stock-mujoco-hallway`), Unitree
+  Go1 playground (`unitree-go1` / `playground-mujoco-hallway`) and Booster T1
+  stock (`booster-t1` / `stock-mujoco-hallway`). The target publication is each
+  robot repository's own report section; G1, Go1 and T1 are being moved onto
+  the Action
+  ([.github #164](https://github.com/Living-Proof-Labs/.github/issues/164),
+  [.github #173](https://github.com/Living-Proof-Labs/.github/issues/173)).
+  Further robots and variants are not on that archived index.
 - Observable vocabulary
   ([livingproof-evaluator #2](https://github.com/Living-Proof-Labs/livingproof-evaluator/issues/2))
   and the observation-binding format
@@ -252,13 +271,14 @@ have since changed as described above.
 | Render supplied assessments only | [livingproof-capability-report #30](https://github.com/Living-Proof-Labs/livingproof-capability-report/issues/30) (done, reporter v2.0.0) | Reporter grading and aggregation are removed; absent assessment data remains explicit |
 | Publish robot manifests and contract-test them | [G1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-g1/issues/4), [Go1 #4](https://github.com/Living-Proof-Labs/livingproof-unitree-go1/issues/4), [T1 #7](https://github.com/Living-Proof-Labs/livingproof-booster-t1/issues/7) | Robot-owned verification locks are retired |
 | Add a Gazebo lock variant | [livingproof-sim-gazebo #4](https://github.com/Living-Proof-Labs/livingproof-sim-gazebo/issues/4) | Another simulator can participate through the same lock and adapter contracts |
-| Create the dedicated consumer | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) (open; `livingproof-verification` publishes the [robot reports](https://docs.livingprooflabs.com/livingproof-verification/)) | One customer-like verification repository with its own definitions, locks and published reports |
+| Create the dedicated consumer | [.github #11](https://github.com/Living-Proof-Labs/.github/issues/11) (open; [archived livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification), repository archived 2026-11-24, published the [archived robot reports](https://docs.livingprooflabs.com/livingproof-verification/)) | One customer-like verification repository with its own definitions, locks and published reports |
 | Render Mermaid in the documentation site | [living-proof-labs.github.io #18](https://github.com/Living-Proof-Labs/living-proof-labs.github.io/issues/18) (done) | The documentation site renders the diagrams above |
 
 Until the manifest migration lands, robot repositories still contain their
 existing `verification.lock.json` files. Those are transitional inputs, not a
-second long-term baseline. The intended end state is the consumer's lock plus
-robot manifests and contract tests.
+second long-term baseline. The intended baseline is the lock beside each
+definition in the robot repository (`verifications/*.lock.json`), plus that
+repository's manifests and contract tests.
 
 ## First parity fixture
 

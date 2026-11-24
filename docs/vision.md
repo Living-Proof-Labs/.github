@@ -48,21 +48,30 @@ The loop below shows how they connect.
 
 ## From a requirement to the next improvement
 
-**Continuous integration runs MuJoCo hallway verification today.** A change in
-[livingproof-verification](https://github.com/Living-Proof-Labs/livingproof-verification)
-runs the walk-hallway scenario for the pinned Unitree G1, Go1 and Booster T1
-configurations, keeps the evidence, grades it and publishes the report. Recorded
-fixtures also run in continuous integration. Gazebo is not connected to that loop
-yet. Physical robot runs need their own hardware execution environment and controls.
-We do not control hardware from continuous integration today.
+**MuJoCo hallway verification is moving onto each robot repository.** The Action
+is the way each robot repository publishes its own report; Unitree G1, Go1 and
+Booster T1 are being moved onto
+[verification-reports-action](https://github.com/Living-Proof-Labs/verification-reports-action/blob/v2.1.0/README.md)
+([.github #164](https://github.com/Living-Proof-Labs/.github/issues/164),
+[.github #173](https://github.com/Living-Proof-Labs/.github/issues/173)).
+Renovate is intended to bump the pinned inputs in that repository. Provenance
+checking is being added
+([verification-reports-action #4](https://github.com/Living-Proof-Labs/verification-reports-action/issues/4),
+in review). The released workflow records the lock's verifier commit and does
+not compare it yet. Recorded fixtures remain available in continuous
+integration.
+Gazebo is not connected to that loop yet. Physical robot runs need their own
+hardware execution environment and controls. We do not control hardware from
+continuous integration.
 
-This is the loop. MuJoCo simulation runs it now; Gazebo, hardware and diagnosis
-are still next:
+This is the loop. MuJoCo simulation is the execution in that loop; Gazebo,
+hardware and diagnosis are still next:
 
 1. Version software, requirements, and scenarios.
-2. Execute the MuJoCo hallway in continuous integration for the published Unitree
-   G1, Go1 and Booster T1 configurations. Gazebo and separate hardware execution
-   environments are next.
+2. Execute the MuJoCo hallway for the Unitree G1, Go1 and Booster T1
+   configurations. Publishing that run from each robot repository is the
+   adoption in progress. Gazebo and separate hardware execution environments
+   are next.
 3. Collect evidence and logs with their versioned context.
 4. Retain evaluator assessments and apply an explicit versioned grading policy.
 5. Produce a traceable report.
@@ -99,11 +108,11 @@ The current pause examples use recorded fixture data, not a moving robot.
 ## Simulation and eventual hardware
 
 Simulation can make scenarios repeatable and allow software changes to be checked
-before a physical run. MuJoCo hallway verification is a delivered end-to-end flow
-for the published Unitree G1, Go1 and Booster T1 configurations: simulation,
-evidence, a grade and a published report. Gazebo demonstrates native engine
-execution; connecting it to capability scenarios, evidence and evaluation is still
-unfinished.
+before a physical run. MuJoCo hallway verification has produced simulation,
+evidence, a grade and a published report for the Unitree G1, Go1 and Booster T1
+configurations. Further publication is moving to each robot repository. Gazebo
+demonstrates native engine execution; connecting it to capability scenarios,
+evidence and evaluation is still unfinished.
 
 Hardware adds physical conditions, device configuration and operational controls.
 It needs a dedicated execution environment and people responsible for operating
