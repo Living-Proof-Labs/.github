@@ -110,6 +110,11 @@
       "summary": "Shared contract definitions at v1.0.0. Observable vocabulary and observation bindings remain design work"
     },
     {
+      "repository": "livingproof-evaluator-health",
+      "title": "Health evaluator",
+      "summary": "Planned robot health evaluation; repository bootstrap in progress, implementation not yet published"
+    },
+    {
       "repository": "livingproof-evaluator-run",
       "title": "Run evaluator",
       "summary": "Planned evaluation of run infrastructure and evidence suitability; implementation not yet published"
