@@ -149,7 +149,7 @@ function releaseCaller(withKeys) {
   return lines.join("\n");
 }
 
-// The network test calls this helper, so both checks run on offline fixtures.
+// The network test calls this helper, so these checks run on offline fixtures.
 function releaseCallsMatchShared(shared, callText) {
   if (!recordedKeysRemain(shared)) return false;
   const outputs = workflowCallKeys(shared, "outputs");
@@ -285,6 +285,15 @@ test("the shared-workflow check fails when a caller passes an unknown input", ()
   const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
   const call = releaseCaller({ "not-a-release-input": "value" });
   assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
+test("the shared-workflow check fails when a caller reads an unknown output", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const call = `${releaseCaller({})}\n# needs.release.outputs.not-a-release-output\n`;
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(workflowCallKeys(shared, "outputs").has("not-a-release-output"), false);
   assert.equal(releaseCallsMatchShared(shared, call), false);
 });
 
