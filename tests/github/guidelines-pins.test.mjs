@@ -125,6 +125,44 @@ function recordedKeysRemain(shared) {
   return true;
 }
 
+function sharedReleaseWorkflow(inputs, outputs) {
+  const lines = ["on:", "  workflow_call:", "    inputs:"];
+  for (const key of inputs) lines.push(`      ${key}:`, "        type: string");
+  lines.push("    outputs:");
+  for (const key of outputs) lines.push(`      ${key}:`, "        value: kept");
+  lines.push("");
+  return lines.join("\n");
+}
+
+function releaseCaller(withKeys) {
+  const lines = [
+    "jobs:",
+    "  release:",
+    "    uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v9.9.11",
+  ];
+  const keys = Object.keys(withKeys);
+  if (keys.length) {
+    lines.push("    with:");
+    for (const key of keys) lines.push(`      ${key}: ${withKeys[key]}`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+// The network test calls this helper, so both checks run on offline fixtures.
+function releaseCallsMatchShared(shared, callText) {
+  if (!recordedKeysRemain(shared)) return false;
+  const outputs = workflowCallKeys(shared, "outputs");
+  for (const name of Object.keys(guidelineCalls(callText))) {
+    if (!inputKeysAllowed(shared, callText, name)) return false;
+    const used = new Set(
+      [...callText.matchAll(new RegExp(`needs\\.${name}\\.outputs\\.([\\w-]+)`, "g"))].map((m) => m[1]),
+    );
+    for (const key of used) if (!outputs.has(key)) return false;
+  }
+  return true;
+}
+
 const hasCall = workflowPath() != null;
 const skipCall = hasCall ? false : "this repository has no guidelines workflow call";
 const skipNetwork = process.env.LIVINGPROOF_NETWORK
@@ -194,43 +232,60 @@ test("recorded release interface names the sealed delivery inputs", () => {
 });
 
 test("a later shared input is allowed without editing the recorded set", () => {
-  const shared = [
-    "on:",
-    "  workflow_call:",
-    "    inputs:",
-    "      dry-run:",
-    "        type: boolean",
-    "      future-input:",
-    "        type: string",
-    "    outputs:",
-    "      commit:",
-    "        value: ${{ jobs.release.outputs.commit }}",
-    "",
-  ].join("\n");
-  const call = [
-    "jobs:",
-    "  release:",
-    "    with:",
-    "      future-input: later-guidelines-release",
-    "",
-  ].join("\n");
+  const shared = sharedReleaseWorkflow(["dry-run", "future-input"], ["commit"]);
+  const call = releaseCaller({ "future-input": "later-guidelines-release" });
   assert.equal(SHARED_RELEASE_INPUTS.has("future-input"), false);
   assert.equal(inputKeysAllowed(shared, call, "release"), true);
 });
 
 test("an added shared input does not make the recorded interface stale", () => {
-  const lines = ["on:", "  workflow_call:", "    inputs:"];
-  for (const key of [...SHARED_RELEASE_INPUTS, "future-input"]) {
-    lines.push(`      ${key}:`, "        type: string");
-  }
-  lines.push("    outputs:");
-  for (const key of SHARED_RELEASE_OUTPUTS) {
-    lines.push(`      ${key}:`, "        value: kept");
-  }
-  lines.push("");
-  const shared = lines.join("\n");
+  const shared = sharedReleaseWorkflow(
+    [...SHARED_RELEASE_INPUTS, "future-input"],
+    SHARED_RELEASE_OUTPUTS,
+  );
   assert.equal(workflowCallKeys(shared, "inputs").has("future-input"), true);
   assert.equal(recordedKeysRemain(shared), true);
+});
+
+test("recordedKeysRemain fails when the pinned workflow drops a recorded input", () => {
+  const shared = sharedReleaseWorkflow(
+    [...SHARED_RELEASE_INPUTS].filter((key) => key !== "expected-commit"),
+    SHARED_RELEASE_OUTPUTS,
+  );
+  assert.equal(workflowCallKeys(shared, "inputs").has("expected-commit"), false);
+  assert.equal(recordedKeysRemain(shared), false);
+});
+
+test("recordedKeysRemain fails when the pinned workflow drops a recorded output", () => {
+  const shared = sharedReleaseWorkflow(
+    SHARED_RELEASE_INPUTS,
+    [...SHARED_RELEASE_OUTPUTS].filter((key) => key !== "commit"),
+  );
+  assert.equal(workflowCallKeys(shared, "outputs").has("commit"), false);
+  assert.equal(recordedKeysRemain(shared), false);
+});
+
+test("inputKeysAllowed rejects a caller passing an unknown input", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const call = releaseCaller({ "not-a-release-input": "value" });
+  assert.equal(inputKeysAllowed(shared, call, "release"), false);
+});
+
+test("the shared-workflow check fails when a recorded input is gone", () => {
+  const shared = sharedReleaseWorkflow(
+    [...SHARED_RELEASE_INPUTS].filter((key) => key !== "expected-commit"),
+    SHARED_RELEASE_OUTPUTS,
+  );
+  const call = releaseCaller({ "dry-run": "false" });
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
+test("the shared-workflow check fails when a caller passes an unknown input", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const call = releaseCaller({ "not-a-release-input": "value" });
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
 });
 
 test("pinned shared workflow still declares every recorded release key", { skip: skipNetwork }, async () => {
@@ -241,14 +296,9 @@ test("pinned shared workflow still declares every recorded release key", { skip:
   const response = await fetch(url);
   assert.ok(response.ok, `${url} -> ${response.status}`);
   const shared = await response.text();
-  assert.equal(recordedKeysRemain(shared), true, `pinned ${ref} dropped a recorded release key`);
-  const outputs = workflowCallKeys(shared, "outputs");
-  const text = readFileSync(workflowPath(), "utf8");
-  for (const name of Object.keys(guidelineCalls(text))) {
-    assert.equal(inputKeysAllowed(shared, text, name), true, name);
-    const used = new Set(
-      [...text.matchAll(new RegExp(`needs\\.${name}\\.outputs\\.([\\w-]+)`, "g"))].map((m) => m[1]),
-    );
-    for (const key of used) assert.ok(outputs.has(key), `unexpected output ${key}`);
-  }
+  assert.equal(
+    releaseCallsMatchShared(shared, readFileSync(workflowPath(), "utf8")),
+    true,
+    `pinned ${ref} release call left the shared interface`,
+  );
 });
