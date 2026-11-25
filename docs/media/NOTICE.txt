@@ -43,7 +43,7 @@ Recording: 1280x720 H.264, 66.04 seconds, no audio track. Poster is the
 1280x720 JPEG shipped with the recording.
 
 The website repository does not publish a license file. This copy does not
-relicense the recording. The surrounding page prose remains CC-BY-4.0, as
+relicense the recording. The surrounding page prose is Apache-2.0, as
 declared for docs/index.md in docs/site.json. The recording stays Living
 Proof Labs material, kept here so the documentation does not depend on a
 marketing-site URL.
