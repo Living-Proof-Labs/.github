@@ -18,6 +18,10 @@ tasks:
     desc: Check organization docs (pages, links, fragments, directory, Mermaid) before publication
     cmds:
       - bash tools/with-node.sh node tools/docs/check-docs.mjs
+  docs:check:live:
+    desc: Check that listed repositories are not archived and listed manual URLs resolve (needs network)
+    cmds:
+      - bash tools/with-node.sh node tools/docs/check-live-manuals.mjs
   test:
     desc: Test inventory and documentation validation
     cmds:
