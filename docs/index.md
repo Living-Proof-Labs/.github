@@ -238,5 +238,5 @@ Documentation identity is separate from each project's package or catalog releas
 
 Contributors follow [guidelines v6.0.0](https://github.com/Living-Proof-Labs/collaboration-guidelines/tree/v6.0.0)
 and this repository's [working agreement](../AGENTS.md). See
-[license scopes](https://docs.livingprooflabs.com/license.html). No private security
+[license](https://docs.livingprooflabs.com/license.html). No private security
 reporting route is documented here.
