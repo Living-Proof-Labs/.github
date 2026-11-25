@@ -297,6 +297,28 @@ test("the shared-workflow check fails when a caller reads an unknown output", ()
   assert.equal(releaseCallsMatchShared(shared, call), false);
 });
 
+test("a caller reading a declared output is accepted", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const output = "commit";
+  assert.equal(workflowCallKeys(shared, "outputs").has(output), true);
+  assert.equal(workflowCallKeys(shared, "inputs").has(output), false);
+  const call = `${releaseCaller({})}\n# needs.release.outputs.${output}\n`;
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(releaseCallsMatchShared(shared, call), true);
+});
+
+test("a caller reading an input name as an output is refused", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const input = "dry-run";
+  assert.equal(workflowCallKeys(shared, "inputs").has(input), true);
+  assert.equal(workflowCallKeys(shared, "outputs").has(input), false);
+  const call = `${releaseCaller({})}\n# needs.release.outputs.${input}\n`;
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
 test("pinned shared workflow still declares every recorded release key", { skip: skipNetwork }, async () => {
   const refs = new Set(Object.values(guidelineCalls()).map((call) => call.ref));
   assert.equal(refs.size, 1);
