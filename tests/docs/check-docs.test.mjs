@@ -34,9 +34,9 @@ test('the bot GitHub Apps owner guide is a published page', () => {
   const page = site.pages.find((p) => p.source === 'docs/GITHUB-APPS.md');
   assert.equal(page?.path, 'github-apps.md');
   assert.equal(page.title, 'Bot GitHub Apps');
-  assert.equal(page.license, 'CC-BY-4.0');
+  assert.equal(page.license, 'Apache-2.0');
   assert.equal(site.pages.at(-1).source, 'docs/GITHUB-APPS.md');
-  assert.match(readFileSync(path.join(ROOT, 'docs/GITHUB-APPS.md'), 'utf8'), /SPDX-License-Identifier: CC-BY-4\.0/);
+  assert.match(readFileSync(path.join(ROOT, 'docs/GITHUB-APPS.md'), 'utf8'), /SPDX-License-Identifier: Apache-2\.0/);
 });
 
 test('architecture is published, in navigation, and reachable from the homepage', () => {
@@ -51,9 +51,24 @@ test('slugs and explicit ids match the published anchors', () => {
   assert.deepEqual([...anchors('# A `b` c\n<a id="keep"></a>\n```\n# not a heading\n```\n')], ['a-b-c', 'keep']);
 });
 
+test('a page declared under any license other than Apache-2.0 fails', () => {
+  for (const license of ['CC-BY-4.0', 'MIT']) {
+    const dir = copy();
+    json(dir, 'docs/site.json', (s) => ({ ...s, pages: s.pages.map((p) => (p.source === 'docs/index.md' ? { ...p, license } : p)) }));
+    assert.ok(check(dir).some((e) => e.includes(`docs/index.md license must be Apache-2.0, not ${license}`)), license);
+  }
+});
+
+test('organization pages carry no CC BY SPDX header', () => {
+  const site = JSON.parse(readFileSync(path.join(ROOT, 'docs/site.json'), 'utf8'));
+  for (const page of site.pages) {
+    assert.doesNotMatch(readFileSync(path.join(ROOT, page.source), 'utf8'), /SPDX-License-Identifier: CC-BY/, page.source);
+  }
+});
+
 test('a missing declared page fails', () => {
   const dir = copy();
-  json(dir, 'docs/site.json', (s) => ({ ...s, pages: [...s.pages, { source: 'docs/gone.md', path: 'gone.md', title: 'Gone', license: 'CC-BY-4.0' }] }));
+  json(dir, 'docs/site.json', (s) => ({ ...s, pages: [...s.pages, { source: 'docs/gone.md', path: 'gone.md', title: 'Gone', license: 'Apache-2.0' }] }));
   assert.ok(check(dir).some((e) => e.includes('missing page docs/gone.md')));
 });
 

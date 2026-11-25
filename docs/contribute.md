@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # Contribute
 
 Bring a concrete question: what should the robot do, under which conditions,
@@ -100,8 +100,8 @@ Keep `theme.font: false`; `brand.css` loads DM Sans and Instrument Serif itself.
 
 ## Licensing and help
 
-See [license scopes](https://docs.livingprooflabs.com/license.html) before reusing content. The adapted vision retains
-its original Apache-2.0 attribution; other original prose is CC BY 4.0.
+See the [license](https://docs.livingprooflabs.com/license.html) before reusing content. All organization
+documentation, including the adapted vision, is licensed under Apache-2.0.
 Use public issues for documentation corrections. No private security reporting
 route is documented for organization documentation; do not put sensitive reports in a
 public documentation issue.

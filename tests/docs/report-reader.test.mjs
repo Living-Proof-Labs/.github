@@ -9,7 +9,7 @@ test('report reader guide is a published page reachable from the site index', ()
   const site = JSON.parse(read('site.json'));
   assert.deepEqual(site.pages.find((p) => p.source === 'docs/reading-reports.md'), {
     source: 'docs/reading-reports.md', path: 'reading-reports.md',
-    title: 'Read a robot report', license: 'CC-BY-4.0',
+    title: 'Read a robot report', license: 'Apache-2.0',
   });
   assert.match(read('index.md'), /\]\(reading-reports\.md\)/);
 });
