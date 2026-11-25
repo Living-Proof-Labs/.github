@@ -2,7 +2,10 @@
 // collaboration-guidelines bumps move every consumer pin together and keep the release interface.
 // Proposed by Vera in the capability-verifier#72 review (guidelines bump checklist items 2, 3 and 6).
 // Offline: the shared release interface is recorded here and checked against the workflow call
-// when this repo has one. LIVINGPROOF_NETWORK=1 also compares them with the pinned tag.
+// when this repo has one. LIVINGPROOF_NETWORK=1 reads the pinned semantic-release.yml and
+// derives its inputs and outputs. Every recorded key must still be declared there. A later
+// guidelines release may add an input without failing that check; a caller is allowed
+// whatever that file declares, so the next bump does not need a handwritten allow-list edit.
 
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -16,12 +19,18 @@ function usesRe() {
   return /^\s+uses:\s*Living-Proof-Labs\/collaboration-guidelines\/\.github\/workflows\/([\w.-]+\.ya?ml)@(\S+)\s*$/gm;
 }
 const PRESET = /^github>Living-Proof-Labs\/collaboration-guidelines:renovate-preset#(.+)$/;
-const SHARED_RELEASE_INPUTS = new Set(["dry-run", "draft-release"]);
+const SHARED_RELEASE_INPUTS = new Set([
+  "dry-run",
+  "draft-release",
+  "expected-version",
+  "expected-commit",
+]);
 const SHARED_RELEASE_OUTPUTS = new Set([
   "draft-created",
   "published",
   "version",
   "git-tag",
+  "commit",
   "release-url",
 ]);
 
@@ -103,6 +112,57 @@ function workflowCallKeys(shared, section) {
   return new Set([...found[1].matchAll(/^      ([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
 }
 
+function inputKeysAllowed(shared, callText, job) {
+  const allowed = workflowCallKeys(shared, "inputs");
+  return Object.keys(mapping(jobBlock(callText, job), "with")).every((key) => allowed.has(key));
+}
+
+function recordedKeysRemain(shared) {
+  const inputs = workflowCallKeys(shared, "inputs");
+  const outputs = workflowCallKeys(shared, "outputs");
+  for (const key of SHARED_RELEASE_INPUTS) if (!inputs.has(key)) return false;
+  for (const key of SHARED_RELEASE_OUTPUTS) if (!outputs.has(key)) return false;
+  return true;
+}
+
+function sharedReleaseWorkflow(inputs, outputs) {
+  const lines = ["on:", "  workflow_call:", "    inputs:"];
+  for (const key of inputs) lines.push(`      ${key}:`, "        type: string");
+  lines.push("    outputs:");
+  for (const key of outputs) lines.push(`      ${key}:`, "        value: kept");
+  lines.push("");
+  return lines.join("\n");
+}
+
+function releaseCaller(withKeys) {
+  const lines = [
+    "jobs:",
+    "  release:",
+    "    uses: Living-Proof-Labs/collaboration-guidelines/.github/workflows/semantic-release.yml@v9.9.11",
+  ];
+  const keys = Object.keys(withKeys);
+  if (keys.length) {
+    lines.push("    with:");
+    for (const key of keys) lines.push(`      ${key}: ${withKeys[key]}`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+// The network test calls this helper, so these checks run on offline fixtures.
+function releaseCallsMatchShared(shared, callText) {
+  if (!recordedKeysRemain(shared)) return false;
+  const outputs = workflowCallKeys(shared, "outputs");
+  for (const name of Object.keys(guidelineCalls(callText))) {
+    if (!inputKeysAllowed(shared, callText, name)) return false;
+    const used = new Set(
+      [...callText.matchAll(new RegExp(`needs\\.${name}\\.outputs\\.([\\w-]+)`, "g"))].map((m) => m[1]),
+    );
+    for (const key of used) if (!outputs.has(key)) return false;
+  }
+  return true;
+}
+
 const hasCall = workflowPath() != null;
 const skipCall = hasCall ? false : "this repository has no guidelines workflow call";
 const skipNetwork = process.env.LIVINGPROOF_NETWORK
@@ -160,7 +220,106 @@ test("an unknown release output is reported", { skip: skipCall }, () => {
   assert.ok(found.has("tag") && !SHARED_RELEASE_OUTPUTS.has("tag"));
 });
 
-test("recorded interface matches the pinned shared workflow", { skip: skipNetwork }, async () => {
+test("recorded release interface names the sealed delivery inputs", () => {
+  assert.deepEqual(
+    [...SHARED_RELEASE_INPUTS].sort(),
+    ["draft-release", "dry-run", "expected-commit", "expected-version"],
+  );
+  assert.deepEqual(
+    [...SHARED_RELEASE_OUTPUTS].sort(),
+    ["commit", "draft-created", "git-tag", "published", "release-url", "version"],
+  );
+});
+
+test("a later shared input is allowed without editing the recorded set", () => {
+  const shared = sharedReleaseWorkflow(["dry-run", "future-input"], ["commit"]);
+  const call = releaseCaller({ "future-input": "later-guidelines-release" });
+  assert.equal(SHARED_RELEASE_INPUTS.has("future-input"), false);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+});
+
+test("an added shared input does not make the recorded interface stale", () => {
+  const shared = sharedReleaseWorkflow(
+    [...SHARED_RELEASE_INPUTS, "future-input"],
+    SHARED_RELEASE_OUTPUTS,
+  );
+  assert.equal(workflowCallKeys(shared, "inputs").has("future-input"), true);
+  assert.equal(recordedKeysRemain(shared), true);
+});
+
+test("recordedKeysRemain fails when the pinned workflow drops a recorded input", () => {
+  const shared = sharedReleaseWorkflow(
+    [...SHARED_RELEASE_INPUTS].filter((key) => key !== "expected-commit"),
+    SHARED_RELEASE_OUTPUTS,
+  );
+  assert.equal(workflowCallKeys(shared, "inputs").has("expected-commit"), false);
+  assert.equal(recordedKeysRemain(shared), false);
+});
+
+test("recordedKeysRemain fails when the pinned workflow drops a recorded output", () => {
+  const shared = sharedReleaseWorkflow(
+    SHARED_RELEASE_INPUTS,
+    [...SHARED_RELEASE_OUTPUTS].filter((key) => key !== "commit"),
+  );
+  assert.equal(workflowCallKeys(shared, "outputs").has("commit"), false);
+  assert.equal(recordedKeysRemain(shared), false);
+});
+
+test("inputKeysAllowed rejects a caller passing an unknown input", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const call = releaseCaller({ "not-a-release-input": "value" });
+  assert.equal(inputKeysAllowed(shared, call, "release"), false);
+});
+
+test("the shared-workflow check fails when a recorded input is gone", () => {
+  const shared = sharedReleaseWorkflow(
+    [...SHARED_RELEASE_INPUTS].filter((key) => key !== "expected-commit"),
+    SHARED_RELEASE_OUTPUTS,
+  );
+  const call = releaseCaller({ "dry-run": "false" });
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
+test("the shared-workflow check fails when a caller passes an unknown input", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const call = releaseCaller({ "not-a-release-input": "value" });
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
+test("the shared-workflow check fails when a caller reads an unknown output", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const call = `${releaseCaller({})}\n# needs.release.outputs.not-a-release-output\n`;
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(workflowCallKeys(shared, "outputs").has("not-a-release-output"), false);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
+test("a caller reading a declared output is accepted", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const output = "commit";
+  assert.equal(workflowCallKeys(shared, "outputs").has(output), true);
+  assert.equal(workflowCallKeys(shared, "inputs").has(output), false);
+  const call = `${releaseCaller({})}\n# needs.release.outputs.${output}\n`;
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(releaseCallsMatchShared(shared, call), true);
+});
+
+test("a caller reading an input name as an output is refused", () => {
+  const shared = sharedReleaseWorkflow(SHARED_RELEASE_INPUTS, SHARED_RELEASE_OUTPUTS);
+  const input = "dry-run";
+  assert.equal(workflowCallKeys(shared, "inputs").has(input), true);
+  assert.equal(workflowCallKeys(shared, "outputs").has(input), false);
+  const call = `${releaseCaller({})}\n# needs.release.outputs.${input}\n`;
+  assert.equal(recordedKeysRemain(shared), true);
+  assert.equal(inputKeysAllowed(shared, call, "release"), true);
+  assert.equal(releaseCallsMatchShared(shared, call), false);
+});
+
+test("pinned shared workflow still declares every recorded release key", { skip: skipNetwork }, async () => {
   const refs = new Set(Object.values(guidelineCalls()).map((call) => call.ref));
   assert.equal(refs.size, 1);
   const [ref] = refs;
@@ -168,6 +327,9 @@ test("recorded interface matches the pinned shared workflow", { skip: skipNetwor
   const response = await fetch(url);
   assert.ok(response.ok, `${url} -> ${response.status}`);
   const shared = await response.text();
-  assert.deepEqual([...workflowCallKeys(shared, "inputs")].sort(), [...SHARED_RELEASE_INPUTS].sort());
-  assert.deepEqual([...workflowCallKeys(shared, "outputs")].sort(), [...SHARED_RELEASE_OUTPUTS].sort());
+  assert.equal(
+    releaseCallsMatchShared(shared, readFileSync(workflowPath(), "utf8")),
+    true,
+    `pinned ${ref} release call left the shared interface`,
+  );
 });
