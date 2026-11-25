@@ -27,6 +27,7 @@ describe('Merge-queue review contracts', () => {
       'livingproof-capability-report',
       'livingproof-common',
       'livingproof-evaluator',
+      'livingproof-evaluator-health',
       'livingproof-evaluator-run',
       'livingproof-evaluator-scenario',
       'livingproof-health',
@@ -39,7 +40,7 @@ describe('Merge-queue review contracts', () => {
       'verification-reports-action',
       'website',
     ]);
-    assert.equal(inventory.repositories.length, 20);
+    assert.equal(inventory.repositories.length, 21);
     validatePolicy(policy);
     validateRequiredChecks(policy, inventory);
     assert.deepEqual(Object.keys(policy.required_checks_by_repository), ['.github', 'livingproof-booster-t1', 'livingproof-unitree-g1', 'livingproof-unitree-go1', 'verification-reports-action']);

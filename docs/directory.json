@@ -51,6 +51,12 @@
       "scope": "Shared contract definitions at v1.0.0 (schema/defs.schema.json). Observable vocabulary and observation bindings remain design work"
     },
     {
+      "repository": "livingproof-evaluator-health",
+      "title": "Health evaluator",
+      "url": "https://docs.livingprooflabs.com/livingproof-evaluator-health/",
+      "scope": "Repository scaffold and command-line interface; robot health evaluation remains planned"
+    },
+    {
       "repository": "livingproof-evaluator-run",
       "title": "Run evaluator",
       "url": "https://docs.livingprooflabs.com/livingproof-evaluator-run/",
@@ -108,6 +114,11 @@
       "repository": "livingproof-evaluator",
       "title": "Evaluator contract",
       "summary": "Shared contract definitions at v1.0.0. Observable vocabulary and observation bindings remain design work"
+    },
+    {
+      "repository": "livingproof-evaluator-health",
+      "title": "Health evaluator",
+      "summary": "Planned robot health evaluation; repository bootstrap in progress, implementation not yet published"
     },
     {
       "repository": "livingproof-evaluator-run",
