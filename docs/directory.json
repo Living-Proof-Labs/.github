@@ -21,12 +21,6 @@
       "scope": "Bundle validation and reports that render the verifier's stored grades"
     },
     {
-      "repository": "verification-reports-action",
-      "title": "Verification reports action",
-      "url": "https://docs.livingprooflabs.com/verification-reports-action/",
-      "scope": "Reusable GitHub Action that runs robot capability verification and produces a traceable report"
-    },
-    {
       "repository": "robot-capability-specs",
       "title": "Robot capability specifications",
       "url": "https://docs.livingprooflabs.com/robot-capability-specs/",

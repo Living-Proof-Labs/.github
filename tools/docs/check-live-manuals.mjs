@@ -20,6 +20,22 @@ function extractUrls(cell) {
   return [...(cell || '').matchAll(/\]\((https:\/\/[^)\s]+)\)/g)].map((m) => m[1]);
 }
 
+// One retry for a transient failure: a network error or a 5xx. A 4xx is a real answer.
+async function attempt(fetchImpl, url, init) {
+  const once = async () => {
+    try {
+      const response = await fetchImpl(url, init);
+      return response.status >= 500 ? { retry: true, response } : { response };
+    } catch (error) {
+      return { retry: true, error };
+    }
+  };
+  const first = await once();
+  const result = first.retry ? await once() : first;
+  if (result.error) throw result.error;
+  return result.response;
+}
+
 export function collectDirectoryTargets(root) {
   const directory = JSON.parse(readFileSync(path.join(root, 'docs/directory.json'), 'utf8'));
   const indexText = readFileSync(path.join(root, 'docs/index.md'), 'utf8');
@@ -57,7 +73,7 @@ export async function checkLiveManuals(root, options = {}) {
   for (const repo of repos) {
     const endpoint = `${apiBase}/repos/${OWNER}/${repo}`;
     try {
-      const response = await fetchImpl(endpoint, { headers: apiHeaders });
+      const response = await attempt(fetchImpl, endpoint, { headers: apiHeaders });
       if (!response.ok) {
         errors.push(`${OWNER}/${repo}: GitHub API returned HTTP ${response.status}`);
         continue;
@@ -73,9 +89,9 @@ export async function checkLiveManuals(root, options = {}) {
 
   for (const url of manualUrls) {
     try {
-      let response = await fetchImpl(url, { method: 'HEAD', headers: { 'User-Agent': USER_AGENT } });
+      let response = await attempt(fetchImpl, url, { method: 'HEAD', headers: { 'User-Agent': USER_AGENT } });
       if (response.status === 405) {
-        response = await fetchImpl(url, { method: 'GET', headers: { 'User-Agent': USER_AGENT } });
+        response = await attempt(fetchImpl, url, { method: 'GET', headers: { 'User-Agent': USER_AGENT } });
       }
       if (response.status >= 400) {
         errors.push(`${url}: HTTP ${response.status}`);
