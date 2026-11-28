@@ -95,6 +95,9 @@ export function check(root) {
   for (const page of site.pages) {
     if (!/\.md$/.test(page.path) || !page.title || !page.license) {
       errors.push(`site.json: page ${page.source} needs a .md path, a title and a license`);
+    } else if (page.license !== 'Apache-2.0') {
+      // Organization documentation is Apache-2.0 only (collaboration-guidelines#162).
+      errors.push(`site.json: page ${page.source} license must be Apache-2.0, not ${page.license}`);
     }
     if (published.has(page.path)) errors.push(`site.json: ${page.path} is published twice`);
     published.add(page.path);

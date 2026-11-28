@@ -6,19 +6,19 @@
       "source": "docs/index.md",
       "path": "index.md",
       "title": "Start here",
-      "license": "CC-BY-4.0"
+      "license": "Apache-2.0"
     },
     {
       "source": "docs/quickstart.md",
       "path": "quickstart.md",
       "title": "Quickstart",
-      "license": "CC-BY-4.0"
+      "license": "Apache-2.0"
     },
     {
       "source": "docs/reading-reports.md",
       "path": "reading-reports.md",
       "title": "Read a robot report",
-      "license": "CC-BY-4.0"
+      "license": "Apache-2.0"
     },
     {
       "source": "docs/vision.md",
@@ -30,19 +30,19 @@
       "source": "docs/architecture/verification-architecture.md",
       "path": "architecture/verification-architecture.md",
       "title": "Verification architecture",
-      "license": "CC-BY-4.0"
+      "license": "Apache-2.0"
     },
     {
       "source": "docs/contribute.md",
       "path": "contribute.md",
       "title": "Contribute",
-      "license": "CC-BY-4.0"
+      "license": "Apache-2.0"
     },
     {
       "source": "docs/GITHUB-APPS.md",
       "path": "github-apps.md",
       "title": "Bot GitHub Apps",
-      "license": "CC-BY-4.0"
+      "license": "Apache-2.0"
     }
   ],
   "directory": "docs/directory.json",

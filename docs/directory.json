@@ -103,6 +103,12 @@
       "title": "Gazebo simulator",
       "url": "https://docs.livingprooflabs.com/livingproof-sim-gazebo/",
       "scope": "Simulator project; robot verification support unfinished"
+    },
+    {
+      "repository": "verification-reports-action",
+      "title": "Verification reports action",
+      "url": "https://docs.livingprooflabs.com/verification-reports-action/",
+      "scope": "Reusable GitHub Action that runs robot capability verification and produces a traceable report"
     }
   ],
   "projects": [
