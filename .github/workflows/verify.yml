@@ -25,6 +25,10 @@ jobs:
           version: '3.54.0'
       - run: task setup
       - run: task verify
+      - name: Check live manual URLs and archived status
+        run: task docs:check:live
+        env:
+          GH_TOKEN: ${{ github.token }}
   docs-preview:
     name: Organization docs preview (publisher build and checks)
     runs-on: ubuntu-24.04

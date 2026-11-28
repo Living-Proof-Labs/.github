@@ -118,7 +118,10 @@ export function check(root) {
   for (const kind of MARKERS) {
     const rows = directory[kind] || [];
     if (!rows.length) errors.push(`${site.directory}: no ${kind}`);
+    const seen = new Set();
     for (const row of rows) {
+      if (seen.has(row.repository)) errors.push(`${site.directory}: ${kind} lists ${row.repository} twice`);
+      seen.add(row.repository);
       if (!inventory.has(row.repository)) {
         errors.push(`${site.directory}: ${kind} entry ${row.repository} is not in config/github/repositories.json`);
       }

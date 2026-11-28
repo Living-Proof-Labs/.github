@@ -155,3 +155,23 @@ test('directory documentation links require HTTPS', () => {
   });
   assert.ok(check(dir).some((error) => error.includes('invalid documentation destination for website')));
 });
+
+test('the committed directory lists each repository once under manuals and under projects', () => {
+  const directory = JSON.parse(readFileSync(path.join(ROOT, 'docs/directory.json'), 'utf8'));
+  for (const kind of ['manuals', 'projects']) {
+    const repos = directory[kind].map((row) => row.repository);
+    assert.deepEqual(repos.filter((repo, i) => repos.indexOf(repo) !== i), [], kind);
+  }
+});
+
+test('a repository listed twice in manuals or in projects fails', () => {
+  for (const kind of ['manuals', 'projects']) {
+    const dir = copy();
+    json(dir, 'docs/directory.json', (d) => ({ ...d, [kind]: [...d[kind], { ...d[kind][0] }] }));
+    const repo = JSON.parse(readFileSync(path.join(dir, 'docs/directory.json'), 'utf8'))[kind][0].repository;
+    assert.ok(
+      check(dir).some((e) => e.includes(`${kind} lists ${repo} twice`)),
+      kind
+    );
+  }
+});
