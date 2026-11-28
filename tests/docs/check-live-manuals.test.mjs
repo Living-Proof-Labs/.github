@@ -90,3 +90,59 @@ test('falls back to GET when HEAD returns 405', async () => {
   assert.deepEqual(result.errors, []);
   assert.ok(calls.some((c) => c.method === 'GET' && c.url === 'https://docs.livingprooflabs.com/verification-reports-action/'));
 });
+
+function counting(statusFor) {
+  const calls = new Map();
+  const fetchImpl = async (url, init = {}) => {
+    const repoMatch = url.match(/\/repos\/Living-Proof-Labs\/([^/]+)$/);
+    const n = (calls.get(url) || 0) + 1;
+    calls.set(url, n);
+    if (repoMatch) return { ok: true, status: 200, json: async () => ({ archived: false }) };
+    const status = statusFor(url, n);
+    if (status === 'throw') throw new Error('socket hang up');
+    return { ok: status >= 200 && status < 400, status };
+  };
+  return { fetchImpl, calls };
+}
+
+const MANUAL = 'https://docs.livingprooflabs.com/verification-reports-action/';
+
+test('a transient 5xx or network failure on a manual URL is retried once', async () => {
+  for (const first of [503, 'throw']) {
+    const { fetchImpl, calls } = counting((url, n) => (url === MANUAL && n === 1 ? first : 200));
+    const result = await checkLiveManuals(ROOT, { fetchImpl, token: '' });
+    assert.deepEqual(result.errors, [], String(first));
+    assert.equal(calls.get(MANUAL), 2);
+  }
+});
+
+test('a manual URL that fails twice is reported', async () => {
+  const { fetchImpl, calls } = counting((url) => (url === MANUAL ? 503 : 200));
+  const result = await checkLiveManuals(ROOT, { fetchImpl, token: '' });
+  assert.deepEqual(result.errors, [`${MANUAL}: HTTP 503`]);
+  assert.equal(calls.get(MANUAL), 2);
+});
+
+test('a 404 is a real answer and is not retried', async () => {
+  const { fetchImpl, calls } = counting((url) => (url === MANUAL ? 404 : 200));
+  const result = await checkLiveManuals(ROOT, { fetchImpl, token: '' });
+  assert.deepEqual(result.errors, [`${MANUAL}: HTTP 404`]);
+  assert.equal(calls.get(MANUAL), 1);
+});
+
+test('a GitHub API 5xx for a listed repository is retried once', async () => {
+  let hits = 0;
+  const fetchImpl = async (url) => {
+    if (url.endsWith('/repos/Living-Proof-Labs/verification-reports-action')) {
+      hits += 1;
+      return hits === 1
+        ? { ok: false, status: 502 }
+        : { ok: true, status: 200, json: async () => ({ archived: false }) };
+    }
+    if (url.includes('/repos/')) return { ok: true, status: 200, json: async () => ({ archived: false }) };
+    return { ok: true, status: 200 };
+  };
+  const result = await checkLiveManuals(ROOT, { fetchImpl, token: '' });
+  assert.deepEqual(result.errors, []);
+  assert.equal(hits, 2);
+});
